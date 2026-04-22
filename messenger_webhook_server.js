@@ -42,7 +42,8 @@ const EQUIPMENT = {
     keyword: "John Deere 50P",
     aliases: ["50p", "jd 50p", "john deere 50p"],
     details: "36-inch bucket, enclosed cab.",
-    thumb: "I don’t have a thumb listed on the John Deere 50P. It does have a 36-inch bucket and enclosed cab."
+    thumb: "Yes, the John Deere 50P does have a thumb."
+  }
   },
   "cat-3075": {
     name: "CAT 307.5 Excavator",
