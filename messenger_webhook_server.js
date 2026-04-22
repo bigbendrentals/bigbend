@@ -66,7 +66,7 @@ const EQUIPMENT = {
     delivery: true,
     keyword: "mini skid steer",
     aliases: ["boxer", "mini skid", "mini skid steer", "ride on skid", "ride-on skid", "ride on skid steer", "ride-on skid steer"],
-    details: "Bucket included."
+    details: "Bucket is included."
   },
   "cat-239": {
     name: "CAT 239",
@@ -423,7 +423,11 @@ function parseDays(text) {
   if (t.includes("two days")) return 2;
   if (t.includes("three days")) return 3;
   if (t.includes("four days")) return 4;
+  if (t.includes("five days")) return 5;
+  if (t.includes("six days")) return 6;
+  if (t.includes("seven days")) return 7;
   if (t.includes("one day") || t.includes("a day")) return 1;
+  if (t.includes("a week") || t.includes("one week")) return 7;
   return null;
 }
 
@@ -496,7 +500,17 @@ function isReferentialFollowup(text) {
     "pick this up",
     "it",
     "that one",
-    "that machine"
+    "that machine",
+    "how about for",
+    "a week",
+    "4 days",
+    "5 days",
+    "6 days",
+    "7 days",
+    "four days",
+    "five days",
+    "six days",
+    "seven days"
   ]);
 }
 
@@ -528,8 +542,36 @@ function isPriceQuestion(text) {
     "how much a day",
     "daily rate",
     "day rate",
-    "rental rate"
+    "rental rate",
+    "how about for",
+    "4 days",
+    "5 days",
+    "6 days",
+    "7 days",
+    "four days",
+    "five days",
+    "six days",
+    "seven days",
+    "a week",
+    "one week",
+    "week"
   ].some((k) => t.includes(k));
+}
+
+function isMonthlyRequest(text) {
+  const t = normalize(text);
+  return t.includes("month") || t.includes("monthly");
+}
+
+function isSpecialMonthlyItem(item, id) {
+  if (!item) return false;
+  if (id === "telehandler") return true;
+  return item.category === "scissor_lift";
+}
+
+function getWeeklyRate(item, id) {
+  if (item.week) return item.week;
+  return (item.day || 0) * 4;
 }
 
 function formatCategoryQuote(ids) {
@@ -553,16 +595,31 @@ function singleQuote(item, id) {
 }
 
 function multiDayQuote(item, id, days, deliveryFee = 0) {
-  const rental = item.day * days;
+  let rental = 0;
+  let billedAsWeekly = false;
+
+  if (days >= 4) {
+    rental = getWeeklyRate(item, id);
+    billedAsWeekly = true;
+  } else {
+    rental = item.day * days;
+  }
+
   const protection = item.protection ? protectionTotal(days) : 0;
   const subtotal = rental + protection + deliveryFee;
   const tax = subtotal * SALES_TAX;
   const total = subtotal + tax;
 
-  const lines = [
-    `${item.name} for ${days} days:`,
-    `Rental: ${money(rental)}`
-  ];
+  const lines = billedAsWeekly
+    ? [
+        `${item.name} weekly rate:`,
+        `Rental: ${money(rental)}`
+      ]
+    : [
+        `${item.name} for ${days} days:`,
+        `Rental: ${money(rental)}`
+      ];
+
   if (protection) lines.push(`Protection: ${money(protection)}`);
   if (deliveryFee) lines.push(`Delivery: ${money(deliveryFee)}`);
   lines.push(`Subtotal: ${money(subtotal)}`);
@@ -588,22 +645,41 @@ function buildBundleQuote(itemIds, days = 1, deliveryFee = 0) {
 
   let rental = 0;
   let protection = 0;
+  let billedAsWeekly = false;
 
   for (const item of items) {
-    rental += (item.day || 0) * days;
-    if (item.protection) protection += protectionTotal(days);
+    if (days >= 4) {
+      rental += getWeeklyRate(item, item.id);
+      billedAsWeekly = true;
+    } else {
+      rental += (item.day || 0) * days;
+    }
+
+    if (item.protection) {
+      protection += protectionTotal(days);
+    }
   }
 
   const subtotal = rental + protection + deliveryFee;
   const tax = subtotal * SALES_TAX;
   const total = subtotal + tax;
 
-  const itemLine = items.map((item) => `${item.name}: ${money((item.day || 0) * days)}`).join("\n");
+  const itemLine = items
+    .map((item) => {
+      const itemRental = days >= 4 ? getWeeklyRate(item, item.id) : (item.day || 0) * days;
+      return `${item.name}: ${money(itemRental)}`;
+    })
+    .join("\n");
 
-  const lines = [
-    `${items.map((item) => item.name).join(" + ")} for ${days} day${days > 1 ? "s" : ""}:`,
-    itemLine
-  ];
+  const lines = billedAsWeekly
+    ? [
+        `${items.map((item) => item.name).join(" + ")} weekly rate:`,
+        itemLine
+      ]
+    : [
+        `${items.map((item) => item.name).join(" + ")} for ${days} day${days > 1 ? "s" : ""}:`,
+        itemLine
+      ];
 
   if (protection) lines.push(`Rental protection: ${money(protection)}`);
   if (deliveryFee) lines.push(`Delivery: ${money(deliveryFee)}`);
@@ -675,6 +751,15 @@ function reply(message, state) {
   const deliveryFee = delivery?.fee || 0;
   const category = findCategory(message) || null;
 
+  if (item && isMonthlyRequest(message) && isSpecialMonthlyItem(item, id)) {
+    return {
+      text: `Monthly pricing for ${item.name} is quoted by Dave based on current market conditions. Please contact Dave at ${DAVE_PHONE}.`,
+      lastId: id,
+      lastCategory: null,
+      lastCategoryItems: []
+    };
+  }
+
   const ambiguousFollowup =
     !explicitFound &&
     state.lastCategoryItems &&
@@ -724,7 +809,7 @@ function reply(message, state) {
 
   if (
     state.lastQuote &&
-    containsAny(text, ["total cost", "what is the total", "total", "all in", "altogether", "out the door"])
+    containsAny(text, ["total cost", "what is the total", "total", "all in", "altogether", "out the door", "how about for", "a week", "week", "4 days", "5 days", "6 days", "7 days", "four days", "five days", "six days", "seven days"])
   ) {
     const requestedDays = parseDays(message) || state.lastQuote.days || 1;
     const requestedDeliveryFee = deliveryFee || state.lastQuote.deliveryFee || 0;
@@ -751,6 +836,17 @@ function reply(message, state) {
       const singleItem = EQUIPMENT[singleId];
 
       if (singleItem) {
+        if (isMonthlyRequest(message) && isSpecialMonthlyItem(singleItem, singleId)) {
+          return {
+            text: `Monthly pricing for ${singleItem.name} is quoted by Dave based on current market conditions. Please contact Dave at ${DAVE_PHONE}.`,
+            lastId: singleId,
+            lastCategory: null,
+            lastCategoryItems: [],
+            lastQuotedItems: [singleId],
+            lastQuote: state.lastQuote
+          };
+        }
+
         const quote =
           requestedDays > 1
             ? multiDayQuote(singleItem, singleId, requestedDays, requestedDeliveryFee)
@@ -859,7 +955,7 @@ function reply(message, state) {
   }
 
   if (item && isPriceQuestion(message)) {
-    if (days > 1 && item.day) {
+    if (days > 1) {
       const quote = multiDayQuote(item, id, days, deliveryFee);
       return {
         text: quote.text,
