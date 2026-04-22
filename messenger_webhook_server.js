@@ -813,6 +813,15 @@ function reply(message, state) {
     };
   }
 
+  if (item) {
+    return {
+      text: singleQuote(item, id),
+      lastId: id,
+      lastCategory: null,
+      lastCategoryItems: []
+    };
+  }
+
   if (category === "skid_steer") {
     return {
       text: `We have ${formatCategoryQuote(CATEGORY_ITEMS.skid_steer)}.`,
