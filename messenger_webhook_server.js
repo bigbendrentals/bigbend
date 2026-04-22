@@ -30,7 +30,8 @@ const EQUIPMENT = {
     delivery: true,
     keyword: "CAT 301.7",
     aliases: ["301.7", "mini excavator", "cat 301.7", "cat 301"],
-    details: "18-inch bucket with 12-inch optional bucket, hydraulic thumb, open cab."
+    details: "18-inch bucket with 12-inch optional bucket, hydraulic thumb, open cab.",
+    thumb: "Yes, the CAT 301.7 has a hydraulic thumb."
   },
   "jd-50p": {
     name: "John Deere 50P Excavator",
@@ -40,7 +41,8 @@ const EQUIPMENT = {
     delivery: true,
     keyword: "John Deere 50P",
     aliases: ["50p", "jd 50p", "john deere 50p"],
-    details: "36-inch bucket, enclosed cab."
+    details: "36-inch bucket, enclosed cab.",
+    thumb: "I don’t have a thumb listed on the John Deere 50P. It does have a 36-inch bucket and enclosed cab."
   },
   "cat-3075": {
     name: "CAT 307.5 Excavator",
@@ -50,7 +52,8 @@ const EQUIPMENT = {
     delivery: true,
     keyword: "CAT 307.5",
     aliases: ["307.5", "cat 307.5"],
-    details: "24-inch bucket, hydraulic thumb, enclosed cab, 17,905 lb."
+    details: "24-inch bucket, hydraulic thumb, enclosed cab, 17,905 lb.",
+    thumb: "Yes, the CAT 307.5 has a hydraulic thumb."
   },
   boxer: {
     name: "Boxer Mini Skid Steer",
@@ -563,6 +566,21 @@ function reply(message, state) {
   }
 
   if (found && item) {
+    if (text.includes("thumb")) {
+      if (item.thumb) {
+        return { text: item.thumb, lastId: id };
+      }
+      return { text: `I don’t have a thumb listed on the ${item.name}. ${item.details || ""}`.trim(), lastId: id };
+    }
+
+    if (text.includes("bucket")) {
+      return { text: item.details || singleQuote(item, id), lastId: id };
+    }
+
+    if (text.includes("cab")) {
+      return { text: item.details || singleQuote(item, id), lastId: id };
+    }
+
     if (days && days > 1 && item.day) {
       const del = item.delivery ? (deliveryInfo(message)?.fee || 0) : 0;
       return { text: multiDayQuote(item, days, del), lastId: id };
