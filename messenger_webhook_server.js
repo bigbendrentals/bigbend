@@ -43,7 +43,6 @@ const EQUIPMENT = {
     aliases: ["50p", "jd 50p", "john deere 50p"],
     details: "36-inch bucket, enclosed cab.",
     thumb: "Yes, the John Deere 50P does have a thumb."
-  }
   },
   "cat-3075": {
     name: "CAT 307.5 Excavator",
@@ -185,20 +184,6 @@ const EQUIPMENT = {
     day: 93.5,
     keyword: "sump pump",
     aliases: ["sump pump", "submersible sump pump"]
-  },
-  "gas-compressor": {
-    name: "Gas Air Compressor",
-    category: "small_tool",
-    day: 71.5,
-    keyword: "gas air compressor",
-    aliases: ["gas air compressor"]
-  },
-  pancake: {
-    name: "Pancake Compressor",
-    category: "small_tool",
-    day: 35,
-    keyword: "pancake compressor",
-    aliases: ["pancake compressor", "portable compressor"]
   },
   "stump-grinder": {
     name: "Rayco RG37",
@@ -574,11 +559,7 @@ function reply(message, state) {
       return { text: `I don’t have a thumb listed on the ${item.name}. ${item.details || ""}`.trim(), lastId: id };
     }
 
-    if (text.includes("bucket")) {
-      return { text: item.details || singleQuote(item, id), lastId: id };
-    }
-
-    if (text.includes("cab")) {
+    if (text.includes("bucket") || text.includes("cab")) {
       return { text: item.details || singleQuote(item, id), lastId: id };
     }
 
