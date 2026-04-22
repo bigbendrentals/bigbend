@@ -29,7 +29,7 @@ const EQUIPMENT = {
     protection: true,
     delivery: true,
     keyword: "CAT 301.7",
-    aliases: ["301.7", "mini excavator", "mini ex", "cat 301.7", "cat 301"],
+    aliases: ["301.7", "3017", "mini excavator", "mini ex", "cat 301.7", "cat301.7", "cat 3017", "cat3017", "cat 301"],
     details: "18-inch bucket with 12-inch optional bucket, hydraulic thumb, open cab.",
     thumb: "Yes, the CAT 301.7 has a hydraulic thumb.",
     weight: 4222
@@ -41,7 +41,7 @@ const EQUIPMENT = {
     protection: true,
     delivery: true,
     keyword: "John Deere 50P",
-    aliases: ["50p", "jd 50p", "john deere 50p"],
+    aliases: ["50p", "50 p", "jd50p", "jd 50p", "john deere 50p", "deere 50p"],
     details: "36-inch bucket, enclosed cab.",
     thumb: "Yes, the John Deere 50P does have a thumb.",
     weight: 11349
@@ -53,7 +53,7 @@ const EQUIPMENT = {
     protection: true,
     delivery: true,
     keyword: "CAT 307.5",
-    aliases: ["307.5", "cat 307.5"],
+    aliases: ["307.5", "3075", "307 5", "cat 307.5", "cat307.5", "cat 3075", "cat3075"],
     details: "24-inch bucket, hydraulic thumb, enclosed cab, 17,905 lb.",
     thumb: "Yes, the CAT 307.5 has a hydraulic thumb.",
     weight: 17905
@@ -65,7 +65,7 @@ const EQUIPMENT = {
     protection: true,
     delivery: true,
     keyword: "mini skid steer",
-    aliases: ["boxer", "mini skid", "ride on skid", "ride-on skid", "mini skid steer"],
+    aliases: ["boxer", "mini skid", "mini skid steer", "ride on skid", "ride-on skid", "ride on skid steer", "ride-on skid steer"],
     details: "Bucket included."
   },
   "cat-239": {
@@ -75,7 +75,7 @@ const EQUIPMENT = {
     protection: true,
     delivery: true,
     keyword: "CAT 239",
-    aliases: ["239", "cat 239"],
+    aliases: ["239", "cat 239", "cat239"],
     details: "Open cab.",
     weight: 7430
   },
@@ -86,7 +86,7 @@ const EQUIPMENT = {
     protection: true,
     delivery: true,
     keyword: "CAT 265",
-    aliases: ["265", "cat 265"],
+    aliases: ["265", "cat 265", "cat265"],
     details: "74 hp, 10,492 lb, closed cab with AC, high flow.",
     weight: 10492
   },
@@ -97,7 +97,7 @@ const EQUIPMENT = {
     protection: true,
     delivery: true,
     keyword: "John Deere 333P",
-    aliases: ["333p", "jd 333p", "john deere 333p", "333", "100 hp", "108 hp", "high horsepower skid steer"],
+    aliases: ["333p", "333 p", "333", "jd333p", "jd 333p", "john deere 333p", "deere 333p", "100 hp", "108 hp", "high horsepower skid steer"],
     details: "108.5 hp, 12,183 lb.",
     weight: 12183
   },
@@ -110,7 +110,7 @@ const EQUIPMENT = {
     protection: true,
     delivery: true,
     keyword: "telehandler",
-    aliases: ["telehandler", "lull", "jlg 6k telehandler", "6k telehandler"],
+    aliases: ["telehandler", "telehandlers", "lull", "lulls", "jlg 6k telehandler", "6k telehandler"],
     details: "6,000 lb capacity, 42 ft 4 in lift height."
   },
   forklift: {
@@ -120,7 +120,7 @@ const EQUIPMENT = {
     protection: true,
     delivery: true,
     keyword: "forklift",
-    aliases: ["forklift", "mitsubishi forklift", "standard forklift"],
+    aliases: ["forklift", "forklifts", "mitsubishi forklift", "standard forklift"],
     details: "3,150 lb capacity, 17 ft lift height."
   },
   "lift-king": {
@@ -137,7 +137,6 @@ const EQUIPMENT = {
     name: "Sumner Contractor Lift",
     category: "material_handling",
     day: 110,
-    keyword: "material lift",
     aliases: ["contractor lift", "duct lift", "material lift"],
     details: "Manual lift, 16 ft max height, 650 lb capacity."
   },
@@ -145,42 +144,36 @@ const EQUIPMENT = {
     name: "Stihl RB600",
     category: "small_tool",
     day: 85,
-    keyword: "pressure washer",
-    aliases: ["pressure washer", "power washer", "rb600", "rb 600"]
+    aliases: ["pressure washer", "pressure washers", "power washer", "power washers", "rb600", "rb 600"]
   },
   "surface-cleaner": {
     name: "Surface Cleaner",
     category: "small_tool",
     day: 38.5,
-    keyword: "surface cleaner",
     aliases: ["surface cleaner", "sidewalk cleaner", "driveway cleaner"]
   },
   snake: {
     name: "Ridgid K400",
     category: "small_tool",
     day: 93.5,
-    keyword: "drain snake",
     aliases: ["drain snake", "k400", "k-400", "ridgid k400"]
   },
   eel: {
     name: "Electric Eel",
     category: "small_tool",
     day: 137.5,
-    keyword: "electric eel",
     aliases: ["electric eel", "commercial drain cleaner", "heavy drain cleaner"]
   },
   splitter: {
     name: "Log Splitter",
     category: "small_tool",
     day: 99,
-    keyword: "log splitter",
     aliases: ["log splitter", "split wood", "split logs", "firewood"]
   },
   "trash-pump": {
     name: "Trash Pump",
     category: "small_tool",
     day: 88,
-    keyword: "trash pump",
     aliases: ["trash pump", "water pump", "drain pool", "pump pool", "pump out a pool"],
     details: "2-inch semi-trash pump."
   },
@@ -188,21 +181,18 @@ const EQUIPMENT = {
     name: "Sump Pump",
     category: "small_tool",
     day: 93.5,
-    keyword: "sump pump",
     aliases: ["sump pump", "submersible sump pump"]
   },
   "gas-compressor": {
     name: "Gas Air Compressor",
     category: "small_tool",
     day: 71.5,
-    keyword: "gas air compressor",
     aliases: ["gas air compressor"]
   },
   pancake: {
     name: "Pancake Compressor",
     category: "small_tool",
     day: 35,
-    keyword: "pancake compressor",
     aliases: ["pancake compressor", "portable compressor"]
   },
   "stump-grinder": {
@@ -218,7 +208,6 @@ const EQUIPMENT = {
     name: "Skid Steer Auger",
     category: "attachment",
     day: 225,
-    keyword: "auger",
     aliases: ["skid steer auger", "auger attachment", "auger"],
     details: "Bits rented separately. Attachment can be rented separately."
   },
@@ -226,7 +215,6 @@ const EQUIPMENT = {
     name: "Skid Steer Breaker",
     category: "attachment",
     day: 350,
-    keyword: "skid steer breaker",
     aliases: ["skid steer breaker", "skid steer demolition hammer", "breaker attachment", "breaker"],
     details: "Attachment can be rented separately."
   },
@@ -234,7 +222,6 @@ const EQUIPMENT = {
     name: "Forestry Mulcher",
     category: "attachment",
     day: 610,
-    keyword: "mulcher",
     aliases: ["mulcher", "forestry mulcher"],
     details: "Attachment can be rented separately."
   },
@@ -242,7 +229,6 @@ const EQUIPMENT = {
     name: "Power Rake",
     category: "attachment",
     day: 225,
-    keyword: "power rake",
     aliases: ["power rake"],
     details: "Attachment can be rented separately."
   },
@@ -250,7 +236,6 @@ const EQUIPMENT = {
     name: "Brushcat 60",
     category: "attachment",
     day: 275,
-    keyword: "Brushcat 60",
     aliases: ["brushcat", "brushcat 60", "skid steer brush cutter"],
     details: "Attachment can be rented separately."
   },
@@ -258,7 +243,6 @@ const EQUIPMENT = {
     name: "Grapple",
     category: "attachment",
     day: 110,
-    keyword: "grapple",
     aliases: ["grapple", "root grapple", "brush grapple", "tree grapple"],
     details: "Attachment can be rented separately."
   },
@@ -266,7 +250,6 @@ const EQUIPMENT = {
     name: "Concrete Saw",
     category: "small_tool",
     day: 150,
-    keyword: "concrete saw",
     aliases: ["concrete saw", "cut off saw", "cutoff saw", "stihl saw"],
     details: "Diamond blade is 155 and sold separately."
   },
@@ -274,7 +257,6 @@ const EQUIPMENT = {
     name: "Power Screed",
     category: "small_tool",
     day: 137.5,
-    keyword: "power screed",
     aliases: ["power screed", "screed", "vibrating screed"],
     details: "Screed board rented separately."
   },
@@ -282,21 +264,18 @@ const EQUIPMENT = {
     name: "Power Trowel",
     category: "small_tool",
     day: 135,
-    keyword: "power trowel",
     aliases: ["power trowel"]
   },
   vibrator: {
     name: "Concrete Vibrator",
     category: "small_tool",
     day: 49,
-    keyword: "concrete vibrator",
     aliases: ["concrete vibrator", "cement vibrator", "pencil vibrator"]
   },
   "bull-float": {
     name: "Bull Float",
     category: "small_tool",
     day: 35,
-    keyword: "bull float",
     aliases: ["bull float", "concrete float"]
   }
 };
@@ -329,8 +308,6 @@ const CATEGORY_ITEMS = {
   excavator: ["cat-3017", "jd-50p", "cat-3075"]
 };
 
-const sessions = new Map();
-
 function money(value) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
 }
@@ -342,6 +319,12 @@ function protectionTotal(days = 1) {
 
 function normalize(text) {
   let t = String(text || "").toLowerCase();
+
+  t = t.replace(/(\d+)[^\da-z]+(\d+[a-z]?)/g, "$1$2");
+  t = t.replace(/cat\s*(\d+)\s*(\d+)/g, "cat $1$2");
+  t = t.replace(/jd\s*(\d+)\s*([a-z])/g, "jd $1$2");
+  t = t.replace(/john\s+deere\s*(\d+)\s*([a-z])/g, "john deere $1$2");
+
   t = t.replace(/4/g, "a");
   t = t.replace(/[^a-z0-9\s.-]/g, " ");
   t = t.replace(/\s+/g, " ").trim();
@@ -352,18 +335,52 @@ function containsAny(text, list) {
   return list.some((s) => text.includes(s));
 }
 
+function aliasVariants(alias) {
+  const n = normalize(alias);
+  const compact = n.replace(/[\s.-]/g, "");
+  const spaced = compact
+    .replace(/([a-z]+)(\d+)/g, "$1 $2")
+    .replace(/(\d+)([a-z]+)/g, "$1 $2")
+    .trim();
+  return [...new Set([n, compact, spaced])];
+}
+
 function findEquipment(text) {
   const t = normalize(text);
-  return Object.entries(EQUIPMENT).find(([, item]) =>
-    item.aliases.some((alias) => t.includes(normalize(alias)))
-  );
+  const compactText = t.replace(/[\s.-]/g, "");
+
+  for (const [id, item] of Object.entries(EQUIPMENT)) {
+    for (const alias of item.aliases) {
+      for (const variant of aliasVariants(alias)) {
+        if (t.includes(variant) || compactText.includes(variant.replace(/[\s.-]/g, ""))) {
+          return [id, item];
+        }
+      }
+    }
+  }
+  return null;
 }
 
 function findAllEquipment(text) {
   const t = normalize(text);
-  return Object.entries(EQUIPMENT)
-    .filter(([, item]) => item.aliases.some((alias) => t.includes(normalize(alias))))
-    .map(([id]) => id);
+  const compactText = t.replace(/[\s.-]/g, "");
+  const out = [];
+
+  for (const [id, item] of Object.entries(EQUIPMENT)) {
+    let matched = false;
+    for (const alias of item.aliases) {
+      for (const variant of aliasVariants(alias)) {
+        if (t.includes(variant) || compactText.includes(variant.replace(/[\s.-]/g, ""))) {
+          matched = true;
+          break;
+        }
+      }
+      if (matched) break;
+    }
+    if (matched) out.push(id);
+  }
+
+  return out;
 }
 
 function findCategory(text) {
@@ -692,7 +709,6 @@ function reply(message, state) {
     };
   }
 
-  // FIX: allow follow-up pricing to use lastId even if no item was repeated
   if (item && isPriceQuestion(message)) {
     if (days > 1 && item.day) {
       const quote = multiDayQuote(item, id, days, deliveryFee);
