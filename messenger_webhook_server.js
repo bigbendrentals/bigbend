@@ -617,36 +617,61 @@ function reply(message, state) {
     };
   }
 
-  if (
-    state.lastQuote &&
-    containsAny(text, ["total cost", "what is the total", "total", "all in", "altogether"])
-  ) {
+if (
+  state.lastQuote &&
+  containsAny(text, ["total cost", "what is the total", "total", "all in", "altogether", "out the door"])
+) {
+  const requestedDays = parseDays(message) || state.lastQuote.days || 1;
+  const requestedDeliveryFee =
+    deliveryFee || state.lastQuote.deliveryFee || 0;
+
+  if (state.lastQuote.itemIds && state.lastQuote.itemIds.length >= 2) {
+    const quote = buildBundleQuote(
+      state.lastQuote.itemIds,
+      requestedDays,
+      requestedDeliveryFee
+    );
+
     return {
-      text: `Subtotal: ${money(state.lastQuote.subtotal)}\nSales tax (7%): ${money(state.lastQuote.tax)}\nTotal: ${money(state.lastQuote.total)}`,
+      text: quote.text,
       lastId: state.lastId,
       lastCategory: state.lastCategory,
       lastCategoryItems: state.lastCategoryItems,
       lastQuotedItems: state.lastQuotedItems,
-      lastQuote: state.lastQuote
+      lastQuote: quote
     };
   }
 
-  if (item && containsAny(text, ["how heavy", "how much does it weigh", "how much it weighs", "what does it weigh", " weight", " weigh"])) {
-    if (item.weight) {
+  if (state.lastQuote.itemIds && state.lastQuote.itemIds.length === 1) {
+    const singleId = state.lastQuote.itemIds[0];
+    const singleItem = EQUIPMENT[singleId];
+
+    if (singleItem) {
+      const quote =
+        requestedDays > 1
+          ? multiDayQuote(singleItem, singleId, requestedDays, requestedDeliveryFee)
+          : buildBundleQuote([singleId], 1, requestedDeliveryFee);
+
       return {
-        text: `${item.name} weighs ${item.weight.toLocaleString()} lb.`,
-        lastId: id,
+        text: quote.text,
+        lastId: singleId,
         lastCategory: null,
-        lastCategoryItems: []
+        lastCategoryItems: [],
+        lastQuotedItems: [singleId],
+        lastQuote: quote
       };
     }
-    return {
-      text: item.details || singleQuote(item, id),
-      lastId: id,
-      lastCategory: null,
-      lastCategoryItems: []
-    };
   }
+
+  return {
+    text: `Subtotal: ${money(state.lastQuote.subtotal)}\nSales tax (7%): ${money(state.lastQuote.tax)}\nTotal: ${money(state.lastQuote.total)}`,
+    lastId: state.lastId,
+    lastCategory: state.lastCategory,
+    lastCategoryItems: state.lastCategoryItems,
+    lastQuotedItems: state.lastQuotedItems,
+    lastQuote: state.lastQuote
+  };
+}
 
   if (item && text.includes("thumb")) {
     if (item.thumb) {
