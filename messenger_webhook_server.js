@@ -460,7 +460,23 @@ function deliveryInfo(text) {
 
 function isPriceQuestion(text) {
   const t = normalize(text);
-  return ["how much", "price", "cost", "total", "quote"].some((k) => t.includes(k));
+  return [
+    "how much",
+    "what does it cost",
+    "whats it cost",
+    "what's it cost",
+    "what is the cost",
+    "cost",
+    "price",
+    "pricing",
+    "total",
+    "quote",
+    "how much is it",
+    "how much a day",
+    "daily rate",
+    "day rate",
+    "rental rate"
+  ].some((k) => t.includes(k));
 }
 
 function formatCategoryQuote(ids) {
