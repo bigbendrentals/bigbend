@@ -466,16 +466,22 @@ function reply(message, state) {
     };
   }
 
-  if (text.includes("do you have a forklift") || text === "forklift") {
+  if (text.includes("do you have a forklift") || text.includes("do you have forklifts") || text === "forklift") {
     return {
       text: "Yes—we have a standard forklift, a rough-terrain forklift, and a telehandler. Are you looking for a warehouse-style forklift, rough-ground forklift, or a lull?",
       lastId: null
     };
   }
 
-  if (text.includes("i need a skid steer") || text === "skid steer") {
+  if (
+    text.includes("i need a skid steer") ||
+    text.includes("do you have a skid steer") ||
+    text.includes("do you have skid steers") ||
+    text.includes("skid steers") ||
+    text === "skid steer"
+  ) {
     return {
-      text: `We have a Boxer mini skid steer at ${money(EQUIPMENT.boxer.day)} a day, a CAT 239 at ${money(EQUIPMENT["cat-239"].day)} a day, a CAT 265 at ${money(EQUIPMENT["cat-265"].day)} a day, and a John Deere 333P at ${money(EQUIPMENT["jd-333p"].day)} a day. What are you trying to do with it? We also have attachments like an auger, breaker, mulcher, brushcat, and power rake.`,
+      text: `Yes, we have skid steers. We have a Boxer mini skid steer at ${money(EQUIPMENT.boxer.day)} a day, a CAT 239 at ${money(EQUIPMENT["cat-239"].day)} a day, a CAT 265 at ${money(EQUIPMENT["cat-265"].day)} a day, and a John Deere 333P at ${money(EQUIPMENT["jd-333p"].day)} a day. What are you trying to do with it? We also have attachments like an auger, breaker, mulcher, brushcat, and power rake.`,
       lastId: "cat-239"
     };
   }
@@ -530,9 +536,14 @@ function reply(message, state) {
     };
   }
 
-  if (text.includes("excavator")) {
+  if (
+    text.includes("excavator") ||
+    text.includes("excavators") ||
+    text.includes("do you have an excavator") ||
+    text.includes("do you have excavators")
+  ) {
     return {
-      text: `We have a CAT 301.7 (${money(EQUIPMENT["cat-3017"].day)}/day), JD 50P (${money(EQUIPMENT["jd-50p"].day)}/day), and CAT 307.5 (${money(EQUIPMENT["cat-3075"].day)}/day).`,
+      text: `Yes, we have excavators. We have a CAT 301.7 (${money(EQUIPMENT["cat-3017"].day)}/day), a John Deere 50P (${money(EQUIPMENT["jd-50p"].day)}/day), and a CAT 307.5 (${money(EQUIPMENT["cat-3075"].day)}/day).`,
       lastId: "cat-3017"
     };
   }
