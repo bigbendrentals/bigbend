@@ -502,14 +502,35 @@ function isReferentialFollowup(text) {
     "that one",
     "that machine",
     "how about for",
+    "and 1 day",
+    "and one day",
+    "and 2 days",
+    "and two days",
+    "and 3 days",
+    "and three days",
+    "and 4 days",
+    "and four days",
+    "and 5 days",
+    "and five days",
+    "and 6 days",
+    "and six days",
+    "and 7 days",
+    "and seven days",
     "a week",
+    "one week",
+    "1 day",
+    "one day",
+    "2 days",
+    "two days",
+    "3 days",
+    "three days",
     "4 days",
-    "5 days",
-    "6 days",
-    "7 days",
     "four days",
+    "5 days",
     "five days",
+    "6 days",
     "six days",
+    "7 days",
     "seven days"
   ]);
 }
@@ -544,13 +565,33 @@ function isPriceQuestion(text) {
     "day rate",
     "rental rate",
     "how about for",
+    "and 1 day",
+    "and one day",
+    "and 2 days",
+    "and two days",
+    "and 3 days",
+    "and three days",
+    "and 4 days",
+    "and four days",
+    "and 5 days",
+    "and five days",
+    "and 6 days",
+    "and six days",
+    "and 7 days",
+    "and seven days",
+    "1 day",
+    "one day",
+    "2 days",
+    "two days",
+    "3 days",
+    "three days",
     "4 days",
-    "5 days",
-    "6 days",
-    "7 days",
     "four days",
+    "5 days",
     "five days",
+    "6 days",
     "six days",
+    "7 days",
     "seven days",
     "a week",
     "one week",
@@ -809,7 +850,7 @@ function reply(message, state) {
 
   if (
     state.lastQuote &&
-    containsAny(text, ["total cost", "what is the total", "total", "all in", "altogether", "out the door", "how about for", "a week", "week", "4 days", "5 days", "6 days", "7 days", "four days", "five days", "six days", "seven days"])
+    containsAny(text, ["total cost", "what is the total", "total", "all in", "altogether", "out the door", "how about for", "and 1 day", "and one day", "and 2 days", "and two days", "and 3 days", "and three days", "and 4 days", "and four days", "and 5 days", "and five days", "and 6 days", "and six days", "and 7 days", "and seven days", "a week", "week", "1 day", "one day", "2 days", "two days", "3 days", "three days", "4 days", "four days", "5 days", "five days", "6 days", "six days", "7 days", "seven days"])
   ) {
     const requestedDays = parseDays(message) || state.lastQuote.days || 1;
     const requestedDeliveryFee = deliveryFee || state.lastQuote.deliveryFee || 0;
@@ -1116,7 +1157,7 @@ function reply(message, state) {
 
   return {
     text: `Sometimes my inventory database is incomplete, so you may need to check the website at ${WEBSITE} for that item.`,
-    lastId: null,
+    lastId: state.lastId,
     lastCategory: state.lastCategory,
     lastCategoryItems: state.lastCategoryItems
   };
