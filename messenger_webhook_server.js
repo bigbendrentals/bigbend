@@ -168,6 +168,21 @@ const EQUIPMENT = {
     aliases: ["electric eel", "commercial drain cleaner", "heavy drain cleaner"],
     details: "Better for heavier drain jobs."
   },
+  "rotary-hammer-drill": {
+    name: 'Makita 1-9/16" Rotary Hammer Drill',
+    category: "small_tool",
+    day: 71.5,
+    keyword: "rotary hammer drill",
+    aliases: [
+      "hammer drill",
+      "rotary hammer",
+      "rotary hammer drill",
+      "makita hammer drill",
+      "makita rotary hammer",
+      "sds max drill"
+    ],
+    details: "Takes SDS Max bits. Some bits are included."
+  },
   splitter: {
     name: "Log Splitter",
     category: "small_tool",
@@ -461,7 +476,7 @@ function singleQuote(item, id) {
   if (id === "boxer") parts.push("Bucket is included.");
   if (
     item.details &&
-    ["trash-pump", "material-lift", "telehandler", "forklift", "lift-king", "cat-265", "jd-333p", "snake", "eel"].includes(id)
+    ["trash-pump", "material-lift", "telehandler", "forklift", "lift-king", "cat-265", "jd-333p", "snake", "eel", "rotary-hammer-drill"].includes(id)
   ) {
     parts.push(item.details);
   }
@@ -925,7 +940,7 @@ function reply(message, state) {
   }
 
   return {
-    text: "Tell me what equipment you need and I’ll price it out.",
+    text: `Sometimes my inventory database is incomplete, so you may need to check the website at ${WEBSITE} for that item.`,
     lastId: id,
     lastCategory: state.lastCategory,
     lastCategoryItems: state.lastCategoryItems
