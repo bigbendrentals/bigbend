@@ -31,7 +31,8 @@ const EQUIPMENT = {
     keyword: "CAT 301.7",
     aliases: ["301.7", "mini excavator", "cat 301.7", "cat 301"],
     details: "18-inch bucket with 12-inch optional bucket, hydraulic thumb, open cab.",
-    thumb: "Yes, the CAT 301.7 has a hydraulic thumb."
+    thumb: "Yes, the CAT 301.7 has a hydraulic thumb.",
+    weight: 4222
   },
   "jd-50p": {
     name: "John Deere 50P Excavator",
@@ -42,7 +43,8 @@ const EQUIPMENT = {
     keyword: "John Deere 50P",
     aliases: ["50p", "jd 50p", "john deere 50p"],
     details: "36-inch bucket, enclosed cab.",
-    thumb: "Yes, the John Deere 50P does have a thumb."
+    thumb: "Yes, the John Deere 50P does have a thumb.",
+    weight: 11349
   },
   "cat-3075": {
     name: "CAT 307.5 Excavator",
@@ -53,7 +55,8 @@ const EQUIPMENT = {
     keyword: "CAT 307.5",
     aliases: ["307.5", "cat 307.5"],
     details: "24-inch bucket, hydraulic thumb, enclosed cab, 17,905 lb.",
-    thumb: "Yes, the CAT 307.5 has a hydraulic thumb."
+    thumb: "Yes, the CAT 307.5 has a hydraulic thumb.",
+    weight: 17905
   },
   boxer: {
     name: "Boxer Mini Skid Steer",
@@ -73,7 +76,8 @@ const EQUIPMENT = {
     delivery: true,
     keyword: "CAT 239",
     aliases: ["239", "cat 239"],
-    details: "Open cab."
+    details: "Open cab.",
+    weight: 7430
   },
   "cat-265": {
     name: "CAT 265",
@@ -83,7 +87,8 @@ const EQUIPMENT = {
     delivery: true,
     keyword: "CAT 265",
     aliases: ["265", "cat 265"],
-    details: "74 hp, 10,492 lb, closed cab with AC, high flow."
+    details: "74 hp, 10,492 lb, closed cab with AC, high flow.",
+    weight: 10492
   },
   "jd-333p": {
     name: "John Deere 333P",
@@ -93,7 +98,8 @@ const EQUIPMENT = {
     delivery: true,
     keyword: "John Deere 333P",
     aliases: ["333p", "jd 333p", "john deere 333p", "100 hp", "108 hp", "high horsepower skid steer"],
-    details: "108.5 hp, 12,183 lb."
+    details: "108.5 hp, 12,183 lb.",
+    weight: 12183
   },
   telehandler: {
     name: "JLG 6K Telehandler",
@@ -366,6 +372,24 @@ function reply(message, state) {
   const item = id ? EQUIPMENT[id] : null;
   const days = parseDays(message);
 
+  if (item && (text.includes("how much does it weigh") || text.includes("how much it weighs") || text.includes("what does it weigh") || text.includes("weight") || text.includes("weigh"))) {
+    if (item.weight) {
+      return { text: `${item.name} weighs ${item.weight.toLocaleString()} lb.`, lastId: id };
+    }
+    return { text: item.details || singleQuote(item, id), lastId: id };
+  }
+
+  if (item && text.includes("thumb")) {
+    if (item.thumb) {
+      return { text: item.thumb, lastId: id };
+    }
+    return { text: `I don’t have a thumb listed on the ${item.name}. ${item.details || ""}`.trim(), lastId: id };
+  }
+
+  if (item && (text.includes("bucket") || text.includes("cab"))) {
+    return { text: item.details || singleQuote(item, id), lastId: id };
+  }
+
   if (["cat-239", "cat-265", "jd-333p", "boxer"].includes(state.lastId)) {
     if (text.includes("dig holes") || text.includes("post holes") || text.includes("fence posts")) {
       return {
@@ -552,17 +576,6 @@ function reply(message, state) {
   }
 
   if (found && item) {
-    if (text.includes("thumb")) {
-      if (item.thumb) {
-        return { text: item.thumb, lastId: id };
-      }
-      return { text: `I don’t have a thumb listed on the ${item.name}. ${item.details || ""}`.trim(), lastId: id };
-    }
-
-    if (text.includes("bucket") || text.includes("cab")) {
-      return { text: item.details || singleQuote(item, id), lastId: id };
-    }
-
     if (days && days > 1 && item.day) {
       const del = item.delivery ? (deliveryInfo(message)?.fee || 0) : 0;
       return { text: multiDayQuote(item, days, del), lastId: id };
