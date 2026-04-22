@@ -175,8 +175,10 @@ const EQUIPMENT = {
     keyword: "rotary hammer drill",
     aliases: [
       "hammer drill",
+      "hammer drills",
       "rotary hammer",
       "rotary hammer drill",
+      "rotary hammer drills",
       "makita hammer drill",
       "makita rotary hammer",
       "sds max drill"
@@ -341,12 +343,12 @@ function protectionTotal(days = 1) {
 function normalize(text) {
   let t = String(text || "").toLowerCase();
 
+  t = t.replace(/skid steer4s/g, "skid steers");
   t = t.replace(/(\d+)[^\da-z]+(\d+[a-z]?)/g, "$1$2");
   t = t.replace(/cat\s*(\d+)\s*(\d+)/g, "cat $1$2");
   t = t.replace(/jd\s*(\d+)\s*([a-z])/g, "jd $1$2");
   t = t.replace(/john\s+deere\s*(\d+)\s*([a-z])/g, "john deere $1$2");
 
-  t = t.replace(/4/g, "a");
   t = t.replace(/[^a-z0-9\s.-]/g, " ");
   t = t.replace(/\s+/g, " ").trim();
   return t;
