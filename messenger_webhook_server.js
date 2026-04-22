@@ -21,6 +21,9 @@ const PROTECTION_BASE = 49.99;
 const DAVE_PHONE = "850-843-2248";
 const WEBSITE = "www.bigbendrentals.net";
 
+const sessions = new Map();
+
+const EQUIPMENT = {
 const EQUIPMENT = {
   "cat-3017": {
     name: "CAT 301.7 Mini Excavator",
