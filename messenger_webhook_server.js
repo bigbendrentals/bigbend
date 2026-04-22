@@ -21,10 +21,7 @@ const PROTECTION_BASE = 49.99;
 const DAVE_PHONE = "850-843-2248";
 const WEBSITE = "www.bigbendrentals.net";
 
-const sessions = new Map();
-
 const EQUIPMENT = {
-  
   "cat-3017": {
     name: "CAT 301.7 Mini Excavator",
     category: "excavator",
@@ -159,13 +156,17 @@ const EQUIPMENT = {
     name: "Ridgid K400",
     category: "small_tool",
     day: 93.5,
-    aliases: ["drain snake", "k400", "k-400", "ridgid k400"]
+    keyword: "Ridgid K400",
+    aliases: ["drain snake", "drain snakes", "k400", "k-400", "ridgid k400", "ridgid", "rigid k400", "rigid"],
+    details: "Good for many standard drain jobs."
   },
   eel: {
     name: "Electric Eel",
     category: "small_tool",
     day: 137.5,
-    aliases: ["electric eel", "commercial drain cleaner", "heavy drain cleaner"]
+    keyword: "Electric Eel",
+    aliases: ["electric eel", "commercial drain cleaner", "heavy drain cleaner"],
+    details: "Better for heavier drain jobs."
   },
   splitter: {
     name: "Log Splitter",
@@ -311,6 +312,8 @@ const CATEGORY_ITEMS = {
   excavator: ["cat-3017", "jd-50p", "cat-3075"]
 };
 
+const sessions = new Map();
+
 function money(value) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
 }
@@ -409,7 +412,24 @@ function parseDays(text) {
 
 function bookingIntent(text) {
   const t = normalize(text);
-  return ["reserve", "availability", "available", "tomorrow", "next week", "book", "hold it", "scheduled", "schedule"].some((k) => t.includes(k));
+  return [
+    "reserve",
+    "availability",
+    "available",
+    "tomorrow",
+    "today",
+    "this afternoon",
+    "this morning",
+    "next week",
+    "book",
+    "hold it",
+    "scheduled",
+    "schedule",
+    "pick up",
+    "pickup",
+    "pick it up",
+    "pick this up"
+  ].some((k) => t.includes(k));
 }
 
 function deliveryInfo(text) {
@@ -441,7 +461,7 @@ function singleQuote(item, id) {
   if (id === "boxer") parts.push("Bucket is included.");
   if (
     item.details &&
-    ["trash-pump", "material-lift", "telehandler", "forklift", "lift-king", "cat-265", "jd-333p"].includes(id)
+    ["trash-pump", "material-lift", "telehandler", "forklift", "lift-king", "cat-265", "jd-333p", "snake", "eel"].includes(id)
   ) {
     parts.push(item.details);
   }
@@ -617,61 +637,77 @@ function reply(message, state) {
     };
   }
 
-if (
-  state.lastQuote &&
-  containsAny(text, ["total cost", "what is the total", "total", "all in", "altogether", "out the door"])
-) {
-  const requestedDays = parseDays(message) || state.lastQuote.days || 1;
-  const requestedDeliveryFee =
-    deliveryFee || state.lastQuote.deliveryFee || 0;
+  if (
+    state.lastQuote &&
+    containsAny(text, ["total cost", "what is the total", "total", "all in", "altogether", "out the door"])
+  ) {
+    const requestedDays = parseDays(message) || state.lastQuote.days || 1;
+    const requestedDeliveryFee = deliveryFee || state.lastQuote.deliveryFee || 0;
 
-  if (state.lastQuote.itemIds && state.lastQuote.itemIds.length >= 2) {
-    const quote = buildBundleQuote(
-      state.lastQuote.itemIds,
-      requestedDays,
-      requestedDeliveryFee
-    );
+    if (state.lastQuote.itemIds && state.lastQuote.itemIds.length >= 2) {
+      const quote = buildBundleQuote(
+        state.lastQuote.itemIds,
+        requestedDays,
+        requestedDeliveryFee
+      );
+
+      return {
+        text: quote.text,
+        lastId: state.lastId,
+        lastCategory: state.lastCategory,
+        lastCategoryItems: state.lastCategoryItems,
+        lastQuotedItems: state.lastQuotedItems,
+        lastQuote: quote
+      };
+    }
+
+    if (state.lastQuote.itemIds && state.lastQuote.itemIds.length === 1) {
+      const singleId = state.lastQuote.itemIds[0];
+      const singleItem = EQUIPMENT[singleId];
+
+      if (singleItem) {
+        const quote =
+          requestedDays > 1
+            ? multiDayQuote(singleItem, singleId, requestedDays, requestedDeliveryFee)
+            : buildBundleQuote([singleId], 1, requestedDeliveryFee);
+
+        return {
+          text: quote.text,
+          lastId: singleId,
+          lastCategory: null,
+          lastCategoryItems: [],
+          lastQuotedItems: [singleId],
+          lastQuote: quote
+        };
+      }
+    }
 
     return {
-      text: quote.text,
+      text: `Subtotal: ${money(state.lastQuote.subtotal)}\nSales tax (7%): ${money(state.lastQuote.tax)}\nTotal: ${money(state.lastQuote.total)}`,
       lastId: state.lastId,
       lastCategory: state.lastCategory,
       lastCategoryItems: state.lastCategoryItems,
       lastQuotedItems: state.lastQuotedItems,
-      lastQuote: quote
+      lastQuote: state.lastQuote
     };
   }
 
-  if (state.lastQuote.itemIds && state.lastQuote.itemIds.length === 1) {
-    const singleId = state.lastQuote.itemIds[0];
-    const singleItem = EQUIPMENT[singleId];
-
-    if (singleItem) {
-      const quote =
-        requestedDays > 1
-          ? multiDayQuote(singleItem, singleId, requestedDays, requestedDeliveryFee)
-          : buildBundleQuote([singleId], 1, requestedDeliveryFee);
-
+  if (item && containsAny(text, ["how heavy", "how much does it weigh", "how much it weighs", "what does it weigh", " weight", " weigh"])) {
+    if (item.weight) {
       return {
-        text: quote.text,
-        lastId: singleId,
+        text: `${item.name} weighs ${item.weight.toLocaleString()} lb.`,
+        lastId: id,
         lastCategory: null,
-        lastCategoryItems: [],
-        lastQuotedItems: [singleId],
-        lastQuote: quote
+        lastCategoryItems: []
       };
     }
+    return {
+      text: item.details || singleQuote(item, id),
+      lastId: id,
+      lastCategory: null,
+      lastCategoryItems: []
+    };
   }
-
-  return {
-    text: `Subtotal: ${money(state.lastQuote.subtotal)}\nSales tax (7%): ${money(state.lastQuote.tax)}\nTotal: ${money(state.lastQuote.total)}`,
-    lastId: state.lastId,
-    lastCategory: state.lastCategory,
-    lastCategoryItems: state.lastCategoryItems,
-    lastQuotedItems: state.lastQuotedItems,
-    lastQuote: state.lastQuote
-  };
-}
 
   if (item && text.includes("thumb")) {
     if (item.thumb) {
@@ -701,7 +737,7 @@ if (
 
   if (bookingIntent(message)) {
     if (item) {
-      const keyword = item.keyword || "equipment";
+      const keyword = item.keyword || item.name;
       return {
         text: `For scheduling or availability, you’ll need to contact Dave at ${DAVE_PHONE}—text is preferred, but you can call as well. You can also check options by searching "${keyword}" on our website at ${WEBSITE}.`,
         lastId: id,
