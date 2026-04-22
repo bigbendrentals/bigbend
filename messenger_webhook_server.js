@@ -428,7 +428,7 @@ function singleQuote(item, id) {
   return parts.join(" ");
 }
 
-function multiDayQuote(item, days, deliveryFee = 0) {
+function multiDayQuote(item, id, days, deliveryFee = 0) {
   const rental = item.day * days;
   const protection = item.protection ? protectionTotal(days) : 0;
   const subtotal = rental + protection + deliveryFee;
@@ -454,7 +454,7 @@ function multiDayQuote(item, days, deliveryFee = 0) {
     protection,
     days,
     deliveryFee,
-    itemIds: [item.id || null]
+    itemIds: [id]
   };
 }
 
@@ -692,9 +692,10 @@ function reply(message, state) {
     };
   }
 
-  if (matchedIds.length === 1 && item) {
+  // FIX: allow follow-up pricing to use lastId even if no item was repeated
+  if (item && isPriceQuestion(message)) {
     if (days > 1 && item.day) {
-      const quote = multiDayQuote({ ...item, id }, days, deliveryFee);
+      const quote = multiDayQuote(item, id, days, deliveryFee);
       return {
         text: quote.text,
         lastId: id,
@@ -705,24 +706,15 @@ function reply(message, state) {
       };
     }
 
-    if (isPriceQuestion(message)) {
-      const priceText = singleQuote(item, id);
-      const quote = buildBundleQuote([id], 1, deliveryFee);
-      return {
-        text: priceText,
-        lastId: id,
-        lastCategory: null,
-        lastCategoryItems: [],
-        lastQuotedItems: [id],
-        lastQuote: quote
-      };
-    }
-
+    const priceText = singleQuote(item, id);
+    const quote = buildBundleQuote([id], 1, deliveryFee);
     return {
-      text: singleQuote(item, id),
+      text: priceText,
       lastId: id,
       lastCategory: null,
-      lastCategoryItems: []
+      lastCategoryItems: [],
+      lastQuotedItems: [id],
+      lastQuote: quote
     };
   }
 
