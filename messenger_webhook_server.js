@@ -65,7 +65,7 @@ const EQUIPMENT = {
     protection: true,
     delivery: true,
     keyword: "mini skid steer",
-    aliases: ["boxer", "mini skid", "ride on skid", "ride-on skid", "mini skid steer"],
+    aliases: ["boxer", "mini skid", "ride on skid steer", "ride-on skid steer", "mini skid steer"],
     details: "Bucket included."
   },
   "cat-239": {
@@ -97,7 +97,7 @@ const EQUIPMENT = {
     protection: true,
     delivery: true,
     keyword: "John Deere 333P",
-    aliases: ["333p", "jd 333p", "john deere 333p", "100 hp", "108 hp", "high horsepower skid steer"],
+    aliases: ["333p", "jd 333p", "john deere 333p", "100 hp", "108 hp"],
     details: "108.5 hp, 12,183 lb.",
     weight: 12183
   },
@@ -181,7 +181,7 @@ const EQUIPMENT = {
     category: "small_tool",
     day: 88,
     keyword: "trash pump",
-    aliases: ["trash pump", "water pump", "drain a pool", "pump pool", "pump out a pool"],
+    aliases: ["trash pump", "water pump"],
     details: "2-inch semi-trash pump."
   },
   "sump-pump": {
@@ -205,7 +205,7 @@ const EQUIPMENT = {
     category: "attachment",
     day: 225,
     keyword: "auger",
-    aliases: ["skid steer auger", "auger attachment"],
+    aliases: ["skid steer auger", "auger attachment", "auger"],
     details: "Bits rented separately. Attachment can be rented separately."
   },
   breaker: {
@@ -213,7 +213,7 @@ const EQUIPMENT = {
     category: "attachment",
     day: 350,
     keyword: "skid steer breaker",
-    aliases: ["skid steer breaker", "skid steer demolition hammer", "breaker attachment"],
+    aliases: ["skid steer breaker", "skid steer demolition hammer", "breaker attachment", "breaker"],
     details: "Attachment can be rented separately."
   },
   mulcher: {
@@ -238,6 +238,14 @@ const EQUIPMENT = {
     day: 275,
     keyword: "Brushcat 60",
     aliases: ["brushcat", "brushcat 60", "skid steer brush cutter"],
+    details: "Attachment can be rented separately."
+  },
+  grapple: {
+    name: "Grapple",
+    category: "attachment",
+    day: 110,
+    keyword: "grapple",
+    aliases: ["grapple", "root grapple", "brush grapple", "tree grapple"],
     details: "Attachment can be rented separately."
   },
   broom: {
@@ -365,6 +373,33 @@ function multiDayQuote(item, days, deliveryFee = 0) {
   return lines.join("\n");
 }
 
+function getSession(psid) {
+  if (!sessions.has(psid)) {
+    sessions.set(psid, { lastId: null, updatedAt: Date.now() });
+  }
+  return sessions.get(psid);
+}
+
+function updateSession(psid, updates) {
+  const session = getSession(psid);
+  sessions.set(psid, { ...session, ...updates, updatedAt: Date.now() });
+}
+
+function splitMessage(text, maxLen = 1800) {
+  if (text.length <= maxLen) return [text];
+  const parts = [];
+  let remaining = text;
+  while (remaining.length > maxLen) {
+    let slice = remaining.slice(0, maxLen);
+    const breakAt = Math.max(slice.lastIndexOf("\n"), slice.lastIndexOf(" "));
+    if (breakAt > 200) slice = slice.slice(0, breakAt);
+    parts.push(slice);
+    remaining = remaining.slice(slice.length).trimStart();
+  }
+  if (remaining) parts.push(remaining);
+  return parts;
+}
+
 function reply(message, state) {
   const text = normalize(message);
   const found = findEquipment(message);
@@ -390,61 +425,6 @@ function reply(message, state) {
     return { text: item.details || singleQuote(item, id), lastId: id };
   }
 
-  if (["cat-239", "cat-265", "jd-333p", "boxer"].includes(state.lastId)) {
-    if (text.includes("dig holes") || text.includes("post holes") || text.includes("fence posts")) {
-      return {
-        text: `For that, I’d usually pair the machine with an auger. We have a skid steer auger for ${money(EQUIPMENT["auger-skid"].day)} a day, and if you want the smaller setup, the Boxer mini skid with the auger can be a good fit too.`,
-        lastId: "auger-skid"
-      };
-    }
-    if (text.includes("clear land") || text.includes("brush") || text.includes("thick brush") || text.includes("overgrowth")) {
-      return {
-        text: `For land clearing, I’d usually point you toward a mulcher at ${money(EQUIPMENT.mulcher.day)} a day or a Brushcat 60 at ${money(EQUIPMENT.brushcat.day)} a day depending on how aggressive the material is.`,
-        lastId: "mulcher"
-      };
-    }
-    if (text.includes("grade") || text.includes("level") || text.includes("smooth out") || text.includes("prep yard") || text.includes("prep soil")) {
-      return {
-        text: `For grading or leveling, the power rake at ${money(EQUIPMENT["power-rake"].day)} a day is usually a strong fit.`,
-        lastId: "power-rake"
-      };
-    }
-    if (text.includes("break concrete") || text.includes("demo") || text.includes("demolition") || text.includes("break up concrete")) {
-      return {
-        text: `For demolition work, I’d usually pair it with the skid steer breaker at ${money(EQUIPMENT.breaker.day)} a day.`,
-        lastId: "breaker"
-      };
-    }
-    if (text.includes("sweep") || text.includes("clean pavement") || text.includes("clean lot") || text.includes("sweep dirt")) {
-      return {
-        text: `For sweeping or cleanup, the hydraulic broom is ${money(EQUIPMENT.broom.day)} a day.`,
-        lastId: "broom"
-      };
-    }
-  }
-
-  if (state.lastId === "pressure-washer" && (text.includes("driveway") || text.includes("sidewalk") || text.includes("concrete"))) {
-    return {
-      text: `For flat concrete like that, I’d definitely add the surface cleaner for ${money(EQUIPMENT["surface-cleaner"].day)} a day.`,
-      lastId: "surface-cleaner"
-    };
-  }
-
-  if (["snake", "eel"].includes(state.lastId)) {
-    if (text.includes("commercial") || text.includes("restaurant") || text.includes("main line") || text.includes("heavy clog")) {
-      return {
-        text: `That sounds more like Electric Eel territory. It’s ${money(EQUIPMENT.eel.day)} a day.`,
-        lastId: "eel"
-      };
-    }
-    if (text.includes("house") || text.includes("bathroom") || text.includes("sink") || text.includes("small line")) {
-      return {
-        text: `For that kind of drain issue, the Ridgid K400 is usually the better fit. It’s ${money(EQUIPMENT.snake.day)} a day.`,
-        lastId: "snake"
-      };
-    }
-  }
-
   if (bookingIntent(message)) {
     const keyword = item?.keyword || "equipment";
     return {
@@ -466,7 +446,11 @@ function reply(message, state) {
     };
   }
 
-  if (text.includes("do you have a forklift") || text.includes("do you have forklifts") || text === "forklift") {
+  if (
+    text.includes("do you have a forklift") ||
+    text.includes("do you have forklifts") ||
+    text === "forklift"
+  ) {
     return {
       text: "Yes—we have a standard forklift, a rough-terrain forklift, and a telehandler. Are you looking for a warehouse-style forklift, rough-ground forklift, or a lull?",
       lastId: null
@@ -481,24 +465,77 @@ function reply(message, state) {
     text === "skid steer"
   ) {
     return {
-      text: `Yes, we have skid steers. We have a Boxer mini skid steer at ${money(EQUIPMENT.boxer.day)} a day, a CAT 239 at ${money(EQUIPMENT["cat-239"].day)} a day, a CAT 265 at ${money(EQUIPMENT["cat-265"].day)} a day, and a John Deere 333P at ${money(EQUIPMENT["jd-333p"].day)} a day. What are you trying to do with it? We also have attachments like an auger, breaker, mulcher, brushcat, and power rake.`,
+      text: `Yes, we have skid steers. We have a Boxer mini skid steer at ${money(EQUIPMENT.boxer.day)} a day, a CAT 239 at ${money(EQUIPMENT["cat-239"].day)} a day, a CAT 265 at ${money(EQUIPMENT["cat-265"].day)} a day, and a John Deere 333P at ${money(EQUIPMENT["jd-333p"].day)} a day. What are you trying to do with it? We also have attachments like a grapple, auger, breaker, mulcher, brushcat, and power rake.`,
       lastId: "cat-239"
     };
   }
 
-  if (text.includes("something smaller") || text.includes("anything smaller") || text === "smaller") {
-    if (state.lastId === "jd-333p") return { text: `Something smaller would be the CAT 265 at ${money(EQUIPMENT["cat-265"].day)} a day, the CAT 239 at ${money(EQUIPMENT["cat-239"].day)} a day, or the Boxer at ${money(EQUIPMENT.boxer.day)} a day.`, lastId: "cat-265" };
-    if (state.lastId === "cat-265") return { text: `Something smaller would be the CAT 239 at ${money(EQUIPMENT["cat-239"].day)} a day or the Boxer at ${money(EQUIPMENT.boxer.day)} a day.`, lastId: "cat-239" };
-    if (state.lastId === "cat-239") return { text: `Something smaller would be the Boxer mini skid steer at ${money(EQUIPMENT.boxer.day)} a day.`, lastId: "boxer" };
-    if (state.lastId === "cat-3075") return { text: `Something smaller would be the John Deere 50P at ${money(EQUIPMENT["jd-50p"].day)} a day or the CAT 301.7 at ${money(EQUIPMENT["cat-3017"].day)} a day.`, lastId: "jd-50p" };
-    return { text: "Do you want something smaller in the skid steer line or the excavator line?", lastId: state.lastId };
+  if (
+    text.includes("excavator") ||
+    text.includes("excavators") ||
+    text.includes("do you have an excavator") ||
+    text.includes("do you have excavators")
+  ) {
+    return {
+      text: `Yes, we have excavators. We have a CAT 301.7 (${money(EQUIPMENT["cat-3017"].day)}/day), a John Deere 50P (${money(EQUIPMENT["jd-50p"].day)}/day), and a CAT 307.5 (${money(EQUIPMENT["cat-3075"].day)}/day).`,
+      lastId: "cat-3017"
+    };
   }
 
-  if (text.includes("something bigger") || text.includes("anything bigger") || text === "bigger") {
-    if (state.lastId === "boxer") return { text: `Something bigger would be the CAT 239 at ${money(EQUIPMENT["cat-239"].day)} a day, the CAT 265 at ${money(EQUIPMENT["cat-265"].day)} a day, or the John Deere 333P at ${money(EQUIPMENT["jd-333p"].day)} a day.`, lastId: "cat-239" };
-    if (state.lastId === "cat-239") return { text: `Something bigger would be the CAT 265 at ${money(EQUIPMENT["cat-265"].day)} a day or the John Deere 333P at ${money(EQUIPMENT["jd-333p"].day)} a day.`, lastId: "cat-265" };
-    if (state.lastId === "cat-3017") return { text: `Something bigger would be the John Deere 50P at ${money(EQUIPMENT["jd-50p"].day)} a day or the CAT 307.5 at ${money(EQUIPMENT["cat-3075"].day)} a day.`, lastId: "jd-50p" };
-    return { text: "Do you want something bigger in the skid steer line or the excavator line?", lastId: state.lastId };
+  if (text.includes("telehandler") || text.includes("lull")) {
+    return {
+      text: `We have a 6K telehandler for ${money(EQUIPMENT.telehandler.day)}/day, ${money(EQUIPMENT.telehandler.week)}/week, or ${money(EQUIPMENT.telehandler.month)}/month. It’s rated at 42 ft 4 in lift height.`,
+      lastId: "telehandler"
+    };
+  }
+
+  if (text.includes("mini skid") || text.includes("ride on skid") || text.includes("ride-on skid")) {
+    return {
+      text: `Yes, we have a Boxer mini skid steer for ${money(EQUIPMENT.boxer.day)} a day. Bucket is included.`,
+      lastId: "boxer"
+    };
+  }
+
+  if (text.includes("move tree limbs") || text.includes("move some tree limbs") || text.includes("tree limbs") || text.includes("move limbs") || text.includes("brush pile") || text.includes("move brush") || text.includes("storm debris")) {
+    return {
+      text: `For moving tree limbs or brush, I’d usually point you toward a skid steer with a grapple. The grapple is ${money(EQUIPMENT.grapple.day)} a day, and we have skid steer options from the Boxer at ${money(EQUIPMENT.boxer.day)} a day up to the John Deere 333P at ${money(EQUIPMENT["jd-333p"].day)} a day.`,
+      lastId: "grapple"
+    };
+  }
+
+  if (text.includes("grapple")) {
+    return {
+      text: `We have a grapple for ${money(EQUIPMENT.grapple.day)} a day. ${EQUIPMENT.grapple.details}`,
+      lastId: "grapple"
+    };
+  }
+
+  if (text.includes("dig holes") || text.includes("post holes") || text.includes("fence posts")) {
+    return {
+      text: `For that, I’d usually pair a machine with an auger. We have a skid steer auger for ${money(EQUIPMENT["auger-skid"].day)} a day, and the smaller setup can also be a Boxer mini skid with an auger.`,
+      lastId: "auger-skid"
+    };
+  }
+
+  if (text.includes("clear land") || text.includes("brush") || text.includes("thick brush") || text.includes("overgrowth")) {
+    return {
+      text: `For land clearing, I’d usually point you toward a forestry mulcher at ${money(EQUIPMENT.mulcher.day)} a day or a Brushcat 60 at ${money(EQUIPMENT.brushcat.day)} a day depending on how heavy the material is.`,
+      lastId: "mulcher"
+    };
+  }
+
+  if (text.includes("grade") || text.includes("level") || text.includes("smooth out") || text.includes("prep yard") || text.includes("prep soil")) {
+    return {
+      text: `For grading or leveling, the power rake at ${money(EQUIPMENT["power-rake"].day)} a day is usually a strong fit.`,
+      lastId: "power-rake"
+    };
+  }
+
+  if (text.includes("break concrete") || text.includes("break up concrete") || text.includes("demo") || text.includes("demolition")) {
+    return {
+      text: `For demolition or breaking concrete, I’d usually pair it with the skid steer breaker at ${money(EQUIPMENT.breaker.day)} a day.`,
+      lastId: "breaker"
+    };
   }
 
   if (text.includes("pressure washer") || text.includes("power washer") || text.includes("clean driveway") || text.includes("clean sidewalk")) {
@@ -536,54 +573,46 @@ function reply(message, state) {
     };
   }
 
-  if (
-    text.includes("excavator") ||
-    text.includes("excavators") ||
-    text.includes("do you have an excavator") ||
-    text.includes("do you have excavators")
-  ) {
-    return {
-      text: `Yes, we have excavators. We have a CAT 301.7 (${money(EQUIPMENT["cat-3017"].day)}/day), a John Deere 50P (${money(EQUIPMENT["jd-50p"].day)}/day), and a CAT 307.5 (${money(EQUIPMENT["cat-3075"].day)}/day).`,
-      lastId: "cat-3017"
-    };
-  }
-
-  if (text.includes("telehandler") || text.includes("lull")) {
-    return {
-      text: `We have a 6K telehandler for ${money(EQUIPMENT.telehandler.day)}/day, ${money(EQUIPMENT.telehandler.week)}/week, or ${money(EQUIPMENT.telehandler.month)}/month. It’s rated at 42 ft 4 in lift height.`,
-      lastId: "telehandler"
-    };
-  }
-
-  if (text.includes("mini skid") || text.includes("ride on skid") || text.includes("ride-on skid")) {
-    return {
-      text: `Yes, we have a Boxer mini skid steer for ${money(EQUIPMENT.boxer.day)} a day. Bucket is included. We also have attachments like an auger, breaker, mulcher, brushcat, and power rake depending on what you’re trying to do.`,
-      lastId: "boxer"
-    };
-  }
-
   if (text.includes("stump grinder")) {
-    return { text: `Yes, we have a stump grinder for ${money(EQUIPMENT["stump-grinder"].day)} a day.`, lastId: "stump-grinder" };
+    return {
+      text: `Yes, we have a stump grinder for ${money(EQUIPMENT["stump-grinder"].day)} a day.`,
+      lastId: "stump-grinder"
+    };
   }
 
   if (text.includes("auger")) {
-    return { text: `We have a skid steer auger for ${money(EQUIPMENT["auger-skid"].day)} a day. ${EQUIPMENT["auger-skid"].details}`, lastId: "auger-skid" };
+    return {
+      text: `We have a skid steer auger for ${money(EQUIPMENT["auger-skid"].day)} a day. ${EQUIPMENT["auger-skid"].details}`,
+      lastId: "auger-skid"
+    };
   }
 
   if (text.includes("breaker")) {
-    return { text: `We have a skid steer breaker for ${money(EQUIPMENT.breaker.day)} a day. ${EQUIPMENT.breaker.details}`, lastId: "breaker" };
+    return {
+      text: `We have a skid steer breaker for ${money(EQUIPMENT.breaker.day)} a day. ${EQUIPMENT.breaker.details}`,
+      lastId: "breaker"
+    };
   }
 
   if (text.includes("mulcher")) {
-    return { text: `We have a forestry mulcher for ${money(EQUIPMENT.mulcher.day)} a day. ${EQUIPMENT.mulcher.details}`, lastId: "mulcher" };
+    return {
+      text: `We have a forestry mulcher for ${money(EQUIPMENT.mulcher.day)} a day. ${EQUIPMENT.mulcher.details}`,
+      lastId: "mulcher"
+    };
   }
 
   if (text.includes("power rake")) {
-    return { text: `We have a power rake for ${money(EQUIPMENT["power-rake"].day)} a day. ${EQUIPMENT["power-rake"].details}`, lastId: "power-rake" };
+    return {
+      text: `We have a power rake for ${money(EQUIPMENT["power-rake"].day)} a day. ${EQUIPMENT["power-rake"].details}`,
+      lastId: "power-rake"
+    };
   }
 
   if (text.includes("brushcat")) {
-    return { text: `We have a Brushcat 60 for ${money(EQUIPMENT.brushcat.day)} a day. ${EQUIPMENT.brushcat.details}`, lastId: "brushcat" };
+    return {
+      text: `We have a Brushcat 60 for ${money(EQUIPMENT.brushcat.day)} a day. ${EQUIPMENT.brushcat.details}`,
+      lastId: "brushcat"
+    };
   }
 
   if (found && item) {
@@ -600,33 +629,6 @@ function reply(message, state) {
   }
 
   return { text: "Tell me what equipment you need and I’ll price it out.", lastId: id };
-}
-
-function getSession(psid) {
-  if (!sessions.has(psid)) {
-    sessions.set(psid, { lastId: null, updatedAt: Date.now() });
-  }
-  return sessions.get(psid);
-}
-
-function updateSession(psid, updates) {
-  const session = getSession(psid);
-  sessions.set(psid, { ...session, ...updates, updatedAt: Date.now() });
-}
-
-function splitMessage(text, maxLen = 1800) {
-  if (text.length <= maxLen) return [text];
-  const parts = [];
-  let remaining = text;
-  while (remaining.length > maxLen) {
-    let slice = remaining.slice(0, maxLen);
-    const breakAt = Math.max(slice.lastIndexOf("\n"), slice.lastIndexOf(" "));
-    if (breakAt > 200) slice = slice.slice(0, breakAt);
-    parts.push(slice);
-    remaining = remaining.slice(slice.length).trimStart();
-  }
-  if (remaining) parts.push(remaining);
-  return parts;
 }
 
 async function sendMessengerText(recipientId, text) {
