@@ -447,6 +447,57 @@ function bookingIntent(text) {
   ].some((k) => t.includes(k));
 }
 
+function isReferentialFollowup(text) {
+  const t = normalize(text);
+  return containsAny(t, [
+    "how much",
+    "what does it cost",
+    "whats it cost",
+    "what's it cost",
+    "what is the cost",
+    "cost",
+    "price",
+    "pricing",
+    "total",
+    "quote",
+    "how much is it",
+    "how much a day",
+    "daily rate",
+    "day rate",
+    "rental rate",
+    "how heavy",
+    "how much does it weigh",
+    "how much it weighs",
+    "what does it weigh",
+    "weight",
+    "weigh",
+    "thumb",
+    "bucket",
+    "cab",
+    "deliver",
+    "delivery",
+    "reserve",
+    "availability",
+    "available",
+    "tomorrow",
+    "today",
+    "this afternoon",
+    "this morning",
+    "next week",
+    "book",
+    "hold it",
+    "scheduled",
+    "schedule",
+    "pick up",
+    "pickup",
+    "pick it up",
+    "pick this up",
+    "it",
+    "that one",
+    "that machine"
+  ]);
+}
+
 function deliveryInfo(text) {
   const t = normalize(text);
   if (t.includes("steinhatchee") || t.includes("dekle") || t.includes("lamont")) {
@@ -612,9 +663,10 @@ function splitMessage(text, maxLen = 1800) {
 
 function reply(message, state) {
   const text = normalize(message);
-  const found = findEquipment(message);
+  const explicitFound = findEquipment(message);
   const matchedIds = [...new Set(findAllEquipment(message))];
-  const id = found ? found[0] : state.lastId;
+  const useLastId = !explicitFound && isReferentialFollowup(message);
+  const id = explicitFound ? explicitFound[0] : (useLastId ? state.lastId : null);
   const item = id ? EQUIPMENT[id] : null;
   const days = parseDays(message) || 1;
   const delivery = deliveryInfo(message);
@@ -622,7 +674,7 @@ function reply(message, state) {
   const category = findCategory(message) || null;
 
   const ambiguousFollowup =
-    !found &&
+    !explicitFound &&
     state.lastCategoryItems &&
     state.lastCategoryItems.length > 1 &&
     containsAny(text, [
@@ -966,7 +1018,7 @@ function reply(message, state) {
 
   return {
     text: `Sometimes my inventory database is incomplete, so you may need to check the website at ${WEBSITE} for that item.`,
-    lastId: id,
+    lastId: null,
     lastCategory: state.lastCategory,
     lastCategoryItems: state.lastCategoryItems
   };
