@@ -18,7 +18,7 @@ if (!VERIFY_TOKEN || !PAGE_ACCESS_TOKEN) {
 
 const SALES_TAX = 0.07;
 const PROTECTION_BASE = 49.99;
-const DAVE_PHONE = "850-843-2248";
+const DAVE_PHONE = "850-843-2245";
 const WEBSITE = "www.bigbendrentals.net";
 
 const EQUIPMENT = {
@@ -58,6 +58,7 @@ const EQUIPMENT = {
     thumb: "Yes, the CAT 307.5 has a hydraulic thumb.",
     weight: 17905
   },
+
   boxer: {
     name: "Boxer Mini Skid Steer",
     category: "skid_steer",
@@ -101,6 +102,7 @@ const EQUIPMENT = {
     details: "108.5 hp, 12,183 lb.",
     weight: 12183
   },
+
   telehandler: {
     name: "JLG 6K Telehandler",
     category: "material_handling",
@@ -140,6 +142,44 @@ const EQUIPMENT = {
     aliases: ["contractor lift", "duct lift", "material lift"],
     details: "Manual lift, 16 ft max height, 650 lb capacity."
   },
+
+  "genie-z45": {
+    name: "Genie Z45 Articulating Boom Lift",
+    category: "boom_lift",
+    day: 471,
+    week: 1884,
+    protection: true,
+    delivery: true,
+    keyword: "Genie Z45 boom lift",
+    aliases: [
+      "genie z45",
+      "z45",
+      "boom lift",
+      "boom lifts",
+      "man lift",
+      "man lifts",
+      "articulating boom",
+      "articulating boom lift"
+    ],
+    details: "Articulating boom lift."
+  },
+  "jlg-et500j": {
+    name: "JLG ET500J Towable 50' Boom Lift",
+    category: "boom_lift",
+    protection: true,
+    delivery: true,
+    keyword: "JLG ET500J boom lift",
+    aliases: [
+      "jlg et500j",
+      "et500j",
+      "towable boom",
+      "towable boom lift",
+      "towable 50 boom lift",
+      "towable man lift"
+    ],
+    details: "Towable 50-foot boom lift. Please check the website for current pricing."
+  },
+
   "pressure-washer": {
     name: "Stihl RB600",
     category: "small_tool",
@@ -225,6 +265,7 @@ const EQUIPMENT = {
     keyword: "stump grinder",
     aliases: ["stump grinder", "rayco rg37"]
   },
+
   "auger-skid": {
     name: "Skid Steer Auger",
     category: "attachment",
@@ -267,6 +308,7 @@ const EQUIPMENT = {
     aliases: ["grapple", "root grapple", "brush grapple", "tree grapple"],
     details: "Attachment can be rented separately."
   },
+
   "concrete-saw": {
     name: "Concrete Saw",
     category: "small_tool",
@@ -321,12 +363,14 @@ const CATEGORY_ALIASES = {
   ],
   telehandler: ["telehandler", "telehandlers", "lull", "lulls"],
   forklift: ["forklift", "forklifts", "rough terrain forklift", "rough ground forklift"],
-  pressure_washer: ["pressure washer", "pressure washers", "power washer", "power washers"]
+  pressure_washer: ["pressure washer", "pressure washers", "power washer", "power washers"],
+  boom_lift: ["boom lift", "boom lifts", "man lift", "man lifts", "articulating boom", "towable boom"]
 };
 
 const CATEGORY_ITEMS = {
   skid_steer: ["boxer", "cat-239", "cat-265", "jd-333p"],
-  excavator: ["cat-3017", "jd-50p", "cat-3075"]
+  excavator: ["cat-3017", "jd-50p", "cat-3075"],
+  boom_lift: ["genie-z45", "jlg-et500j"]
 };
 
 const sessions = new Map();
@@ -349,7 +393,7 @@ function normalize(text) {
   t = t.replace(/jd\s*(\d+)\s*([a-z])/g, "jd $1$2");
   t = t.replace(/john\s+deere\s*(\d+)\s*([a-z])/g, "john deere $1$2");
 
-  t = t.replace(/[^a-z0-9\s.-]/g, " ");
+  t = t.replace(/[^a-z0-9\s.'-]/g, " ");
   t = t.replace(/\s+/g, " ").trim();
   return t;
 }
@@ -373,7 +417,7 @@ function findEquipment(text) {
   const compactText = t.replace(/[\s.-]/g, "");
 
   for (const [id, item] of Object.entries(EQUIPMENT)) {
-    for (const alias of item.aliases) {
+    for (const alias of item.aliases || []) {
       for (const variant of aliasVariants(alias)) {
         if (t.includes(variant) || compactText.includes(variant.replace(/[\s.-]/g, ""))) {
           return [id, item];
@@ -391,7 +435,7 @@ function findAllEquipment(text) {
 
   for (const [id, item] of Object.entries(EQUIPMENT)) {
     let matched = false;
-    for (const alias of item.aliases) {
+    for (const alias of item.aliases || []) {
       for (const variant of aliasVariants(alias)) {
         if (t.includes(variant) || compactText.includes(variant.replace(/[\s.-]/g, ""))) {
           matched = true;
@@ -610,28 +654,52 @@ function isSpecialMonthlyItem(item, id) {
   return item.category === "scissor_lift";
 }
 
-function getWeeklyRate(item, id) {
+function getWeeklyRate(item) {
   if (item.week) return item.week;
   return (item.day || 0) * 4;
 }
 
 function formatCategoryQuote(ids) {
-  return ids.map((id) => `${EQUIPMENT[id].name} (${money(EQUIPMENT[id].day)}/day)`).join(", ");
+  const formatted = ids.map((id) => {
+    const item = EQUIPMENT[id];
+    if (item.day) return `${item.name} (${money(item.day)}/day)`;
+    return item.name;
+  });
+  return formatted.join(", ");
 }
 
 function singleQuote(item, id) {
   const parts = [];
-  if (item.day) parts.push(`${item.name} is ${money(item.day)} a day.`);
-  if (item.week) parts.push(`${money(item.week)} for the week.`);
-  if (item.month) parts.push(`${money(item.month)} for the month.`);
-  if (item.protection) parts.push(`Rental protection is ${money(protectionTotal(1))} and is required on that machine.`);
-  if (id === "boxer") parts.push("Bucket is included.");
+
+  if (item.day) {
+    parts.push(`${item.name} is ${money(item.day)} a day.`);
+  } else {
+    parts.push(`${item.name}.`);
+  }
+
+  if (item.week) {
+    parts.push(`${money(item.week)} for the week.`);
+  }
+
+  if (id === "jlg-et500j") {
+    parts.push("Please check the website for current pricing.");
+  }
+
+  if (item.protection) {
+    parts.push(`Rental Protection Plan is ${money(protectionTotal(1))} and is required on that machine.`);
+  }
+
+  if (id === "boxer") {
+    parts.push("Bucket is included.");
+  }
+
   if (
     item.details &&
-    ["trash-pump", "material-lift", "telehandler", "forklift", "lift-king", "cat-265", "jd-333p", "snake", "eel", "rotary-hammer-drill"].includes(id)
+    ["trash-pump", "material-lift", "telehandler", "forklift", "lift-king", "cat-265", "jd-333p", "snake", "eel", "rotary-hammer-drill", "genie-z45", "jlg-et500j"].includes(id)
   ) {
     parts.push(item.details);
   }
+
   return parts.join(" ");
 }
 
@@ -640,9 +708,9 @@ function multiDayQuote(item, id, days, deliveryFee = 0) {
   let billedAsWeekly = false;
 
   if (days >= 4) {
-    rental = getWeeklyRate(item, id);
+    rental = getWeeklyRate(item);
     billedAsWeekly = true;
-  } else {
+  } else if (item.day) {
     rental = item.day * days;
   }
 
@@ -661,7 +729,7 @@ function multiDayQuote(item, id, days, deliveryFee = 0) {
         `Rental: ${money(rental)}`
       ];
 
-  if (protection) lines.push(`Protection: ${money(protection)}`);
+  if (protection) lines.push(`Rental Protection Plan: ${money(protection)}`);
   if (deliveryFee) lines.push(`Delivery: ${money(deliveryFee)}`);
   lines.push(`Subtotal: ${money(subtotal)}`);
   lines.push(`Sales tax (7%): ${money(tax)}`);
@@ -690,7 +758,7 @@ function buildBundleQuote(itemIds, days = 1, deliveryFee = 0) {
 
   for (const item of items) {
     if (days >= 4) {
-      rental += getWeeklyRate(item, item.id);
+      rental += getWeeklyRate(item);
       billedAsWeekly = true;
     } else {
       rental += (item.day || 0) * days;
@@ -707,7 +775,7 @@ function buildBundleQuote(itemIds, days = 1, deliveryFee = 0) {
 
   const itemLine = items
     .map((item) => {
-      const itemRental = days >= 4 ? getWeeklyRate(item, item.id) : (item.day || 0) * days;
+      const itemRental = days >= 4 ? getWeeklyRate(item) : (item.day || 0) * days;
       return `${item.name}: ${money(itemRental)}`;
     })
     .join("\n");
@@ -722,7 +790,7 @@ function buildBundleQuote(itemIds, days = 1, deliveryFee = 0) {
         itemLine
       ];
 
-  if (protection) lines.push(`Rental protection: ${money(protection)}`);
+  if (protection) lines.push(`Rental Protection Plan: ${money(protection)}`);
   if (deliveryFee) lines.push(`Delivery: ${money(deliveryFee)}`);
   lines.push(`Subtotal: ${money(subtotal)}`);
   lines.push(`Sales tax (7%): ${money(tax)}`);
@@ -744,6 +812,23 @@ function buildBundleQuote(itemIds, days = 1, deliveryFee = 0) {
 function categoryDisambiguationText(ids, verb = "mean") {
   const names = ids.map((id) => EQUIPMENT[id].name).join(", ");
   return `Which machine do you ${verb} — ${names}?`;
+}
+
+function arrangedBoomLiftIntent(text) {
+  const t = normalize(text);
+  return containsAny(t, [
+    "larger",
+    "bigger",
+    "taller",
+    "higher",
+    "different one",
+    "different ones",
+    "different boom",
+    "specialty boom",
+    "specialty equipment",
+    "larger boom lift",
+    "taller boom lift"
+  ]);
 }
 
 function getSession(psid) {
@@ -791,6 +876,15 @@ function reply(message, state) {
   const delivery = deliveryInfo(message);
   const deliveryFee = delivery?.fee || 0;
   const category = findCategory(message) || null;
+
+  if ((category === "boom_lift" || state.lastCategory === "boom_lift" || item?.category === "boom_lift") && arrangedBoomLiftIntent(message)) {
+    return {
+      text: `We can arrange larger or specialty boom lifts if needed. Specialty equipment is handled separately, so please schedule online at ${WEBSITE} or call/text Dave at ${DAVE_PHONE}.`,
+      lastId: state.lastId,
+      lastCategory: "boom_lift",
+      lastCategoryItems: CATEGORY_ITEMS.boom_lift
+    };
+  }
 
   if (item && isMonthlyRequest(message) && isSpecialMonthlyItem(item, id)) {
     return {
@@ -850,18 +944,21 @@ function reply(message, state) {
 
   if (
     state.lastQuote &&
-    containsAny(text, ["total cost", "what is the total", "total", "all in", "altogether", "out the door", "how about for", "and 1 day", "and one day", "and 2 days", "and two days", "and 3 days", "and three days", "and 4 days", "and four days", "and 5 days", "and five days", "and 6 days", "and six days", "and 7 days", "and seven days", "a week", "week", "1 day", "one day", "2 days", "two days", "3 days", "three days", "4 days", "four days", "5 days", "five days", "6 days", "six days", "7 days", "seven days"])
+    containsAny(text, [
+      "total cost", "what is the total", "total", "all in", "altogether", "out the door",
+      "how about for", "and 1 day", "and one day", "and 2 days", "and two days",
+      "and 3 days", "and three days", "and 4 days", "and four days", "and 5 days",
+      "and five days", "and 6 days", "and six days", "and 7 days", "and seven days",
+      "a week", "week", "1 day", "one day", "2 days", "two days", "3 days",
+      "three days", "4 days", "four days", "5 days", "five days", "6 days",
+      "six days", "7 days", "seven days"
+    ])
   ) {
     const requestedDays = parseDays(message) || state.lastQuote.days || 1;
     const requestedDeliveryFee = deliveryFee || state.lastQuote.deliveryFee || 0;
 
     if (state.lastQuote.itemIds && state.lastQuote.itemIds.length >= 2) {
-      const quote = buildBundleQuote(
-        state.lastQuote.itemIds,
-        requestedDays,
-        requestedDeliveryFee
-      );
-
+      const quote = buildBundleQuote(state.lastQuote.itemIds, requestedDays, requestedDeliveryFee);
       return {
         text: quote.text,
         lastId: state.lastId,
@@ -1047,6 +1144,15 @@ function reply(message, state) {
     };
   }
 
+  if (category === "boom_lift") {
+    return {
+      text: `We have a Genie Z45 Articulating Boom Lift (${money(EQUIPMENT["genie-z45"].day)}/day) and a JLG ET500J Towable 50' Boom Lift. If you need a larger, taller, or specialty boom lift, we can arrange one. Please schedule online at ${WEBSITE} or call/text Dave at ${DAVE_PHONE}.`,
+      lastId: null,
+      lastCategory: "boom_lift",
+      lastCategoryItems: CATEGORY_ITEMS.boom_lift
+    };
+  }
+
   if (category === "telehandler") {
     return {
       text: `We have a 6K telehandler for ${money(EQUIPMENT.telehandler.day)}/day, ${money(EQUIPMENT.telehandler.week)}/week, or ${money(EQUIPMENT.telehandler.month)}/month. It’s rated at 42 ft 4 in lift height.`,
@@ -1159,7 +1265,9 @@ function reply(message, state) {
     text: `Sometimes my inventory database is incomplete, so you may need to check the website at ${WEBSITE} for that item.`,
     lastId: state.lastId,
     lastCategory: state.lastCategory,
-    lastCategoryItems: state.lastCategoryItems
+    lastCategoryItems: state.lastCategoryItems,
+    lastQuotedItems: state.lastQuotedItems,
+    lastQuote: state.lastQuote
   };
 }
 
@@ -1220,11 +1328,26 @@ app.post("/webhook", async (req, res) => {
           const result = reply(event.message.text, session);
 
           updateSession(senderId, {
-            lastId: result.lastId !== undefined ? result.lastId : session.lastId,
-            lastCategory: result.lastCategory !== undefined ? result.lastCategory : session.lastCategory,
-            lastCategoryItems: result.lastCategoryItems !== undefined ? result.lastCategoryItems : session.lastCategoryItems,
-            lastQuotedItems: result.lastQuotedItems !== undefined ? result.lastQuotedItems : session.lastQuotedItems,
-            lastQuote: result.lastQuote !== undefined ? result.lastQuote : session.lastQuote
+            lastId:
+              result.lastId !== undefined && result.lastId !== null
+                ? result.lastId
+                : session.lastId,
+            lastCategory:
+              result.lastCategory !== undefined
+                ? result.lastCategory
+                : session.lastCategory,
+            lastCategoryItems:
+              result.lastCategoryItems !== undefined
+                ? result.lastCategoryItems
+                : session.lastCategoryItems,
+            lastQuotedItems:
+              result.lastQuotedItems !== undefined
+                ? result.lastQuotedItems
+                : session.lastQuotedItems,
+            lastQuote:
+              result.lastQuote !== undefined && result.lastQuote !== null
+                ? result.lastQuote
+                : session.lastQuote
           });
 
           await sendMessengerText(senderId, result.text);
