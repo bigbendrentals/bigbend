@@ -1029,7 +1029,7 @@ function reply(message, state) {
     };
   }
 
-  if (isDeliveryQuestion(message)) {
+  if (isDeliveryQuestion(message) && !isPriceQuestion(message)) {
     if (isDeliveryPriceQuestion(message)) {
       if (delivery) {
         return { text: `Delivery for ${delivery.placeLabel} is ${money(delivery.fee)}.`, lastId: state.lastId, lastCategory: state.lastCategory, lastCategoryItems: state.lastCategoryItems, lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice };
