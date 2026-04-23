@@ -510,7 +510,41 @@ function isMonthlyRequest(text) {
 
 function isPriceQuestion(text) {
   const t = normalize(text);
-  return containsAny(t, ["how much", "what does it cost", "whats it cost", "what's it cost", "what is the cost", "price", "pricing", "quote", "cost", "day rate", "daily rate", "rental rate", "a week", "week", "weekly", "monthly", "month", "and 1 day", "and one day", "and 2 days", "and two days", "and 3 days", "and three days", "and 4 days", "and four days", "and 5 days", "and five days", "and 6 days", "and six days", "and 7 days", "and seven days"]) || parseDays(t) !== null;
+  return containsAny(t, [
+    "how much",
+    "what does it cost",
+    "whats it cost",
+    "what's it cost",
+    "what is the cost",
+    "what is the total",
+    "what's the total",
+    "total",
+    "pricing",
+    "quote",
+    "cost",
+    "day rate",
+    "daily rate",
+    "rental rate",
+    "a week",
+    "week",
+    "weekly",
+    "monthly",
+    "month",
+    "and 1 day",
+    "and one day",
+    "and 2 days",
+    "and two days",
+    "and 3 days",
+    "and three days",
+    "and 4 days",
+    "and four days",
+    "and 5 days",
+    "and five days",
+    "and 6 days",
+    "and six days",
+    "and 7 days",
+    "and seven days"
+  ]) || parseDays(t) !== null;
 }
 
 function isWeightQuestion(text) {
@@ -694,6 +728,19 @@ function wantsTrailerAddedToTotal(text) {
     "plus trailer",
     "and a trailer",
     "and trailer"
+  ]);
+}
+
+function wantsDeliveryAddedToTotal(text) {
+  const t = normalize(text);
+  return containsAny(t, [
+    "with delivery",
+    "including delivery",
+    "include delivery",
+    "include the delivery",
+    "delivery included",
+    "and delivery",
+    "plus delivery"
   ]);
 }
 
@@ -892,7 +939,8 @@ function reply(message, state) {
   const days = parseDays(message) || 1;
   const delivery = deliveryInfo(message);
   const deliveryFee = delivery?.fee || 0;
-  const effectiveDeliveryFee = deliveryFee || state.lastDeliveryFee || 0;
+  const effectiveDeliveryFee = (deliveryFee || state.lastDeliveryFee || 0);
+  const wantsDeliveryTotal = wantsDeliveryAddedToTotal(message);
 
   if (delivery && state.lastCategory === "delivery_followup") {
     return {
@@ -983,7 +1031,7 @@ function reply(message, state) {
 
   if (comboChoice) {
     const variant = isDetailRequest(message) ? "details" : "quote";
-    let response = buildMulcherComboResponse(comboChoice, days, effectiveDeliveryFee, variant);
+    let response = buildMulcherComboResponse(comboChoice, days, wantsDeliveryTotal ? effectiveDeliveryFee : 0, variant);
     if (wantsTrailerAddedToTotal(message)) {
       response = applyTrailerToQuote(response.quote, days);
     }
@@ -1036,7 +1084,7 @@ function reply(message, state) {
     };
   }
 
-  if (isDeliveryQuestion(message) && !isPriceQuestion(message)) {
+  if (isDeliveryQuestion(message) && !isPriceQuestion(message) && !wantsDeliveryAddedToTotal(message)) {
     if (isDeliveryPriceQuestion(message)) {
       if (delivery) {
         return { text: `Delivery for ${delivery.placeLabel} is ${money(delivery.fee)}.`,
@@ -1125,7 +1173,7 @@ function reply(message, state) {
   }
 
   if (matchedIds.length >= 2 && isPriceQuestion(message)) {
-    const quote = buildBundleQuote(matchedIds, days, effectiveDeliveryFee);
+    const quote = buildBundleQuote(matchedIds, days, wantsDeliveryTotal ? effectiveDeliveryFee : 0);
     return clearCategoryFields({ text: quote.text, lastId: matchedIds[0], lastQuotedItems: matchedIds, lastQuote: quote, lastMulcherComboChoice: state.lastMulcherComboChoice });
   }
 
@@ -1133,7 +1181,7 @@ function reply(message, state) {
     const requestedDays = parseDays(message) || state.lastQuote.days || 1;
     const requestedDeliveryFee = deliveryFee || state.lastQuote.deliveryFee || state.lastDeliveryFee || 0;
     if (state.lastQuote.itemIds?.length >= 2) {
-      let quote = buildBundleQuote(state.lastQuote.itemIds, requestedDays, requestedDeliveryFee);
+      let quote = buildBundleQuote(state.lastQuote.itemIds, requestedDays, wantsDeliveryTotal ? requestedDeliveryFee : 0);
       if (wantsTrailerAddedToTotal(message)) {
         quote = applyTrailerToQuote(quote, requestedDays).quote;
       }
@@ -1146,7 +1194,7 @@ function reply(message, state) {
         if (isMonthlyRequest(message) && singleId === ITEM_IDS.TELEHANDLER) {
           return clearCategoryFields({ text: `Monthly pricing for ${singleItem.name} is quoted by Dave based on current market conditions. Please call or text Dave at ${DAVE_PHONE}.`, lastId: singleId, lastQuotedItems: [singleId], lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice });
         }
-        let quote = multiDayQuote(singleItem, singleId, requestedDays, requestedDeliveryFee);
+        let quote = multiDayQuote(singleItem, singleId, requestedDays, wantsDeliveryTotal ? requestedDeliveryFee : 0);
         if (wantsTrailerAddedToTotal(message)) {
           quote = applyTrailerToQuote(quote, requestedDays).quote;
         }
@@ -1228,13 +1276,13 @@ function reply(message, state) {
     }
     if (isPriceQuestion(message)) {
       if (days > 1) {
-        let quote = multiDayQuote(item, id, days, effectiveDeliveryFee);
+        let quote = multiDayQuote(item, id, days, wantsDeliveryTotal ? effectiveDeliveryFee : 0);
         if (wantsTrailerAddedToTotal(message)) {
           quote = applyTrailerToQuote(quote, days).quote;
         }
         return clearCategoryFields({ text: quote.text, lastId: id, lastQuotedItems: [id], lastQuote: quote, lastMulcherComboChoice: state.lastMulcherComboChoice });
       }
-      let quote = buildBundleQuote([id], 1, effectiveDeliveryFee);
+      let quote = buildBundleQuote([id], 1, wantsDeliveryTotal ? effectiveDeliveryFee : 0);
       if (wantsTrailerAddedToTotal(message)) {
         quote = applyTrailerToQuote(quote, 1).quote;
       }
