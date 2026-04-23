@@ -180,6 +180,31 @@ const EQUIPMENT = {
     details: "Towable 50-foot boom lift. Please check the website for current pricing."
   },
 
+  "genie-gs1930": {
+    name: "Genie GS1930 Scissor Lift",
+    category: "scissor_lift",
+    day: 192,
+    week: 550,
+    month: 715,
+    protection: true,
+    delivery: true,
+    keyword: "Genie GS1930 Scissor Lift",
+    aliases: ["gs1930", "genie gs1930", "1930 scissor lift", "scissor lift", "scissor lifts"],
+    details: "Indoor/outdoor slab scissor lift. Not a rough-terrain scissor lift."
+  },
+  "genie-gs3246": {
+    name: "Genie GS3246 Scissor Lift",
+    category: "scissor_lift",
+    day: 313,
+    week: 660,
+    month: 1320,
+    protection: true,
+    delivery: true,
+    keyword: "Genie GS3246 Scissor Lift",
+    aliases: ["gs3246", "genie gs3246", "3246 scissor lift"],
+    details: "Indoor/outdoor slab scissor lift. Not a rough-terrain scissor lift."
+  },
+
   "pressure-washer": {
     name: "Stihl RB600",
     category: "small_tool",
@@ -389,13 +414,15 @@ const CATEGORY_ALIASES = {
   telehandler: ["telehandler", "telehandlers", "lull", "lulls"],
   forklift: ["forklift", "forklifts", "rough terrain forklift", "rough ground forklift"],
   pressure_washer: ["pressure washer", "pressure washers", "power washer", "power washers"],
-  boom_lift: ["boom lift", "boom lifts", "man lift", "man lifts", "articulating boom", "towable boom"]
+  boom_lift: ["boom lift", "boom lifts", "man lift", "man lifts", "articulating boom", "towable boom"],
+  scissor_lift: ["scissor lift", "scissor lifts"]
 };
 
 const CATEGORY_ITEMS = {
   skid_steer: ["boxer", "cat-239", "cat-265", "jd-333p"],
   excavator: ["cat-3017", "jd-50p", "cat-3075"],
-  boom_lift: ["genie-z45", "jlg-et500j"]
+  boom_lift: ["genie-z45", "jlg-et500j"],
+  scissor_lift: ["genie-gs1930", "genie-gs3246"]
 };
 
 const sessions = new Map();
@@ -605,7 +632,9 @@ function isReferentialFollowup(text) {
     "mulcher and skid steer",
     "with a skid steer",
     "with skid steer",
-    "just the attachment"
+    "just the attachment",
+    "both",
+    "combo"
   ]);
 }
 
@@ -728,8 +757,17 @@ function singleQuote(item, id) {
     parts.push(`${money(item.week)} for the week.`);
   }
 
+  if (item.month && item.category !== "scissor_lift") {
+    parts.push(`${money(item.month)} for the month.`);
+  }
+
   if (id === "jlg-et500j") {
     parts.push("Please check the website for current pricing.");
+  }
+
+  if (item.category === "scissor_lift") {
+    parts.push(`${money(item.month)} for the month.`);
+    parts.push("These are not rough-terrain scissor lifts. Rough-terrain scissor lifts must be special ordered.");
   }
 
   if (item.protection) {
@@ -755,6 +793,8 @@ function singleQuote(item, id) {
       "rotary-hammer-drill",
       "genie-z45",
       "jlg-et500j",
+      "genie-gs1930",
+      "genie-gs3246",
       "cat-hm316-mulcher",
       "jd-mh60d-mulcher"
     ].includes(id)
@@ -790,6 +830,11 @@ function multiDayQuote(item, id, days, deliveryFee = 0) {
         `${item.name} for ${days} days:`,
         `Rental: ${money(rental)}`
       ];
+
+  if (item.category === "scissor_lift") {
+    lines.push(`Monthly: ${money(item.month)}`);
+    lines.push("These are not rough-terrain scissor lifts. Rough-terrain scissor lifts must be special ordered.");
+  }
 
   if (protection) lines.push(`Rental Protection Plan: ${money(protection)}`);
   if (deliveryFee) lines.push(`Delivery: ${money(deliveryFee)}`);
@@ -929,6 +974,20 @@ function isMulcherJustAttachmentQuestion(text) {
   ]);
 }
 
+function meansBoth(text) {
+  const t = normalize(text);
+  return [
+    "both",
+    "combo",
+    "the combo",
+    "with the skid steer",
+    "with skid steer",
+    "with a skid steer",
+    "mulcher and skid steer",
+    "need both"
+  ].some((k) => t.includes(k));
+}
+
 function getSession(psid) {
   if (!sessions.has(psid)) {
     sessions.set(psid, {
@@ -986,10 +1045,7 @@ function reply(message, state) {
     };
   }
 
-  if (
-    state.lastCategory === "mulcher" &&
-    (isMulcherComboQuestion(message) || isMulcherJustAttachmentQuestion(message))
-  ) {
+  if (state.lastCategory === "mulcher") {
     if (isMulcherJustAttachmentQuestion(message)) {
       return {
         text: `We have a CAT HM316 Forestry Mulcher (${money(EQUIPMENT["cat-hm316-mulcher"].day)}/day) and a John Deere MH60D Forestry Mulcher (${money(EQUIPMENT["jd-mh60d-mulcher"].day)}/day). The CAT mulcher uses carbide teeth that do not need sharpening, so I like to recommend it for weekly rentals if available.`,
@@ -1001,43 +1057,50 @@ function reply(message, state) {
       };
     }
 
+    if (isMulcherComboQuestion(message) || meansBoth(message)) {
+      return {
+        text: `Which combo do you need — CAT HM316 + CAT 265 or John Deere MH60D + John Deere 333P? The Boxer and CAT 239 cannot be used with either mulcher.`,
+        lastId: null,
+        lastCategory: "mulcher_combo",
+        lastCategoryItems: ["cat-hm316-mulcher", "cat-265", "jd-mh60d-mulcher", "jd-333p"],
+        lastQuotedItems: [],
+        lastQuote: state.lastQuote
+      };
+    }
+  }
+
+  if (state.lastCategory === "mulcher_combo") {
+    if (containsAny(text, ["cat", "cat 265", "hm316", "cat mulcher"])) {
+      const quote = buildBundleQuote(["cat-hm316-mulcher", "cat-265"], days, deliveryFee);
+      return {
+        text: `${quote.text}\n\nThe CAT mulcher uses carbide teeth that do not need sharpening, so I like to recommend it for weekly rentals if available.`,
+        lastId: "cat-265",
+        lastCategory: null,
+        lastCategoryItems: [],
+        lastQuotedItems: ["cat-hm316-mulcher", "cat-265"],
+        lastQuote: quote
+      };
+    }
+
+    if (containsAny(text, ["john deere", "jd", "333p", "mh60d", "jd mulcher"])) {
+      const quote = buildBundleQuote(["jd-mh60d-mulcher", "jd-333p"], days, deliveryFee);
+      return {
+        text: quote.text,
+        lastId: "jd-333p",
+        lastCategory: null,
+        lastCategoryItems: [],
+        lastQuotedItems: ["jd-mh60d-mulcher", "jd-333p"],
+        lastQuote: quote
+      };
+    }
+
     return {
-      text: `Which combo do you need — CAT HM316 + CAT 265 or John Deere MH60D + John Deere 333P? The Boxer and CAT 239 cannot be used with the mulchers.`,
+      text: `Which combo do you need — CAT HM316 + CAT 265 or John Deere MH60D + John Deere 333P?`,
       lastId: null,
       lastCategory: "mulcher_combo",
       lastCategoryItems: ["cat-hm316-mulcher", "cat-265", "jd-mh60d-mulcher", "jd-333p"],
-      lastQuotedItems: [],
+      lastQuotedItems: state.lastQuotedItems,
       lastQuote: state.lastQuote
-    };
-  }
-
-  if (
-    state.lastCategory === "mulcher_combo" &&
-    containsAny(text, ["cat", "cat 265", "hm316", "cat mulcher"])
-  ) {
-    const quote = buildBundleQuote(["cat-hm316-mulcher", "cat-265"], days, deliveryFee);
-    return {
-      text: `${quote.text}\n\nThe CAT mulcher uses carbide teeth that do not need sharpening, so I like to recommend it for weekly rentals if available.`,
-      lastId: "cat-265",
-      lastCategory: null,
-      lastCategoryItems: [],
-      lastQuotedItems: ["cat-hm316-mulcher", "cat-265"],
-      lastQuote: quote
-    };
-  }
-
-  if (
-    state.lastCategory === "mulcher_combo" &&
-    containsAny(text, ["john deere", "jd", "333p", "mh60d", "jd mulcher"])
-  ) {
-    const quote = buildBundleQuote(["jd-mh60d-mulcher", "jd-333p"], days, deliveryFee);
-    return {
-      text: quote.text,
-      lastId: "jd-333p",
-      lastCategory: null,
-      lastCategoryItems: [],
-      lastQuotedItems: ["jd-mh60d-mulcher", "jd-333p"],
-      lastQuote: quote
     };
   }
 
@@ -1507,6 +1570,17 @@ function reply(message, state) {
       lastId: null,
       lastCategory: null,
       lastCategoryItems: [],
+      lastQuotedItems: state.lastQuotedItems,
+      lastQuote: state.lastQuote
+    };
+  }
+
+  if (category === "scissor_lift") {
+    return {
+      text: `We have a Genie GS1930 Scissor Lift (${money(EQUIPMENT["genie-gs1930"].day)}/day, ${money(EQUIPMENT["genie-gs1930"].week)}/week, ${money(EQUIPMENT["genie-gs1930"].month)}/month) and a Genie GS3246 Scissor Lift (${money(EQUIPMENT["genie-gs3246"].day)}/day, ${money(EQUIPMENT["genie-gs3246"].week)}/week, ${money(EQUIPMENT["genie-gs3246"].month)}/month). These are not rough-terrain scissor lifts. Rough-terrain scissor lifts must be special ordered.`,
+      lastId: null,
+      lastCategory: "scissor_lift",
+      lastCategoryItems: CATEGORY_ITEMS.scissor_lift,
       lastQuotedItems: state.lastQuotedItems,
       lastQuote: state.lastQuote
     };
