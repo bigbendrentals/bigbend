@@ -1100,7 +1100,11 @@ function wantsTrailerAddedToTotal(text) {
     "add trailer",
     "plus a trailer",
     "plus trailer",
-    "and a trailer"
+    "and a trailer",
+    "and trailer",
+    "trailer included in the total",
+    "include the trailer in the total",
+    "with the trailer included"
   ]);
 }
 
