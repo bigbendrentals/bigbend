@@ -465,6 +465,8 @@ function getSession(psid) {
       lastQuotedItems: [],
       lastQuote: null,
       lastMulcherComboChoice: null,
+      lastDeliveryFee: 0,
+      lastDeliveryPlace: null,
       updatedAt: Date.now()
     });
   }
@@ -890,16 +892,21 @@ function reply(message, state) {
   const days = parseDays(message) || 1;
   const delivery = deliveryInfo(message);
   const deliveryFee = delivery?.fee || 0;
+  const effectiveDeliveryFee = deliveryFee || state.lastDeliveryFee || 0;
 
   if (delivery && state.lastCategory === "delivery_followup") {
     return {
       text: `Yes, we can deliver there. Delivery for ${delivery.placeLabel} is ${money(delivery.fee)}.`,
-      lastId: state.lastId,
-      lastCategory: null,
-      lastCategoryItems: [],
-      lastQuotedItems: state.lastQuotedItems,
-      lastQuote: state.lastQuote,
-      lastMulcherComboChoice: state.lastMulcherComboChoice
+        lastId: state.lastId,
+        lastCategory: null,
+        lastCategoryItems: [],
+        lastQuotedItems: state.lastQuotedItems,
+        lastQuote: state.lastQuote,
+        lastMulcherComboChoice: state.lastMulcherComboChoice,
+        lastDeliveryFee: delivery.fee,
+        lastDeliveryPlace: delivery.placeLabel,
+      lastDeliveryFee: delivery.fee,
+      lastDeliveryPlace: delivery.placeLabel
     };
   }
 
@@ -976,7 +983,7 @@ function reply(message, state) {
 
   if (comboChoice) {
     const variant = isDetailRequest(message) ? "details" : "quote";
-    let response = buildMulcherComboResponse(comboChoice, days, deliveryFee, variant);
+    let response = buildMulcherComboResponse(comboChoice, days, effectiveDeliveryFee, variant);
     if (wantsTrailerAddedToTotal(message)) {
       response = applyTrailerToQuote(response.quote, days);
     }
@@ -1032,7 +1039,15 @@ function reply(message, state) {
   if (isDeliveryQuestion(message) && !isPriceQuestion(message)) {
     if (isDeliveryPriceQuestion(message)) {
       if (delivery) {
-        return { text: `Delivery for ${delivery.placeLabel} is ${money(delivery.fee)}.`, lastId: state.lastId, lastCategory: state.lastCategory, lastCategoryItems: state.lastCategoryItems, lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice };
+        return { text: `Delivery for ${delivery.placeLabel} is ${money(delivery.fee)}.`,
+          lastId: state.lastId,
+          lastCategory: null,
+          lastCategoryItems: [],
+          lastQuotedItems: state.lastQuotedItems,
+          lastQuote: state.lastQuote,
+          lastMulcherComboChoice: state.lastMulcherComboChoice,
+          lastDeliveryFee: delivery.fee,
+          lastDeliveryPlace: delivery.placeLabel };
       }
       return {
         text: "What city or area are you in? Delivery pricing depends on location.",
@@ -1110,13 +1125,13 @@ function reply(message, state) {
   }
 
   if (matchedIds.length >= 2 && isPriceQuestion(message)) {
-    const quote = buildBundleQuote(matchedIds, days, deliveryFee);
+    const quote = buildBundleQuote(matchedIds, days, effectiveDeliveryFee);
     return clearCategoryFields({ text: quote.text, lastId: matchedIds[0], lastQuotedItems: matchedIds, lastQuote: quote, lastMulcherComboChoice: state.lastMulcherComboChoice });
   }
 
   if (state.lastQuote && !explicitFound && !category && !explicitIntentOverride && !comboChoice && (isPriceQuestion(message) || parseDays(message) !== null || text === "a week" || text === "week")) {
     const requestedDays = parseDays(message) || state.lastQuote.days || 1;
-    const requestedDeliveryFee = deliveryFee || state.lastQuote.deliveryFee || 0;
+    const requestedDeliveryFee = deliveryFee || state.lastQuote.deliveryFee || state.lastDeliveryFee || 0;
     if (state.lastQuote.itemIds?.length >= 2) {
       let quote = buildBundleQuote(state.lastQuote.itemIds, requestedDays, requestedDeliveryFee);
       if (wantsTrailerAddedToTotal(message)) {
@@ -1213,13 +1228,13 @@ function reply(message, state) {
     }
     if (isPriceQuestion(message)) {
       if (days > 1) {
-        let quote = multiDayQuote(item, id, days, deliveryFee);
+        let quote = multiDayQuote(item, id, days, effectiveDeliveryFee);
         if (wantsTrailerAddedToTotal(message)) {
           quote = applyTrailerToQuote(quote, days).quote;
         }
         return clearCategoryFields({ text: quote.text, lastId: id, lastQuotedItems: [id], lastQuote: quote, lastMulcherComboChoice: state.lastMulcherComboChoice });
       }
-      let quote = buildBundleQuote([id], 1, deliveryFee);
+      let quote = buildBundleQuote([id], 1, effectiveDeliveryFee);
       if (wantsTrailerAddedToTotal(message)) {
         quote = applyTrailerToQuote(quote, 1).quote;
       }
@@ -1299,7 +1314,9 @@ app.post("/webhook", async (req, res) => {
             lastCategoryItems: result.lastCategoryItems !== undefined ? result.lastCategoryItems : session.lastCategoryItems,
             lastQuotedItems: result.lastQuotedItems !== undefined ? result.lastQuotedItems : session.lastQuotedItems,
             lastQuote: result.lastQuote !== undefined ? result.lastQuote : session.lastQuote,
-            lastMulcherComboChoice: result.lastMulcherComboChoice !== undefined ? result.lastMulcherComboChoice : session.lastMulcherComboChoice
+            lastMulcherComboChoice: result.lastMulcherComboChoice !== undefined ? result.lastMulcherComboChoice : session.lastMulcherComboChoice,
+            lastDeliveryFee: result.lastDeliveryFee !== undefined ? result.lastDeliveryFee : session.lastDeliveryFee,
+            lastDeliveryPlace: result.lastDeliveryPlace !== undefined ? result.lastDeliveryPlace : session.lastDeliveryPlace
           });
           await sendMessengerText(senderId, result.text);
         }
