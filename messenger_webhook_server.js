@@ -891,6 +891,18 @@ function reply(message, state) {
   const delivery = deliveryInfo(message);
   const deliveryFee = delivery?.fee || 0;
 
+  if (delivery && state.lastCategory === "delivery_followup") {
+    return {
+      text: `Yes, we can deliver there. Delivery for ${delivery.placeLabel} is ${money(delivery.fee)}.`,
+      lastId: state.lastId,
+      lastCategory: null,
+      lastCategoryItems: [],
+      lastQuotedItems: state.lastQuotedItems,
+      lastQuote: state.lastQuote,
+      lastMulcherComboChoice: state.lastMulcherComboChoice
+    };
+  }
+
   if (isMulcherQuestion(message)) {
     if (isMulcherComboQuestion(message)) {
       return {
@@ -1022,12 +1034,28 @@ function reply(message, state) {
       if (delivery) {
         return { text: `Delivery for ${delivery.placeLabel} is ${money(delivery.fee)}.`, lastId: state.lastId, lastCategory: state.lastCategory, lastCategoryItems: state.lastCategoryItems, lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice };
       }
-      return { text: "What city or area are you in? Delivery pricing depends on location.", lastId: state.lastId, lastCategory: state.lastCategory, lastCategoryItems: state.lastCategoryItems, lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice };
+      return {
+        text: "What city or area are you in? Delivery pricing depends on location.",
+        lastId: item ? id : state.lastId,
+        lastCategory: "delivery_followup",
+        lastCategoryItems: [],
+        lastQuotedItems: item ? [id] : state.lastQuotedItems,
+        lastQuote: state.lastQuote,
+        lastMulcherComboChoice: state.lastMulcherComboChoice
+      };
     }
     if (delivery) {
       return { text: `Yes, we can deliver there. Delivery for ${delivery.placeLabel} is ${money(delivery.fee)}.`, lastId: state.lastId, lastCategory: state.lastCategory, lastCategoryItems: state.lastCategoryItems, lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice };
     }
-    return { text: `We deliver within about a ${DELIVERY_RADIUS_MILES}-mile radius. What city or area are you in? Delivery pricing depends on location.`, lastId: state.lastId, lastCategory: state.lastCategory, lastCategoryItems: state.lastCategoryItems, lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice };
+    return {
+      text: `We deliver within about a ${DELIVERY_RADIUS_MILES}-mile radius. What city or area are you in? Delivery pricing depends on location.`,
+      lastId: item ? id : state.lastId,
+      lastCategory: "delivery_followup",
+      lastCategoryItems: [],
+      lastQuotedItems: item ? [id] : state.lastQuotedItems,
+      lastQuote: state.lastQuote,
+      lastMulcherComboChoice: state.lastMulcherComboChoice
+    };
   }
 
   if (isTrailerQuestion(message)) {
