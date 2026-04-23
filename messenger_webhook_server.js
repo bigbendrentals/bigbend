@@ -301,7 +301,11 @@ const EQUIPMENT = {
       "hm316",
       "hm316 mulcher",
       "cat hm 316",
-      "cat forestry mulcher"
+      "cat forestry mulcher",
+      "forestry mulcher",
+      "forestry mulchers",
+      "mulcher",
+      "mulchers"
     ],
     keyword: "CAT HM316 Forestry Mulcher",
     details: "Uses carbide teeth that do not need sharpening. High Flow XPS required. 62-inch working width, 74-inch overall width, 58-inch overall height, 53-inch length, 2,959 lb. Axial piston dual-speed motor, polychain belt drive, 34 fixed teeth, max 8-inch cutting diameter, max 4.1-inch cutting depth. Can be rented by itself or paired with the CAT 265 only."
@@ -940,51 +944,48 @@ function arrangedBoomLiftIntent(text) {
 
 function isMulcherQuestion(text) {
   const t = normalize(text);
-  return containsAny(t, [
+  return [
     "mulcher",
     "mulchers",
     "forestry mulcher",
+    "forestry mulchers",
+    "mulcher combo",
+    "mulcher combos",
+    "forestry mulcher combo",
+    "forestry mulcher combos",
     "cat mulcher",
     "jd mulcher",
     "john deere mulcher",
     "hm316",
     "mh60d"
-  ]);
+  ].some((k) => t.includes(k));
 }
 
 function isMulcherComboQuestion(text) {
   const t = normalize(text);
-  return containsAny(t, [
+  return [
+    "mulcher combo",
+    "mulcher combos",
+    "forestry mulcher combo",
+    "forestry mulcher combos",
     "mulcher and skid steer",
     "with a skid steer",
     "with skid steer",
-    "with the skid steer"
-  ]);
+    "with the skid steer",
+    "both",
+    "combo"
+  ].some((k) => t.includes(k));
 }
 
-function isMulcherJustAttachmentQuestion(text) {
+function isMulcherOnlyQuestion(text) {
   const t = normalize(text);
-  return containsAny(t, [
+  return [
     "just the mulcher",
-    "just mulcher",
     "mulcher only",
+    "just mulcher",
     "just the attachment",
     "attachment only",
     "just the head"
-  ]);
-}
-
-function meansBoth(text) {
-  const t = normalize(text);
-  return [
-    "both",
-    "combo",
-    "the combo",
-    "with the skid steer",
-    "with skid steer",
-    "with a skid steer",
-    "mulcher and skid steer",
-    "need both"
   ].some((k) => t.includes(k));
 }
 
@@ -1034,7 +1035,29 @@ function reply(message, state) {
   const deliveryFee = delivery?.fee || 0;
   const category = findCategory(message) || null;
 
-  if (isMulcherQuestion(message) && !explicitFound && !state.lastQuotedItems?.length) {
+  if (isMulcherQuestion(message)) {
+    if (isMulcherComboQuestion(message)) {
+      return {
+        text: "Which combo do you need — CAT HM316 + CAT 265 or John Deere MH60D + John Deere 333P? The Boxer and CAT 239 cannot be used with either mulcher.",
+        lastId: null,
+        lastCategory: "mulcher_combo",
+        lastCategoryItems: ["cat-hm316-mulcher", "cat-265", "jd-mh60d-mulcher", "jd-333p"],
+        lastQuotedItems: [],
+        lastQuote: state.lastQuote
+      };
+    }
+
+    if (isMulcherOnlyQuestion(message)) {
+      return {
+        text: `We have a CAT HM316 Forestry Mulcher (${money(EQUIPMENT["cat-hm316-mulcher"].day)}/day) and a John Deere MH60D Forestry Mulcher (${money(EQUIPMENT["jd-mh60d-mulcher"].day)}/day). The CAT mulcher uses carbide teeth that do not need sharpening, so I like to recommend it for weekly rentals if available.`,
+        lastId: null,
+        lastCategory: "mulcher",
+        lastCategoryItems: ["cat-hm316-mulcher", "jd-mh60d-mulcher"],
+        lastQuotedItems: [],
+        lastQuote: state.lastQuote
+      };
+    }
+
     return {
       text: "Do you need the mulcher and skid steer or just the mulcher?",
       lastId: null,
@@ -1046,7 +1069,7 @@ function reply(message, state) {
   }
 
   if (state.lastCategory === "mulcher") {
-    if (isMulcherJustAttachmentQuestion(message)) {
+    if (isMulcherOnlyQuestion(message)) {
       return {
         text: `We have a CAT HM316 Forestry Mulcher (${money(EQUIPMENT["cat-hm316-mulcher"].day)}/day) and a John Deere MH60D Forestry Mulcher (${money(EQUIPMENT["jd-mh60d-mulcher"].day)}/day). The CAT mulcher uses carbide teeth that do not need sharpening, so I like to recommend it for weekly rentals if available.`,
         lastId: null,
@@ -1057,9 +1080,9 @@ function reply(message, state) {
       };
     }
 
-    if (isMulcherComboQuestion(message) || meansBoth(message)) {
+    if (isMulcherComboQuestion(message)) {
       return {
-        text: `Which combo do you need — CAT HM316 + CAT 265 or John Deere MH60D + John Deere 333P? The Boxer and CAT 239 cannot be used with either mulcher.`,
+        text: "Which combo do you need — CAT HM316 + CAT 265 or John Deere MH60D + John Deere 333P? The Boxer and CAT 239 cannot be used with either mulcher.",
         lastId: null,
         lastCategory: "mulcher_combo",
         lastCategoryItems: ["cat-hm316-mulcher", "cat-265", "jd-mh60d-mulcher", "jd-333p"],
@@ -1095,122 +1118,12 @@ function reply(message, state) {
     }
 
     return {
-      text: `Which combo do you need — CAT HM316 + CAT 265 or John Deere MH60D + John Deere 333P?`,
+      text: "Which combo do you need — CAT HM316 + CAT 265 or John Deere MH60D + John Deere 333P?",
       lastId: null,
       lastCategory: "mulcher_combo",
       lastCategoryItems: ["cat-hm316-mulcher", "cat-265", "jd-mh60d-mulcher", "jd-333p"],
       lastQuotedItems: state.lastQuotedItems,
       lastQuote: state.lastQuote
-    };
-  }
-
-  if (
-    explicitFound &&
-    (explicitFound[0] === "cat-hm316-mulcher" || explicitFound[0] === "jd-mh60d-mulcher") &&
-    !containsAny(text, ["cat 265", "333p", "john deere 333p", "just the mulcher", "mulcher only"])
-  ) {
-    return {
-      text: "Do you need the mulcher and skid steer or just the mulcher?",
-      lastId: explicitFound[0],
-      lastCategory: "mulcher",
-      lastCategoryItems: [explicitFound[0]],
-      lastQuotedItems: [explicitFound[0]],
-      lastQuote: state.lastQuote
-    };
-  }
-
-  if (
-    explicitFound &&
-    (explicitFound[0] === "cat-hm316-mulcher" || explicitFound[0] === "jd-mh60d-mulcher") &&
-    isMulcherJustAttachmentQuestion(message)
-  ) {
-    const singleMulcher = EQUIPMENT[explicitFound[0]];
-    return {
-      text: `${singleQuote(singleMulcher, explicitFound[0])}${explicitFound[0] === "cat-hm316-mulcher" ? " I like to recommend the CAT mulcher for weekly rentals because the teeth do not need sharpening." : ""}`,
-      lastId: explicitFound[0],
-      lastCategory: null,
-      lastCategoryItems: [],
-      lastQuotedItems: [explicitFound[0]],
-      lastQuote: buildBundleQuote([explicitFound[0]], 1, deliveryFee)
-    };
-  }
-
-  if (
-    explicitFound &&
-    explicitFound[0] === "cat-hm316-mulcher" &&
-    containsAny(text, ["cat 265", "with a skid steer", "with skid steer", "mulcher and skid steer"])
-  ) {
-    const quote = buildBundleQuote(["cat-hm316-mulcher", "cat-265"], days, deliveryFee);
-    return {
-      text: `${quote.text}\n\nThe CAT mulcher uses carbide teeth that do not need sharpening, so I like to recommend it for weekly rentals if available.`,
-      lastId: "cat-265",
-      lastCategory: null,
-      lastCategoryItems: [],
-      lastQuotedItems: ["cat-hm316-mulcher", "cat-265"],
-      lastQuote: quote
-    };
-  }
-
-  if (
-    explicitFound &&
-    explicitFound[0] === "jd-mh60d-mulcher" &&
-    containsAny(text, ["333p", "john deere 333p", "with a skid steer", "with skid steer", "mulcher and skid steer"])
-  ) {
-    const quote = buildBundleQuote(["jd-mh60d-mulcher", "jd-333p"], days, deliveryFee);
-    return {
-      text: quote.text,
-      lastId: "jd-333p",
-      lastCategory: null,
-      lastCategoryItems: [],
-      lastQuotedItems: ["jd-mh60d-mulcher", "jd-333p"],
-      lastQuote: quote
-    };
-  }
-
-  if (
-    state.lastQuotedItems &&
-    state.lastQuotedItems.length === 1 &&
-    (state.lastQuotedItems[0] === "cat-hm316-mulcher" || state.lastQuotedItems[0] === "jd-mh60d-mulcher") &&
-    containsAny(text, ["with a skid steer", "with skid steer", "mulcher and skid steer"])
-  ) {
-    if (state.lastQuotedItems[0] === "cat-hm316-mulcher") {
-      const quote = buildBundleQuote(["cat-hm316-mulcher", "cat-265"], days, deliveryFee);
-      return {
-        text: `${quote.text}\n\nThe CAT mulcher uses carbide teeth that do not need sharpening, so I like to recommend it for weekly rentals if available.`,
-        lastId: "cat-265",
-        lastCategory: null,
-        lastCategoryItems: [],
-        lastQuotedItems: ["cat-hm316-mulcher", "cat-265"],
-        lastQuote: quote
-      };
-    }
-
-    const quote = buildBundleQuote(["jd-mh60d-mulcher", "jd-333p"], days, deliveryFee);
-    return {
-      text: quote.text,
-      lastId: "jd-333p",
-      lastCategory: null,
-      lastCategoryItems: [],
-      lastQuotedItems: ["jd-mh60d-mulcher", "jd-333p"],
-      lastQuote: quote
-    };
-  }
-
-  if (
-    state.lastQuotedItems &&
-    state.lastQuotedItems.length === 1 &&
-    (state.lastQuotedItems[0] === "cat-hm316-mulcher" || state.lastQuotedItems[0] === "jd-mh60d-mulcher") &&
-    isMulcherJustAttachmentQuestion(message)
-  ) {
-    const mulcherId = state.lastQuotedItems[0];
-    const mulcher = EQUIPMENT[mulcherId];
-    return {
-      text: `${singleQuote(mulcher, mulcherId)}${mulcherId === "cat-hm316-mulcher" ? " I like to recommend the CAT mulcher for weekly rentals because the teeth do not need sharpening." : ""}`,
-      lastId: mulcherId,
-      lastCategory: null,
-      lastCategoryItems: [],
-      lastQuotedItems: [mulcherId],
-      lastQuote: buildBundleQuote([mulcherId], 1, deliveryFee)
     };
   }
 
