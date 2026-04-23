@@ -233,177 +233,29 @@ const EQUIPMENT = {
     aliases: ["gs3246", "genie gs3246", "3246 scissor lift", "larger slab scissor lift", "bigger scissor lift"],
     details: "Indoor/outdoor slab scissor lift. Not a rough-terrain scissor lift."
   },
-  [ITEM_IDS.PRESSURE_WASHER]: {
-    name: "Pressure Washer",
-    category: "small_tool",
-    day: 85,
-    aliases: ["pressure washer", "pressure washers", "power washer", "power washers", "rb600", "rb 600"],
-    details: "Pressure washer."
-  },
-  [ITEM_IDS.SURFACE_CLEANER]: {
-    name: "Surface Cleaner",
-    category: "small_tool",
-    day: 38.5,
-    aliases: ["surface cleaner", "driveway cleaner", "sidewalk cleaner", "flatwork cleaner"],
-    details: "Flatwork surface cleaner."
-  },
-  [ITEM_IDS.SNAKE]: {
-    name: "Ridgid K400 Drain Snake",
-    category: "small_tool",
-    day: 93.5,
-    keyword: "Ridgid K400",
-    aliases: ["drain snake", "drain snakes", "snake machine", "k400", "k-400", "ridgid k400", "rigid k400", "small drain cleaner"],
-    details: "Good for many standard drain jobs."
-  },
-  [ITEM_IDS.EEL]: {
-    name: "Electric Eel",
-    category: "small_tool",
-    day: 137.5,
-    keyword: "Electric Eel",
-    aliases: ["electric eel", "commercial drain cleaner", "heavy drain cleaner", "large drain snake", "big drain cleaner"],
-    details: "Better for heavier drain jobs."
-  },
-  [ITEM_IDS.ROTARY_HAMMER]: {
-    name: 'Makita 1-9/16" Rotary Hammer Drill',
-    category: "small_tool",
-    day: 71.5,
-    keyword: "rotary hammer drill",
-    aliases: ["hammer drill", "hammer drills", "rotary hammer", "rotary hammer drill", "rotary hammer drills", "makita hammer drill", "makita rotary hammer", "sds max drill", "concrete hammer drill"],
-    details: "Takes SDS Max bits. Some bits are included."
-  },
-  [ITEM_IDS.STUMP_GRINDER]: {
-    name: "Rayco RG37 Stump Grinder",
-    category: "small_tool",
-    day: 357.5,
-    protection: true,
-    delivery: true,
-    keyword: "stump grinder",
-    aliases: ["stump grinder", "rayco rg37", "rg37", "stump machine", "grind a stump"],
-    details: "Rental Protection Plan is required on that machine."
-  },
-  [ITEM_IDS.TRASH_PUMP]: {
-    name: "Trash Pump",
-    category: "small_tool",
-    day: 88,
-    aliases: ["trash pump", "water pump", "pump out water", "pump a pond", "drain pool", "pump pool"],
-    details: "2-inch semi-trash pump."
-  },
-  [ITEM_IDS.SUMP_PUMP]: {
-    name: "Sump Pump",
-    category: "small_tool",
-    day: 93.5,
-    aliases: ["sump pump", "submersible sump pump", "submersible pump"],
-    details: "Submersible sump pump."
-  },
-  [ITEM_IDS.GAS_COMPRESSOR]: {
-    name: "Gas Air Compressor",
-    category: "small_tool",
-    day: 71.5,
-    aliases: ["gas air compressor", "gas compressor", "towable compressor", "air compressor"],
-    details: "Gas-powered air compressor."
-  },
-  [ITEM_IDS.PANCAKE]: {
-    name: "Pancake Compressor",
-    category: "small_tool",
-    day: 35,
-    aliases: ["pancake compressor", "portable compressor", "small compressor"],
-    details: "Portable pancake compressor."
-  },
-  [ITEM_IDS.SPLITTER]: {
-    name: "Log Splitter",
-    category: "small_tool",
-    day: 99,
-    aliases: ["log splitter", "split wood", "split logs", "firewood splitter", "wood splitter"],
-    details: "Log splitter."
-  },
-  [ITEM_IDS.CAT_MULCHER]: {
-    name: "CAT HM316 Forestry Mulcher",
-    category: "attachment",
-    day: 610,
-    protection: true,
-    keyword: "CAT HM316 Forestry Mulcher",
-    aliases: ["cat mulcher", "cat hm316", "hm316", "hm316 mulcher", "cat hm 316", "cat forestry mulcher"],
-    details: "Uses carbide teeth that do not need sharpening. High Flow XPS required. 62-inch working width, 74-inch overall width, 58-inch overall height, 53-inch length, 2,959 lb. Axial piston dual-speed motor, polychain belt drive, 34 fixed teeth, max 8-inch cutting diameter, max 4.1-inch cutting depth. Can be rented by itself or paired with the CAT 265 only."
-  },
-  [ITEM_IDS.JD_MULCHER]: {
-    name: "John Deere MH60D Forestry Mulcher",
-    category: "attachment",
-    day: 610,
-    protection: true,
-    keyword: "John Deere MH60D Forestry Mulcher",
-    aliases: ["john deere mulcher", "jd mulcher", "mh60d", "mh60d mulcher", "john deere mh60d", "jd mh60d", "john deere forestry mulcher"],
-    details: "Removes up to 8-inch trees and 12-inch stumps. 30 double-carbide-tipped teeth. Two-speed hydraulic system. 60-inch cutting width, 74-inch overall width, 56-inch height, 55-inch length, 2,730 lb. Can be rented by itself or paired with the John Deere 333P only."
-  },
-  [ITEM_IDS.AUGER]: {
-    name: "Skid Steer Auger",
-    category: "attachment",
-    day: 225,
-    aliases: ["skid steer auger", "auger attachment", "auger", "post hole auger", "post hole digger"],
-    details: "Bits rented separately. Attachment can be rented separately."
-  },
-  [ITEM_IDS.BREAKER]: {
-    name: "Skid Steer Breaker",
-    category: "attachment",
-    day: 350,
-    aliases: ["skid steer breaker", "breaker attachment", "breaker", "skid steer hammer", "demolition hammer attachment"],
-    details: "Attachment can be rented separately."
-  },
-  [ITEM_IDS.POWER_RAKE]: {
-    name: "Power Rake",
-    category: "attachment",
-    day: 225,
-    aliases: ["power rake", "soil conditioner", "soil prep attachment"],
-    details: "Attachment can be rented separately."
-  },
-  [ITEM_IDS.BRUSHCAT]: {
-    name: "Brushcat 60",
-    category: "attachment",
-    day: 275,
-    aliases: ["brushcat", "brushcat 60", "skid steer brush cutter", "brush cutter attachment", "bush hog attachment"],
-    details: "Attachment can be rented separately."
-  },
-  [ITEM_IDS.GRAPPLE]: {
-    name: "Grapple",
-    category: "attachment",
-    day: 110,
-    aliases: ["grapple", "root grapple", "brush grapple", "tree grapple"],
-    details: "Attachment can be rented separately."
-  },
-  [ITEM_IDS.CONCRETE_SAW]: {
-    name: "Concrete Saw",
-    category: "small_tool",
-    day: 150,
-    aliases: ["concrete saw", "cut off saw", "cutoff saw", "stihl saw", "demo saw"],
-    details: "Blade is sold separately."
-  },
-  [ITEM_IDS.SCREED]: {
-    name: "Power Screed",
-    category: "small_tool",
-    day: 137.5,
-    aliases: ["power screed", "screed", "vibrating screed", "concrete screed"],
-    details: "Screed board rented separately."
-  },
-  [ITEM_IDS.TROWEL]: {
-    name: "Power Trowel",
-    category: "small_tool",
-    day: 135,
-    aliases: ["power trowel", "walk behind trowel", "concrete trowel"],
-    details: "Power trowel."
-  },
-  [ITEM_IDS.VIBRATOR]: {
-    name: "Concrete Vibrator",
-    category: "small_tool",
-    day: 49,
-    aliases: ["concrete vibrator", "cement vibrator", "pencil vibrator"],
-    details: "Concrete vibrator."
-  },
-  [ITEM_IDS.BULL_FLOAT]: {
-    name: "Bull Float",
-    category: "small_tool",
-    day: 35,
-    aliases: ["bull float", "concrete float"],
-    details: "Bull float."
-  }
+  [ITEM_IDS.PRESSURE_WASHER]: { name: "Pressure Washer", category: "small_tool", day: 85, aliases: ["pressure washer", "pressure washers", "power washer", "power washers", "rb600", "rb 600"], details: "Pressure washer." },
+  [ITEM_IDS.SURFACE_CLEANER]: { name: "Surface Cleaner", category: "small_tool", day: 38.5, aliases: ["surface cleaner", "driveway cleaner", "sidewalk cleaner", "flatwork cleaner"], details: "Flatwork surface cleaner." },
+  [ITEM_IDS.SNAKE]: { name: "Ridgid K400 Drain Snake", category: "small_tool", day: 93.5, keyword: "Ridgid K400", aliases: ["drain snake", "drain snakes", "snake machine", "k400", "k-400", "ridgid k400", "rigid k400", "small drain cleaner"], details: "Good for many standard drain jobs." },
+  [ITEM_IDS.EEL]: { name: "Electric Eel", category: "small_tool", day: 137.5, keyword: "Electric Eel", aliases: ["electric eel", "commercial drain cleaner", "heavy drain cleaner", "large drain snake", "big drain cleaner"], details: "Better for heavier drain jobs." },
+  [ITEM_IDS.ROTARY_HAMMER]: { name: 'Makita 1-9/16" Rotary Hammer Drill', category: "small_tool", day: 71.5, keyword: "rotary hammer drill", aliases: ["hammer drill", "hammer drills", "rotary hammer", "rotary hammer drill", "rotary hammer drills", "makita hammer drill", "makita rotary hammer", "sds max drill", "concrete hammer drill"], details: "Takes SDS Max bits. Some bits are included." },
+  [ITEM_IDS.STUMP_GRINDER]: { name: "Rayco RG37 Stump Grinder", category: "small_tool", day: 357.5, protection: true, delivery: true, keyword: "stump grinder", aliases: ["stump grinder", "rayco rg37", "rg37", "stump machine", "grind a stump"], details: "Rental Protection Plan is required on that machine." },
+  [ITEM_IDS.TRASH_PUMP]: { name: "Trash Pump", category: "small_tool", day: 88, aliases: ["trash pump", "water pump", "pump out water", "pump a pond", "drain pool", "pump pool"], details: "2-inch semi-trash pump." },
+  [ITEM_IDS.SUMP_PUMP]: { name: "Sump Pump", category: "small_tool", day: 93.5, aliases: ["sump pump", "submersible sump pump", "submersible pump"], details: "Submersible sump pump." },
+  [ITEM_IDS.GAS_COMPRESSOR]: { name: "Gas Air Compressor", category: "small_tool", day: 71.5, aliases: ["gas air compressor", "gas compressor", "towable compressor", "air compressor"], details: "Gas-powered air compressor." },
+  [ITEM_IDS.PANCAKE]: { name: "Pancake Compressor", category: "small_tool", day: 35, aliases: ["pancake compressor", "portable compressor", "small compressor"], details: "Portable pancake compressor." },
+  [ITEM_IDS.SPLITTER]: { name: "Log Splitter", category: "small_tool", day: 99, aliases: ["log splitter", "split wood", "split logs", "firewood splitter", "wood splitter"], details: "Log splitter." },
+  [ITEM_IDS.CAT_MULCHER]: { name: "CAT HM316 Forestry Mulcher", category: "attachment", day: 610, protection: true, keyword: "CAT HM316 Forestry Mulcher", aliases: ["cat mulcher", "cat hm316", "hm316", "hm316 mulcher", "cat hm 316", "cat forestry mulcher"], details: "Uses carbide teeth that do not need sharpening. High Flow XPS required. 62-inch working width, 74-inch overall width, 58-inch overall height, 53-inch length, 2,959 lb. Axial piston dual-speed motor, polychain belt drive, 34 fixed teeth, max 8-inch cutting diameter, max 4.1-inch cutting depth. Can be rented by itself or paired with the CAT 265 only." },
+  [ITEM_IDS.JD_MULCHER]: { name: "John Deere MH60D Forestry Mulcher", category: "attachment", day: 610, protection: true, keyword: "John Deere MH60D Forestry Mulcher", aliases: ["john deere mulcher", "jd mulcher", "mh60d", "mh60d mulcher", "john deere mh60d", "jd mh60d", "john deere forestry mulcher"], details: "Removes up to 8-inch trees and 12-inch stumps. 30 double-carbide-tipped teeth. Two-speed hydraulic system. 60-inch cutting width, 74-inch overall width, 56-inch height, 55-inch length, 2,730 lb. Can be rented by itself or paired with the John Deere 333P only." },
+  [ITEM_IDS.AUGER]: { name: "Skid Steer Auger", category: "attachment", day: 225, aliases: ["skid steer auger", "auger attachment", "auger", "post hole auger", "post hole digger"], details: "Bits rented separately. Attachment can be rented separately." },
+  [ITEM_IDS.BREAKER]: { name: "Skid Steer Breaker", category: "attachment", day: 350, aliases: ["skid steer breaker", "breaker attachment", "breaker", "skid steer hammer", "demolition hammer attachment"], details: "Attachment can be rented separately." },
+  [ITEM_IDS.POWER_RAKE]: { name: "Power Rake", category: "attachment", day: 225, aliases: ["power rake", "soil conditioner", "soil prep attachment"], details: "Attachment can be rented separately." },
+  [ITEM_IDS.BRUSHCAT]: { name: "Brushcat 60", category: "attachment", day: 275, aliases: ["brushcat", "brushcat 60", "skid steer brush cutter", "brush cutter attachment", "bush hog attachment"], details: "Attachment can be rented separately." },
+  [ITEM_IDS.GRAPPLE]: { name: "Grapple", category: "attachment", day: 110, aliases: ["grapple", "root grapple", "brush grapple", "tree grapple"], details: "Attachment can be rented separately." },
+  [ITEM_IDS.CONCRETE_SAW]: { name: "Concrete Saw", category: "small_tool", day: 150, aliases: ["concrete saw", "cut off saw", "cutoff saw", "stihl saw", "demo saw"], details: "Blade is sold separately." },
+  [ITEM_IDS.SCREED]: { name: "Power Screed", category: "small_tool", day: 137.5, aliases: ["power screed", "screed", "vibrating screed", "concrete screed"], details: "Screed board rented separately." },
+  [ITEM_IDS.TROWEL]: { name: "Power Trowel", category: "small_tool", day: 135, aliases: ["power trowel", "walk behind trowel", "concrete trowel"], details: "Power trowel." },
+  [ITEM_IDS.VIBRATOR]: { name: "Concrete Vibrator", category: "small_tool", day: 49, aliases: ["concrete vibrator", "cement vibrator", "pencil vibrator"], details: "Concrete vibrator." },
+  [ITEM_IDS.BULL_FLOAT]: { name: "Bull Float", category: "small_tool", day: 35, aliases: ["bull float", "concrete float"], details: "Bull float." }
 };
 
 const CATEGORY_ALIASES = {
@@ -615,8 +467,7 @@ function isMulcherOnlyQuestion(text) {
 
 function isReferentialFollowup(text) {
   const t = normalize(text);
-  if (parseDays(t) !== null) return true;
-  if (t === "both") return true;
+  if (parseDays(t) !== null || t === "both") return true;
   return containsAny(t, ["it", "that one", "that machine", "how much", "price", "pricing", "cost", "quote", "week", "weekly", "monthly", "month", "weight", "weigh", "thumb", "bucket", "cab", "delivery", "deliver", "reserve", "available", "availability", "schedule", "book"]);
 }
 
@@ -637,9 +488,7 @@ function findEquipment(text) {
   const candidates = [];
   for (const [id, item] of Object.entries(EQUIPMENT)) {
     let score = 0;
-    for (const alias of item.aliases || []) {
-      score = Math.max(score, scoreAliasMatch(text, alias));
-    }
+    for (const alias of item.aliases || []) score = Math.max(score, scoreAliasMatch(text, alias));
     if (score > 0) candidates.push({ id, item, score });
   }
   candidates.sort((a, b) => b.score - a.score);
@@ -650,9 +499,7 @@ function findAllEquipment(text) {
   const found = [];
   for (const [id, item] of Object.entries(EQUIPMENT)) {
     let score = 0;
-    for (const alias of item.aliases || []) {
-      score = Math.max(score, scoreAliasMatch(text, alias));
-    }
+    for (const alias of item.aliases || []) score = Math.max(score, scoreAliasMatch(text, alias));
     if (score > 0) found.push(id);
   }
   return [...new Set(found)];
@@ -676,9 +523,7 @@ function categoryDisambiguationText(ids, verb = "mean") {
 }
 
 function schedulingText(item) {
-  if (item?.keyword) {
-    return `For availability or scheduling, call or text Dave at ${DAVE_PHONE}. You can also check the website at ${WEBSITE} and search for "${item.keyword}".`;
-  }
+  if (item?.keyword) return `For availability or scheduling, call or text Dave at ${DAVE_PHONE}. You can also check the website at ${WEBSITE} and search for "${item.keyword}".`;
   return `For availability or scheduling, call or text Dave at ${DAVE_PHONE}. You can also check the website at ${WEBSITE}.`;
 }
 
@@ -692,9 +537,7 @@ function trailerSurcharge(days = 1) {
 }
 
 function trailerSurchargeText(days = 1) {
-  if (days <= 1) {
-    return `We can supply a trailer for a ${money(TRAILER_SURCHARGE_FIRST_DAY)} surcharge for the first day.`;
-  }
+  if (days <= 1) return `We can supply a trailer for a ${money(TRAILER_SURCHARGE_FIRST_DAY)} surcharge for the first day.`;
   return `We can supply a trailer for a ${money(TRAILER_SURCHARGE_FIRST_DAY)} surcharge for the first day and ${money(TRAILER_SURCHARGE_ADDITIONAL_DAY)} for each additional day. For ${days} days, the trailer surcharge would be ${money(trailerSurcharge(days))}.`;
 }
 
@@ -704,44 +547,18 @@ function trailerPolicyText(days = 1) {
 
 function trailerWeightText(state) {
   const item = state.lastId ? EQUIPMENT[state.lastId] : null;
-  if (item?.weight) {
-    return `${item.name} weighs ${item.weight.toLocaleString()} lb. Clients can supply their own trailer if it meets the weight requirements for hauling the equipment.`;
-  }
+  if (item?.weight) return `${item.name} weighs ${item.weight.toLocaleString()} lb. Clients can supply their own trailer if it meets the weight requirements for hauling the equipment.`;
   return `Clients can supply their own trailer if it meets the weight requirements for hauling the equipment. If you tell me which machine you mean, I can give you its weight.`;
 }
 
 function wantsTrailerAddedToTotal(text) {
   const t = normalize(text);
-  return containsAny(t, [
-    "total with the trailer",
-    "total with trailer",
-    "with the trailer",
-    "with trailer",
-    "including a trailer",
-    "including trailer",
-    "include a trailer",
-    "include trailer",
-    "include the trailer",
-    "add the trailer",
-    "add trailer",
-    "plus a trailer",
-    "plus trailer",
-    "and a trailer",
-    "and trailer"
-  ]);
+  return containsAny(t, ["total with the trailer", "total with trailer", "with the trailer", "with trailer", "including a trailer", "including trailer", "include a trailer", "include trailer", "include the trailer", "add the trailer", "add trailer", "plus a trailer", "plus trailer", "and a trailer", "and trailer"]);
 }
 
 function wantsDeliveryAddedToTotal(text) {
   const t = normalize(text);
-  return containsAny(t, [
-    "with delivery",
-    "including delivery",
-    "include delivery",
-    "include the delivery",
-    "delivery included",
-    "and delivery",
-    "plus delivery"
-  ]);
+  return containsAny(t, ["with delivery", "including delivery", "include delivery", "include the delivery", "delivery included", "and delivery", "plus delivery"]);
 }
 
 function applyTrailerToQuote(baseQuote, days) {
@@ -750,26 +567,9 @@ function applyTrailerToQuote(baseQuote, days) {
   const subtotal = (baseQuote.subtotal - priorTrailerFee) + trailerFee;
   const tax = subtotal * SALES_TAX;
   const total = subtotal + tax;
-
   return {
-    text:
-      `${baseQuote.text}
-` +
-      `Trailer surcharge: ${money(trailerFee)}
-` +
-      `Updated subtotal: ${money(subtotal)}
-` +
-      `Sales tax (7%): ${money(tax)}
-` +
-      `Total with trailer: ${money(total)}`,
-    quote: {
-      ...baseQuote,
-      subtotal,
-      tax,
-      total,
-      trailerFee,
-      days
-    }
+    text: `${baseQuote.text}\nTrailer surcharge: ${money(trailerFee)}\nUpdated subtotal: ${money(subtotal)}\nSales tax (7%): ${money(tax)}\nTotal with trailer: ${money(total)}`,
+    quote: { ...baseQuote, subtotal, tax, total, trailerFee, days }
   };
 }
 
@@ -904,26 +704,38 @@ function buildMulcherComboResponse(choice, days, deliveryFee = 0, variant = "quo
   const comboIds = MULCHER_COMBOS[choice];
   const quote = buildBundleQuote(comboIds, days, deliveryFee);
   if (choice === "cat") {
-    if (variant === "details") {
-      return {
-        text: `${quote.text}\n\nThe CAT HM316 Forestry Mulcher can be rented by itself or paired with the CAT 265 only. The Boxer and CAT 239 cannot be used with either mulcher.`,
-        quote
-      };
-    }
+    if (variant === "details") return { text: `${quote.text}\n\nThe CAT HM316 Forestry Mulcher can be rented by itself or paired with the CAT 265 only. The Boxer and CAT 239 cannot be used with either mulcher.`, quote };
     return { text: quote.text, quote };
   }
-  if (variant === "details") {
-    return {
-      text: `${quote.text}\n\nThe John Deere MH60D Forestry Mulcher can be rented by itself or paired with the John Deere 333P only. The Boxer and CAT 239 cannot be used with either mulcher.`,
-      quote
-    };
-  }
+  if (variant === "details") return { text: `${quote.text}\n\nThe John Deere MH60D Forestry Mulcher can be rented by itself or paired with the John Deere 333P only. The Boxer and CAT 239 cannot be used with either mulcher.`, quote };
   return { text: quote.text, quote };
 }
 
 function isDetailRequest(text) {
   const t = normalize(text);
   return containsAny(t, ["tell me about", "what about", "details", "info", "information", "more about"]);
+}
+
+function quoteWithAddons(baseQuote, days, addTrailer, addDelivery) {
+  let working = { ...baseQuote };
+  if (!addDelivery) {
+    const deliveryFee = 0;
+    const subtotal = (working.subtotal - (working.deliveryFee || 0));
+    const tax = subtotal * SALES_TAX;
+    const total = subtotal + tax;
+    working = {
+      ...working,
+      text: working.text,
+      subtotal,
+      tax,
+      total,
+      deliveryFee
+    };
+  }
+  if (addTrailer) {
+    return applyTrailerToQuote(working, days).quote;
+  }
+  return working;
 }
 
 function reply(message, state) {
@@ -939,20 +751,19 @@ function reply(message, state) {
   const days = parseDays(message) || 1;
   const delivery = deliveryInfo(message);
   const deliveryFee = delivery?.fee || 0;
-  const effectiveDeliveryFee = (deliveryFee || state.lastDeliveryFee || 0);
+  const effectiveDeliveryFee = deliveryFee || state.lastDeliveryFee || 0;
   const wantsDeliveryTotal = wantsDeliveryAddedToTotal(message);
+  const wantsTrailerTotal = wantsTrailerAddedToTotal(message);
 
   if (delivery && state.lastCategory === "delivery_followup") {
     return {
       text: `Yes, we can deliver there. Delivery for ${delivery.placeLabel} is ${money(delivery.fee)}.`,
-        lastId: state.lastId,
-        lastCategory: null,
-        lastCategoryItems: [],
-        lastQuotedItems: state.lastQuotedItems,
-        lastQuote: state.lastQuote,
-        lastMulcherComboChoice: state.lastMulcherComboChoice,
-        lastDeliveryFee: delivery.fee,
-        lastDeliveryPlace: delivery.placeLabel,
+      lastId: state.lastId,
+      lastCategory: null,
+      lastCategoryItems: [],
+      lastQuotedItems: state.lastQuotedItems,
+      lastQuote: state.lastQuote,
+      lastMulcherComboChoice: state.lastMulcherComboChoice,
       lastDeliveryFee: delivery.fee,
       lastDeliveryPlace: delivery.placeLabel
     };
@@ -960,221 +771,91 @@ function reply(message, state) {
 
   if (isMulcherQuestion(message)) {
     if (isMulcherComboQuestion(message)) {
-      return {
-        text: "Which combo do you need — CAT HM316 + CAT 265 or John Deere MH60D + John Deere 333P? The Boxer and CAT 239 cannot be used with either mulcher.",
-        lastId: null,
-        lastCategory: "mulcher_combo",
-        lastCategoryItems: [ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_265, ITEM_IDS.JD_MULCHER, ITEM_IDS.JD_333P],
-        lastQuotedItems: [],
-        lastQuote: state.lastQuote,
-        lastMulcherComboChoice: state.lastMulcherComboChoice
-      };
+      return { text: "Which combo do you need — CAT HM316 + CAT 265 or John Deere MH60D + John Deere 333P? The Boxer and CAT 239 cannot be used with either mulcher.", lastId: null, lastCategory: "mulcher_combo", lastCategoryItems: [ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_265, ITEM_IDS.JD_MULCHER, ITEM_IDS.JD_333P], lastQuotedItems: [], lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace };
     }
     if (isMulcherOnlyQuestion(message)) {
-      return {
-        text: `We have a CAT HM316 Forestry Mulcher (${money(EQUIPMENT[ITEM_IDS.CAT_MULCHER].day)}/day) and a John Deere MH60D Forestry Mulcher (${money(EQUIPMENT[ITEM_IDS.JD_MULCHER].day)}/day). The CAT HM316 is usually better for longer rentals since the carbide teeth don’t need sharpening.`,
-        lastId: null,
-        lastCategory: "mulcher",
-        lastCategoryItems: [ITEM_IDS.CAT_MULCHER, ITEM_IDS.JD_MULCHER],
-        lastQuotedItems: [],
-        lastQuote: state.lastQuote,
-        lastMulcherComboChoice: state.lastMulcherComboChoice
-      };
+      return { text: `We have a CAT HM316 Forestry Mulcher (${money(EQUIPMENT[ITEM_IDS.CAT_MULCHER].day)}/day) and a John Deere MH60D Forestry Mulcher (${money(EQUIPMENT[ITEM_IDS.JD_MULCHER].day)}/day). The CAT HM316 is usually better for longer rentals since the carbide teeth don’t need sharpening.`, lastId: null, lastCategory: "mulcher", lastCategoryItems: [ITEM_IDS.CAT_MULCHER, ITEM_IDS.JD_MULCHER], lastQuotedItems: [], lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace };
     }
-    return {
-      text: "Do you need the mulcher and skid steer or just the mulcher?",
-      lastId: null,
-      lastCategory: "mulcher",
-      lastCategoryItems: [ITEM_IDS.CAT_MULCHER, ITEM_IDS.JD_MULCHER],
-      lastQuotedItems: [],
-      lastQuote: state.lastQuote,
-      lastMulcherComboChoice: state.lastMulcherComboChoice
-    };
+    return { text: "Do you need the mulcher and skid steer or just the mulcher?", lastId: null, lastCategory: "mulcher", lastCategoryItems: [ITEM_IDS.CAT_MULCHER, ITEM_IDS.JD_MULCHER], lastQuotedItems: [], lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace };
   }
 
-  if (state.lastCategory === "mulcher") {
-    if (isMulcherOnlyQuestion(message)) {
-      return {
-        text: `We have a CAT HM316 Forestry Mulcher (${money(EQUIPMENT[ITEM_IDS.CAT_MULCHER].day)}/day) and a John Deere MH60D Forestry Mulcher (${money(EQUIPMENT[ITEM_IDS.JD_MULCHER].day)}/day). The CAT HM316 is usually better for longer rentals since the carbide teeth don’t need sharpening.`,
-        lastId: null,
-        lastCategory: "mulcher",
-        lastCategoryItems: [ITEM_IDS.CAT_MULCHER, ITEM_IDS.JD_MULCHER],
-        lastQuotedItems: [],
-        lastQuote: state.lastQuote,
-        lastMulcherComboChoice: state.lastMulcherComboChoice
-      };
-    }
-    if (isMulcherComboQuestion(message)) {
-      return {
-        text: "Which combo do you need — CAT HM316 + CAT 265 or John Deere MH60D + John Deere 333P? The Boxer and CAT 239 cannot be used with either mulcher.",
-        lastId: null,
-        lastCategory: "mulcher_combo",
-        lastCategoryItems: [ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_265, ITEM_IDS.JD_MULCHER, ITEM_IDS.JD_333P],
-        lastQuotedItems: [],
-        lastQuote: state.lastQuote,
-        lastMulcherComboChoice: state.lastMulcherComboChoice
-      };
-    }
+  if (state.lastCategory === "mulcher" && isMulcherComboQuestion(message)) {
+    return { text: "Which combo do you need — CAT HM316 + CAT 265 or John Deere MH60D + John Deere 333P? The Boxer and CAT 239 cannot be used with either mulcher.", lastId: null, lastCategory: "mulcher_combo", lastCategoryItems: [ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_265, ITEM_IDS.JD_MULCHER, ITEM_IDS.JD_333P], lastQuotedItems: [], lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace };
   }
 
   if (state.lastCategory === "mulcher_combo" && text === "both") {
-    return {
-      text: "Which combo do you need — CAT HM316 + CAT 265 or John Deere MH60D + John Deere 333P? The Boxer and CAT 239 cannot be used with either mulcher.",
-      lastId: null,
-      lastCategory: "mulcher_combo",
-      lastCategoryItems: [ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_265, ITEM_IDS.JD_MULCHER, ITEM_IDS.JD_333P],
-      lastQuotedItems: state.lastQuotedItems,
-      lastQuote: state.lastQuote,
-      lastMulcherComboChoice: state.lastMulcherComboChoice
-    };
+    return { text: "Which combo do you need — CAT HM316 + CAT 265 or John Deere MH60D + John Deere 333P? The Boxer and CAT 239 cannot be used with either mulcher.", lastId: null, lastCategory: "mulcher_combo", lastCategoryItems: [ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_265, ITEM_IDS.JD_MULCHER, ITEM_IDS.JD_333P], lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace };
   }
 
   if (comboChoice) {
     const variant = isDetailRequest(message) ? "details" : "quote";
     let response = buildMulcherComboResponse(comboChoice, days, wantsDeliveryTotal ? effectiveDeliveryFee : 0, variant);
-    if (wantsTrailerAddedToTotal(message)) {
-      response = applyTrailerToQuote(response.quote, days);
-    }
+    if (wantsTrailerTotal) response = applyTrailerToQuote(response.quote, days);
     const comboIds = MULCHER_COMBOS[comboChoice];
     const representativeId = comboChoice === "cat" ? ITEM_IDS.CAT_265 : ITEM_IDS.JD_333P;
-    return clearCategoryFields({ text: response.text, lastId: representativeId, lastQuotedItems: comboIds, lastQuote: response.quote, lastMulcherComboChoice: comboChoice });
+    return clearCategoryFields({ text: response.text, lastId: representativeId, lastQuotedItems: comboIds, lastQuote: response.quote, lastMulcherComboChoice: comboChoice, lastDeliveryFee: effectiveDeliveryFee, lastDeliveryPlace: delivery?.placeLabel || state.lastDeliveryPlace });
   }
 
   if (text === "cat" || text === "the cat") {
-    return {
-      text: "Which CAT machine are you referring to — CAT 265 skid steer, CAT HM316 mulcher, CAT 301.7 excavator, or CAT 307.5 excavator?",
-      lastId: null,
-      lastCategory: "cat_disambiguation",
-      lastCategoryItems: [ITEM_IDS.CAT_265, ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_3017, ITEM_IDS.CAT_3075],
-      lastQuotedItems: state.lastQuotedItems,
-      lastQuote: state.lastQuote,
-      lastMulcherComboChoice: state.lastMulcherComboChoice
-    };
+    return { text: "Which CAT machine are you referring to — CAT 265 skid steer, CAT HM316 mulcher, CAT 301.7 excavator, or CAT 307.5 excavator?", lastId: null, lastCategory: "cat_disambiguation", lastCategoryItems: [ITEM_IDS.CAT_265, ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_3017, ITEM_IDS.CAT_3075], lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace };
   }
 
   if (state.lastCategory === "cat_disambiguation") {
     if (containsAny(text, ["265", "cat 265", "skid steer"])) {
       const selected = ITEM_IDS.CAT_265;
       const quote = buildBundleQuote([selected], 1, 0);
-      return clearCategoryFields({ text: singleQuote(EQUIPMENT[selected], selected), lastId: selected, lastQuotedItems: [selected], lastQuote: quote, lastMulcherComboChoice: state.lastMulcherComboChoice });
+      return clearCategoryFields({ text: singleQuote(EQUIPMENT[selected], selected), lastId: selected, lastQuotedItems: [selected], lastQuote: quote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace });
     }
     if (containsAny(text, ["hm316", "mulcher", "cat mulcher"])) {
       const selected = ITEM_IDS.CAT_MULCHER;
       const quote = buildBundleQuote([selected], 1, 0);
-      return clearCategoryFields({ text: singleQuote(EQUIPMENT[selected], selected), lastId: selected, lastQuotedItems: [selected], lastQuote: quote, lastMulcherComboChoice: state.lastMulcherComboChoice });
+      return clearCategoryFields({ text: singleQuote(EQUIPMENT[selected], selected), lastId: selected, lastQuotedItems: [selected], lastQuote: quote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace });
     }
     if (containsAny(text, ["301.7", "3017", "cat 301", "small excavator"])) {
       const selected = ITEM_IDS.CAT_3017;
       const quote = buildBundleQuote([selected], 1, 0);
-      return clearCategoryFields({ text: singleQuote(EQUIPMENT[selected], selected), lastId: selected, lastQuotedItems: [selected], lastQuote: quote, lastMulcherComboChoice: state.lastMulcherComboChoice });
+      return clearCategoryFields({ text: singleQuote(EQUIPMENT[selected], selected), lastId: selected, lastQuotedItems: [selected], lastQuote: quote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace });
     }
     if (containsAny(text, ["307.5", "3075", "cat 307", "bigger excavator"])) {
       const selected = ITEM_IDS.CAT_3075;
       const quote = buildBundleQuote([selected], 1, 0);
-      return clearCategoryFields({ text: singleQuote(EQUIPMENT[selected], selected), lastId: selected, lastQuotedItems: [selected], lastQuote: quote, lastMulcherComboChoice: state.lastMulcherComboChoice });
+      return clearCategoryFields({ text: singleQuote(EQUIPMENT[selected], selected), lastId: selected, lastQuotedItems: [selected], lastQuote: quote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace });
     }
-    return {
-      text: "Which CAT machine are you referring to — CAT 265 skid steer, CAT HM316 mulcher, CAT 301.7 excavator, or CAT 307.5 excavator?",
-      lastId: null,
-      lastCategory: "cat_disambiguation",
-      lastCategoryItems: [ITEM_IDS.CAT_265, ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_3017, ITEM_IDS.CAT_3075],
-      lastQuotedItems: state.lastQuotedItems,
-      lastQuote: state.lastQuote,
-      lastMulcherComboChoice: state.lastMulcherComboChoice
-    };
+    return { text: "Which CAT machine are you referring to — CAT 265 skid steer, CAT HM316 mulcher, CAT 301.7 excavator, or CAT 307.5 excavator?", lastId: null, lastCategory: "cat_disambiguation", lastCategoryItems: [ITEM_IDS.CAT_265, ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_3017, ITEM_IDS.CAT_3075], lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace };
   }
 
-  if (isDeliveryQuestion(message) && !isPriceQuestion(message) && !wantsDeliveryAddedToTotal(message)) {
+  if (isDeliveryQuestion(message) && !isPriceQuestion(message) && !wantsDeliveryTotal) {
     if (isDeliveryPriceQuestion(message)) {
       if (delivery) {
-        return { text: `Delivery for ${delivery.placeLabel} is ${money(delivery.fee)}.`,
-          lastId: state.lastId,
-          lastCategory: null,
-          lastCategoryItems: [],
-          lastQuotedItems: state.lastQuotedItems,
-          lastQuote: state.lastQuote,
-          lastMulcherComboChoice: state.lastMulcherComboChoice,
-          lastDeliveryFee: delivery.fee,
-          lastDeliveryPlace: delivery.placeLabel };
+        return { text: `Delivery for ${delivery.placeLabel} is ${money(delivery.fee)}.`, lastId: state.lastId, lastCategory: null, lastCategoryItems: [], lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: delivery.fee, lastDeliveryPlace: delivery.placeLabel };
       }
-      return {
-        text: "What city or area are you in? Delivery pricing depends on location.",
-        lastId: item ? id : state.lastId,
-        lastCategory: "delivery_followup",
-        lastCategoryItems: [],
-        lastQuotedItems: item ? [id] : state.lastQuotedItems,
-        lastQuote: state.lastQuote,
-        lastMulcherComboChoice: state.lastMulcherComboChoice
-      };
+      return { text: "What city or area are you in? Delivery pricing depends on location.", lastId: item ? id : state.lastId, lastCategory: "delivery_followup", lastCategoryItems: [], lastQuotedItems: item ? [id] : state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace };
     }
     if (delivery) {
-      return { text: `Yes, we can deliver there. Delivery for ${delivery.placeLabel} is ${money(delivery.fee)}.`, lastId: state.lastId, lastCategory: state.lastCategory, lastCategoryItems: state.lastCategoryItems, lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice };
+      return { text: `Yes, we can deliver there. Delivery for ${delivery.placeLabel} is ${money(delivery.fee)}.`, lastId: state.lastId, lastCategory: null, lastCategoryItems: [], lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: delivery.fee, lastDeliveryPlace: delivery.placeLabel };
     }
-    return {
-      text: `We deliver within about a ${DELIVERY_RADIUS_MILES}-mile radius. What city or area are you in? Delivery pricing depends on location.`,
-      lastId: item ? id : state.lastId,
-      lastCategory: "delivery_followup",
-      lastCategoryItems: [],
-      lastQuotedItems: item ? [id] : state.lastQuotedItems,
-      lastQuote: state.lastQuote,
-      lastMulcherComboChoice: state.lastMulcherComboChoice
-    };
+    return { text: `We deliver within about a ${DELIVERY_RADIUS_MILES}-mile radius. What city or area are you in? Delivery pricing depends on location.`, lastId: item ? id : state.lastId, lastCategory: "delivery_followup", lastCategoryItems: [], lastQuotedItems: item ? [id] : state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace };
   }
 
   if (isTrailerQuestion(message)) {
     const requestedDays = parseDays(message) || state.lastQuote?.days || 1;
-
-    if (state.lastQuote && wantsTrailerAddedToTotal(message)) {
+    if (state.lastQuote && wantsTrailerTotal) {
       const response = applyTrailerToQuote(state.lastQuote, requestedDays);
-      return {
-        text: response.text,
-        lastId: state.lastId,
-        lastCategory: state.lastCategory,
-        lastCategoryItems: state.lastCategoryItems,
-        lastQuotedItems: state.lastQuotedItems,
-        lastQuote: response.quote,
-        lastMulcherComboChoice: state.lastMulcherComboChoice
-      };
+      return { text: response.text, lastId: state.lastId, lastCategory: state.lastCategory, lastCategoryItems: state.lastCategoryItems, lastQuotedItems: state.lastQuotedItems, lastQuote: response.quote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace };
     }
-
     if (isTrailerIncludedQuestion(message)) {
-      return {
-        text: `No, the trailer does not come with it automatically. ${trailerPolicyText(requestedDays)}`,
-        lastId: state.lastId,
-        lastCategory: state.lastCategory,
-        lastCategoryItems: state.lastCategoryItems,
-        lastQuotedItems: state.lastQuotedItems,
-        lastQuote: state.lastQuote,
-        lastMulcherComboChoice: state.lastMulcherComboChoice
-      };
+      return { text: `No, the trailer does not come with it automatically. ${trailerPolicyText(requestedDays)}`, lastId: state.lastId, lastCategory: state.lastCategory, lastCategoryItems: state.lastCategoryItems, lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace };
     }
-
     if (containsAny(text, ["weight requirements", "what trailer do i need", "what size trailer", "how heavy is it"])) {
-      return {
-        text: trailerWeightText(state),
-        lastId: state.lastId,
-        lastCategory: state.lastCategory,
-        lastCategoryItems: state.lastCategoryItems,
-        lastQuotedItems: state.lastQuotedItems,
-        lastQuote: state.lastQuote,
-        lastMulcherComboChoice: state.lastMulcherComboChoice
-      };
+      return { text: trailerWeightText(state), lastId: state.lastId, lastCategory: state.lastCategory, lastCategoryItems: state.lastCategoryItems, lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace };
     }
-
-    return {
-      text: trailerPolicyText(requestedDays),
-      lastId: state.lastId,
-      lastCategory: state.lastCategory,
-      lastCategoryItems: state.lastCategoryItems,
-      lastQuotedItems: state.lastQuotedItems,
-      lastQuote: state.lastQuote,
-      lastMulcherComboChoice: state.lastMulcherComboChoice
-    };
+    return { text: trailerPolicyText(requestedDays), lastId: state.lastId, lastCategory: state.lastCategory, lastCategoryItems: state.lastCategoryItems, lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace };
   }
 
   if (matchedIds.length >= 2 && isPriceQuestion(message)) {
-    const quote = buildBundleQuote(matchedIds, days, wantsDeliveryTotal ? effectiveDeliveryFee : 0);
-    return clearCategoryFields({ text: quote.text, lastId: matchedIds[0], lastQuotedItems: matchedIds, lastQuote: quote, lastMulcherComboChoice: state.lastMulcherComboChoice });
+    let quote = buildBundleQuote(matchedIds, days, wantsDeliveryTotal ? effectiveDeliveryFee : 0);
+    if (wantsTrailerTotal) quote = applyTrailerToQuote(quote, days).quote;
+    return clearCategoryFields({ text: quote.text, lastId: matchedIds[0], lastQuotedItems: matchedIds, lastQuote: quote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: effectiveDeliveryFee, lastDeliveryPlace: delivery?.placeLabel || state.lastDeliveryPlace });
   }
 
   if (state.lastQuote && !explicitFound && !category && !explicitIntentOverride && !comboChoice && (isPriceQuestion(message) || parseDays(message) !== null || text === "a week" || text === "week")) {
@@ -1182,120 +863,92 @@ function reply(message, state) {
     const requestedDeliveryFee = deliveryFee || state.lastQuote.deliveryFee || state.lastDeliveryFee || 0;
     if (state.lastQuote.itemIds?.length >= 2) {
       let quote = buildBundleQuote(state.lastQuote.itemIds, requestedDays, wantsDeliveryTotal ? requestedDeliveryFee : 0);
-      if (wantsTrailerAddedToTotal(message)) {
-        quote = applyTrailerToQuote(quote, requestedDays).quote;
-      }
-      return clearCategoryFields({ text: quote.text, lastId: state.lastId, lastQuotedItems: state.lastQuote.itemIds, lastQuote: quote, lastMulcherComboChoice: state.lastMulcherComboChoice });
+      if (wantsTrailerTotal) quote = applyTrailerToQuote(quote, requestedDays).quote;
+      return clearCategoryFields({ text: quote.text, lastId: state.lastId, lastQuotedItems: state.lastQuote.itemIds, lastQuote: quote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: requestedDeliveryFee || state.lastDeliveryFee, lastDeliveryPlace: delivery?.placeLabel || state.lastDeliveryPlace });
     }
     if (state.lastQuote.itemIds?.length === 1) {
       const singleId = state.lastQuote.itemIds[0];
       const singleItem = EQUIPMENT[singleId];
       if (singleItem) {
         if (isMonthlyRequest(message) && singleId === ITEM_IDS.TELEHANDLER) {
-          return clearCategoryFields({ text: `Monthly pricing for ${singleItem.name} is quoted by Dave based on current market conditions. Please call or text Dave at ${DAVE_PHONE}.`, lastId: singleId, lastQuotedItems: [singleId], lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice });
+          return clearCategoryFields({ text: `Monthly pricing for ${singleItem.name} is quoted by Dave based on current market conditions. Please call or text Dave at ${DAVE_PHONE}.`, lastId: singleId, lastQuotedItems: [singleId], lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace });
         }
         let quote = multiDayQuote(singleItem, singleId, requestedDays, wantsDeliveryTotal ? requestedDeliveryFee : 0);
-        if (wantsTrailerAddedToTotal(message)) {
-          quote = applyTrailerToQuote(quote, requestedDays).quote;
-        }
-        return clearCategoryFields({ text: quote.text, lastId: singleId, lastQuotedItems: [singleId], lastQuote: quote, lastMulcherComboChoice: state.lastMulcherComboChoice });
+        if (wantsTrailerTotal) quote = applyTrailerToQuote(quote, requestedDays).quote;
+        return clearCategoryFields({ text: quote.text, lastId: singleId, lastQuotedItems: [singleId], lastQuote: quote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: requestedDeliveryFee || state.lastDeliveryFee, lastDeliveryPlace: delivery?.placeLabel || state.lastDeliveryPlace });
       }
     }
   }
 
   if (category === "scissor_lift" && !explicitFound) {
-    return {
-      text: `We have two slab scissor lifts available:\n\n• Genie GS1930 – ${money(EQUIPMENT[ITEM_IDS.GS1930].day)}/day, ${money(EQUIPMENT[ITEM_IDS.GS1930].week)}/week, ${money(EQUIPMENT[ITEM_IDS.GS1930].month)}/month\n• Genie GS3246 – ${money(EQUIPMENT[ITEM_IDS.GS3246].day)}/day, ${money(EQUIPMENT[ITEM_IDS.GS3246].week)}/week, ${money(EQUIPMENT[ITEM_IDS.GS3246].month)}/month\n\nThese are slab scissor lifts, not rough-terrain scissor lifts. Rough-terrain scissor lifts must be special ordered.`,
-      lastId: null,
-      lastCategory: "scissor_lift",
-      lastCategoryItems: CATEGORY_ITEMS.scissor_lift,
-      lastQuotedItems: state.lastQuotedItems,
-      lastQuote: state.lastQuote,
-      lastMulcherComboChoice: state.lastMulcherComboChoice
-    };
+    return { text: `We have two slab scissor lifts available:\n\n• Genie GS1930 – ${money(EQUIPMENT[ITEM_IDS.GS1930].day)}/day, ${money(EQUIPMENT[ITEM_IDS.GS1930].week)}/week, ${money(EQUIPMENT[ITEM_IDS.GS1930].month)}/month\n• Genie GS3246 – ${money(EQUIPMENT[ITEM_IDS.GS3246].day)}/day, ${money(EQUIPMENT[ITEM_IDS.GS3246].week)}/week, ${money(EQUIPMENT[ITEM_IDS.GS3246].month)}/month\n\nThese are slab scissor lifts, not rough-terrain scissor lifts. Rough-terrain scissor lifts must be special ordered.`, lastId: null, lastCategory: "scissor_lift", lastCategoryItems: CATEGORY_ITEMS.scissor_lift, lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace };
   }
 
   if (category === "boom_lift" && !explicitFound) {
-    return {
-      text: `We have a Genie Z45 Articulating Boom Lift (${money(EQUIPMENT[ITEM_IDS.GENIE_Z45].day)}/day) and a JLG ET500J Towable 50' Boom Lift. For current ET500J pricing, please check the website at ${WEBSITE}. If you need a larger, taller, or specialty boom lift, we can arrange one. Please schedule online at ${WEBSITE} or call/text Dave at ${DAVE_PHONE}.`,
-      lastId: null,
-      lastCategory: "boom_lift",
-      lastCategoryItems: CATEGORY_ITEMS.boom_lift,
-      lastQuotedItems: state.lastQuotedItems,
-      lastQuote: state.lastQuote,
-      lastMulcherComboChoice: state.lastMulcherComboChoice
-    };
+    return { text: `We have a Genie Z45 Articulating Boom Lift (${money(EQUIPMENT[ITEM_IDS.GENIE_Z45].day)}/day) and a JLG ET500J Towable 50' Boom Lift. For current ET500J pricing, please check the website at ${WEBSITE}. If you need a larger, taller, or specialty boom lift, we can arrange one. Please schedule online at ${WEBSITE} or call/text Dave at ${DAVE_PHONE}.`, lastId: null, lastCategory: "boom_lift", lastCategoryItems: CATEGORY_ITEMS.boom_lift, lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace };
   }
 
   if (category === "excavator" && !explicitFound) {
-    return { text: `We have ${formatCategoryQuote(CATEGORY_ITEMS.excavator)}.`, lastId: null, lastCategory: "excavator", lastCategoryItems: CATEGORY_ITEMS.excavator, lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice };
+    return { text: `We have ${formatCategoryQuote(CATEGORY_ITEMS.excavator)}.`, lastId: null, lastCategory: "excavator", lastCategoryItems: CATEGORY_ITEMS.excavator, lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace };
   }
 
   if (category === "skid_steer" && !explicitFound) {
-    return { text: `We have ${formatCategoryQuote(CATEGORY_ITEMS.skid_steer)}.`, lastId: null, lastCategory: "skid_steer", lastCategoryItems: CATEGORY_ITEMS.skid_steer, lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice };
+    return { text: `We have ${formatCategoryQuote(CATEGORY_ITEMS.skid_steer)}.`, lastId: null, lastCategory: "skid_steer", lastCategoryItems: CATEGORY_ITEMS.skid_steer, lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace };
   }
 
   if (category === "telehandler" && !explicitFound) {
-    return { text: `We have a JLG 6K Telehandler for ${money(EQUIPMENT[ITEM_IDS.TELEHANDLER].day)}/day and ${money(EQUIPMENT[ITEM_IDS.TELEHANDLER].week)}/week. Monthly pricing is quoted by Dave based on current market conditions.`, lastId: ITEM_IDS.TELEHANDLER, lastCategory: null, lastCategoryItems: [], lastQuotedItems: [ITEM_IDS.TELEHANDLER], lastQuote: buildBundleQuote([ITEM_IDS.TELEHANDLER], 1, 0), lastMulcherComboChoice: state.lastMulcherComboChoice };
+    return { text: `We have a JLG 6K Telehandler for ${money(EQUIPMENT[ITEM_IDS.TELEHANDLER].day)}/day and ${money(EQUIPMENT[ITEM_IDS.TELEHANDLER].week)}/week. Monthly pricing is quoted by Dave based on current market conditions.`, lastId: ITEM_IDS.TELEHANDLER, lastCategory: null, lastCategoryItems: [], lastQuotedItems: [ITEM_IDS.TELEHANDLER], lastQuote: buildBundleQuote([ITEM_IDS.TELEHANDLER], 1, 0), lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace };
   }
 
   if (category === "forklift" && !explicitFound) {
-    return { text: "Yes—we have a standard forklift, a rough-terrain forklift, and a telehandler. Are you looking for a warehouse-style forklift, rough-ground forklift, or a lull?", lastId: null, lastCategory: "forklift", lastCategoryItems: [ITEM_IDS.FORKLIFT, ITEM_IDS.LIFT_KING, ITEM_IDS.TELEHANDLER], lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice };
+    return { text: "Yes—we have a standard forklift, a rough-terrain forklift, and a telehandler. Are you looking for a warehouse-style forklift, rough-ground forklift, or a lull?", lastId: null, lastCategory: "forklift", lastCategoryItems: [ITEM_IDS.FORKLIFT, ITEM_IDS.LIFT_KING, ITEM_IDS.TELEHANDLER], lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace };
   }
 
   if (category === "pressure_washer" && !explicitFound) {
-    return { text: `Yes, we have a pressure washer for ${money(EQUIPMENT[ITEM_IDS.PRESSURE_WASHER].day)} a day. We also have a surface cleaner for ${money(EQUIPMENT[ITEM_IDS.SURFACE_CLEANER].day)} a day for flatwork.`, lastId: ITEM_IDS.PRESSURE_WASHER, lastCategory: null, lastCategoryItems: [], lastQuotedItems: [ITEM_IDS.PRESSURE_WASHER], lastQuote: buildBundleQuote([ITEM_IDS.PRESSURE_WASHER], 1, 0), lastMulcherComboChoice: state.lastMulcherComboChoice };
+    return { text: `Yes, we have a pressure washer for ${money(EQUIPMENT[ITEM_IDS.PRESSURE_WASHER].day)} a day. We also have a surface cleaner for ${money(EQUIPMENT[ITEM_IDS.SURFACE_CLEANER].day)} a day for flatwork.`, lastId: ITEM_IDS.PRESSURE_WASHER, lastCategory: null, lastCategoryItems: [], lastQuotedItems: [ITEM_IDS.PRESSURE_WASHER], lastQuote: buildBundleQuote([ITEM_IDS.PRESSURE_WASHER], 1, 0), lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace };
   }
 
   if ((category === "boom_lift" || state.lastCategory === "boom_lift" || item?.category === "boom_lift") && arrangedBoomLiftIntent(message)) {
-    return { text: `We can arrange larger or specialty boom lifts if needed. Specialty equipment is handled separately, so please schedule online at ${WEBSITE} or call/text Dave at ${DAVE_PHONE}.`, lastId: state.lastId, lastCategory: "boom_lift", lastCategoryItems: CATEGORY_ITEMS.boom_lift, lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice };
+    return { text: `We can arrange larger or specialty boom lifts if needed. Specialty equipment is handled separately, so please schedule online at ${WEBSITE} or call/text Dave at ${DAVE_PHONE}.`, lastId: state.lastId, lastCategory: "boom_lift", lastCategoryItems: CATEGORY_ITEMS.boom_lift, lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace };
   }
 
   if (bookingIntent(message) && !item && state.lastCategoryItems?.length > 1) {
-    return { text: categoryDisambiguationText(state.lastCategoryItems, "want to schedule"), lastId: state.lastId, lastCategory: state.lastCategory, lastCategoryItems: state.lastCategoryItems, lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice };
+    return { text: categoryDisambiguationText(state.lastCategoryItems, "want to schedule"), lastId: state.lastId, lastCategory: state.lastCategory, lastCategoryItems: state.lastCategoryItems, lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace };
   }
 
   if (item) {
-    if (bookingIntent(message)) {
-      return clearCategoryFields({ text: schedulingText(item), lastId: id, lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice });
-    }
+    if (bookingIntent(message)) return clearCategoryFields({ text: schedulingText(item), lastId: id, lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace });
     if (isMonthlyRequest(message) && id === ITEM_IDS.TELEHANDLER) {
-      return clearCategoryFields({ text: `Monthly pricing for ${item.name} is quoted by Dave based on current market conditions. Please call or text Dave at ${DAVE_PHONE}.`, lastId: id, lastQuotedItems: [id], lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice });
+      return clearCategoryFields({ text: `Monthly pricing for ${item.name} is quoted by Dave based on current market conditions. Please call or text Dave at ${DAVE_PHONE}.`, lastId: id, lastQuotedItems: [id], lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace });
     }
     if (isWeightQuestion(message)) {
-      if (item.weight) {
-        return clearCategoryFields({ text: `${item.name} weighs ${item.weight.toLocaleString()} lb.`, lastId: id, lastQuotedItems: [id], lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice });
-      }
-      return clearCategoryFields({ text: item.details || singleQuote(item, id), lastId: id, lastQuotedItems: [id], lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice });
+      if (item.weight) return clearCategoryFields({ text: `${item.name} weighs ${item.weight.toLocaleString()} lb.`, lastId: id, lastQuotedItems: [id], lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace });
+      return clearCategoryFields({ text: item.details || singleQuote(item, id), lastId: id, lastQuotedItems: [id], lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace });
     }
     if (isThumbQuestion(message)) {
-      return clearCategoryFields({ text: item.thumb || `I don’t have a thumb listed on the ${item.name}. ${item.details || ""}`.trim(), lastId: id, lastQuotedItems: [id], lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice });
+      return clearCategoryFields({ text: item.thumb || `I don’t have a thumb listed on the ${item.name}. ${item.details || ""}`.trim(), lastId: id, lastQuotedItems: [id], lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace });
     }
     if (isBucketOrCabQuestion(message)) {
-      return clearCategoryFields({ text: item.details || singleQuote(item, id), lastId: id, lastQuotedItems: [id], lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice });
+      return clearCategoryFields({ text: item.details || singleQuote(item, id), lastId: id, lastQuotedItems: [id], lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace });
     }
     if (isPriceQuestion(message)) {
       if (days > 1) {
         let quote = multiDayQuote(item, id, days, wantsDeliveryTotal ? effectiveDeliveryFee : 0);
-        if (wantsTrailerAddedToTotal(message)) {
-          quote = applyTrailerToQuote(quote, days).quote;
-        }
-        return clearCategoryFields({ text: quote.text, lastId: id, lastQuotedItems: [id], lastQuote: quote, lastMulcherComboChoice: state.lastMulcherComboChoice });
+        if (wantsTrailerTotal) quote = applyTrailerToQuote(quote, days).quote;
+        return clearCategoryFields({ text: quote.text, lastId: id, lastQuotedItems: [id], lastQuote: quote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: effectiveDeliveryFee, lastDeliveryPlace: delivery?.placeLabel || state.lastDeliveryPlace });
       }
       let quote = buildBundleQuote([id], 1, wantsDeliveryTotal ? effectiveDeliveryFee : 0);
-      if (wantsTrailerAddedToTotal(message)) {
-        quote = applyTrailerToQuote(quote, 1).quote;
-      }
-      return clearCategoryFields({ text: quote.text, lastId: id, lastQuotedItems: [id], lastQuote: quote, lastMulcherComboChoice: state.lastMulcherComboChoice });
+      if (wantsTrailerTotal) quote = applyTrailerToQuote(quote, 1).quote;
+      return clearCategoryFields({ text: quote.text, lastId: id, lastQuotedItems: [id], lastQuote: quote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: effectiveDeliveryFee, lastDeliveryPlace: delivery?.placeLabel || state.lastDeliveryPlace });
     }
-    return clearCategoryFields({ text: singleQuote(item, id), lastId: id, lastQuotedItems: [id], lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice });
+    return clearCategoryFields({ text: singleQuote(item, id), lastId: id, lastQuotedItems: [id], lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace });
   }
 
   if (!explicitFound && state.lastCategoryItems?.length > 1 && !explicitIntentOverride && !comboChoice && isReferentialFollowup(message)) {
-    return { text: categoryDisambiguationText(state.lastCategoryItems, bookingIntent(message) ? "want to schedule" : "mean"), lastId: state.lastId, lastCategory: state.lastCategory, lastCategoryItems: state.lastCategoryItems, lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice };
+    return { text: categoryDisambiguationText(state.lastCategoryItems, bookingIntent(message) ? "want to schedule" : "mean"), lastId: state.lastId, lastCategory: state.lastCategory, lastCategoryItems: state.lastCategoryItems, lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace };
   }
 
-  return { text: unknownItemFallback(), lastId: state.lastId, lastCategory: state.lastCategory, lastCategoryItems: state.lastCategoryItems, lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice };
+  return { text: unknownItemFallback(), lastId: state.lastId, lastCategory: state.lastCategory, lastCategoryItems: state.lastCategoryItems, lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace };
 }
 
 function splitMessage(text, maxLen = 1800) {
@@ -1322,11 +975,7 @@ async function sendMessengerText(recipientId, text) {
         "Content-Type": "application/json",
         Authorization: `Bearer ${PAGE_ACCESS_TOKEN}`
       },
-      body: JSON.stringify({
-        recipient: { id: recipientId },
-        messaging_type: "RESPONSE",
-        message: { text: chunk }
-      })
+      body: JSON.stringify({ recipient: { id: recipientId }, messaging_type: "RESPONSE", message: { text: chunk } })
     });
     const bodyText = await response.text();
     if (!response.ok) throw new Error(`Facebook send failed: ${response.status} ${bodyText}`);
