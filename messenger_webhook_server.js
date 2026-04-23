@@ -1081,6 +1081,59 @@ function isReferentialFollowup(text) {
   ]);
 }
 
+function isCatComboIntent(text) {
+  const t = normalize(text);
+  return (
+    t === "cat" ||
+    t === "the cat" ||
+    containsAny(t, [
+      "cat combo",
+      "caterpillar combo",
+      "the cat combo",
+      "cat mulcher combo",
+      "tell me about the cat",
+      "tell me about the cat combo",
+      "what about the cat",
+      "what about cat",
+      "how much for the cat combo",
+      "how much for cat combo",
+      "cat hm316 and cat 265",
+      "hm316 and 265"
+    ])
+  );
+}
+
+function isJdComboIntent(text) {
+  const t = normalize(text);
+  return (
+    t === "jd" ||
+    t === "the jd" ||
+    t === "john deere" ||
+    t === "the john deere" ||
+    containsAny(t, [
+      "jd combo",
+      "the jd combo",
+      "john deere combo",
+      "the john deere combo",
+      "john deere mulcher combo",
+      "jd mulcher combo",
+      "tell me about the jd",
+      "tell me about jd",
+      "tell me about the john deere",
+      "tell me about the john deere combo",
+      "what about the jd",
+      "what about jd",
+      "what about the john deere",
+      "how much for the john deere combo",
+      "how much for john deere combo",
+      "how much for the john deere mulcher combo",
+      "how much for the jd combo",
+      "mh60d and 333p",
+      "john deere mh60d and john deere 333p"
+    ])
+  );
+}
+
 function scoreAliasMatch(text, alias) {
   const nText = normalize(text);
   const cText = compact(text);
@@ -1323,43 +1376,40 @@ function clearCategoryFields(patch = {}) {
 function hasExplicitIntentOverride(text) {
   const t = normalize(text);
 
-  return containsAny(t, [
-    "cat",
-    "the cat",
-    "cat combo",
-    "caterpillar",
-    "cat 265",
-    "hm316",
-    "cat mulcher",
-    "john deere",
-    "the john deere",
-    "jd",
-    "jd combo",
-    "333p",
-    "mh60d",
-    "jd mulcher",
-    "john deere mulcher",
-    "boxer",
-    "cat 239",
-    "telehandler",
-    "lull",
-    "forklift",
-    "boom lift",
-    "man lift",
-    "scissor lift",
-    "excavator",
-    "mini excavator",
-    "stump grinder",
-    "drain snake",
-    "electric eel",
-    "pressure washer",
-    "surface cleaner",
-    "auger",
-    "breaker",
-    "grapple",
-    "brushcat",
-    "power rake"
-  ]);
+  return (
+    isCatComboIntent(t) ||
+    isJdComboIntent(t) ||
+    containsAny(t, [
+      "cat 265",
+      "hm316",
+      "cat mulcher",
+      "john deere 333p",
+      "333p",
+      "mh60d",
+      "jd mulcher",
+      "john deere mulcher",
+      "boxer",
+      "cat 239",
+      "telehandler",
+      "lull",
+      "forklift",
+      "boom lift",
+      "man lift",
+      "scissor lift",
+      "excavator",
+      "mini excavator",
+      "stump grinder",
+      "drain snake",
+      "electric eel",
+      "pressure washer",
+      "surface cleaner",
+      "auger",
+      "breaker",
+      "grapple",
+      "brushcat",
+      "power rake"
+    ])
+  );
 }
 
 function reply(message, state) {
@@ -1434,11 +1484,7 @@ function reply(message, state) {
   }
 
   if (state.lastCategory === "mulcher_combo") {
-    if (
-      text === "cat" ||
-      text.includes("the cat") ||
-      containsAny(text, ["cat combo", "caterpillar", "cat 265", "hm316", "cat mulcher"])
-    ) {
+    if (isCatComboIntent(text)) {
       const quote = buildBundleQuote([ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_265], days, deliveryFee);
       return clearCategoryFields({
         text: quote.text,
@@ -1448,12 +1494,7 @@ function reply(message, state) {
       });
     }
 
-    if (
-      text === "john deere" ||
-      text === "jd" ||
-      text.includes("the john deere") ||
-      containsAny(text, ["jd combo", "333p", "mh60d", "jd mulcher", "john deere mulcher"])
-    ) {
+    if (isJdComboIntent(text)) {
       const quote = buildBundleQuote([ITEM_IDS.JD_MULCHER, ITEM_IDS.JD_333P], days, deliveryFee);
       return clearCategoryFields({
         text: quote.text,
@@ -1482,6 +1523,55 @@ function reply(message, state) {
       lastQuotedItems: state.lastQuotedItems,
       lastQuote: state.lastQuote
     };
+  }
+
+  // Strong combo-intent layer after mulcher flow has cleared.
+  if (isCatComboIntent(message)) {
+    const quote = buildBundleQuote([ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_265], days, deliveryFee);
+
+    if (containsAny(text, ["tell me about", "what about"])) {
+      return clearCategoryFields({
+        text:
+          `CAT HM316 Forestry Mulcher + CAT 265:\n` +
+          `CAT HM316 Forestry Mulcher: ${money(EQUIPMENT[ITEM_IDS.CAT_MULCHER].day)}/day\n` +
+          `CAT 265: ${money(EQUIPMENT[ITEM_IDS.CAT_265].day)}/day\n` +
+          `The CAT mulcher can be rented by itself or paired with the CAT 265 only. The Boxer and CAT 239 cannot be used with either mulcher. The CAT HM316 is usually better for longer rentals since the carbide teeth don’t need sharpening.`,
+        lastId: ITEM_IDS.CAT_265,
+        lastQuotedItems: [ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_265],
+        lastQuote: quote
+      });
+    }
+
+    return clearCategoryFields({
+      text: quote.text,
+      lastId: ITEM_IDS.CAT_265,
+      lastQuotedItems: [ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_265],
+      lastQuote: quote
+    });
+  }
+
+  if (isJdComboIntent(message)) {
+    const quote = buildBundleQuote([ITEM_IDS.JD_MULCHER, ITEM_IDS.JD_333P], days, deliveryFee);
+
+    if (containsAny(text, ["tell me about", "what about"])) {
+      return clearCategoryFields({
+        text:
+          `John Deere MH60D Forestry Mulcher + John Deere 333P:\n` +
+          `John Deere MH60D Forestry Mulcher: ${money(EQUIPMENT[ITEM_IDS.JD_MULCHER].day)}/day\n` +
+          `John Deere 333P: ${money(EQUIPMENT[ITEM_IDS.JD_333P].day)}/day\n` +
+          `The John Deere mulcher can be rented by itself or paired with the John Deere 333P only. The Boxer and CAT 239 cannot be used with either mulcher.`,
+        lastId: ITEM_IDS.JD_333P,
+        lastQuotedItems: [ITEM_IDS.JD_MULCHER, ITEM_IDS.JD_333P],
+        lastQuote: quote
+      });
+    }
+
+    return clearCategoryFields({
+      text: quote.text,
+      lastId: ITEM_IDS.JD_333P,
+      lastQuotedItems: [ITEM_IDS.JD_MULCHER, ITEM_IDS.JD_333P],
+      lastQuote: quote
+    });
   }
 
   // CAT disambiguation outside mulcher combo flow.
@@ -1910,64 +2000,4 @@ async function sendMessengerText(recipientId, text) {
 
     const bodyText = await response.text();
     if (!response.ok) {
-      throw new Error(`Facebook send failed: ${response.status} ${bodyText}`);
-    }
-  }
-}
-
-app.get("/", (_req, res) => {
-  res.status(200).send("Messenger webhook is running.");
-});
-
-app.get("/webhook", (req, res) => {
-  const mode = req.query["hub.mode"];
-  const token = req.query["hub.verify_token"];
-  const challenge = req.query["hub.challenge"];
-
-  if (mode === "subscribe" && token === VERIFY_TOKEN) {
-    return res.status(200).send(challenge);
-  }
-
-  return res.sendStatus(403);
-});
-
-app.post("/webhook", async (req, res) => {
-  try {
-    const body = req.body;
-
-    if (body.object !== "page") {
-      return res.sendStatus(404);
-    }
-
-    for (const entry of body.entry || []) {
-      for (const event of entry.messaging || []) {
-        if (!event.sender?.id) continue;
-        const senderId = event.sender.id;
-
-        if (event.message?.text) {
-          const session = getSession(senderId);
-          const result = reply(event.message.text, session);
-
-          updateSession(senderId, {
-            lastId: result.lastId !== undefined ? result.lastId : session.lastId,
-            lastCategory: result.lastCategory !== undefined ? result.lastCategory : session.lastCategory,
-            lastCategoryItems: result.lastCategoryItems !== undefined ? result.lastCategoryItems : session.lastCategoryItems,
-            lastQuotedItems: result.lastQuotedItems !== undefined ? result.lastQuotedItems : session.lastQuotedItems,
-            lastQuote: result.lastQuote !== undefined ? result.lastQuote : session.lastQuote
-          });
-
-          await sendMessengerText(senderId, result.text);
-        }
-      }
-    }
-
-    return res.sendStatus(200);
-  } catch (error) {
-    console.error("Webhook error:", error);
-    return res.sendStatus(500);
-  }
-});
-
-app.listen(PORT, () => {
-  console.log(`Messenger webhook listening on port ${PORT}`);
-});
+      throw new Error(`Facebook send
