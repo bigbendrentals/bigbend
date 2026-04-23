@@ -674,6 +674,49 @@ function trailerWeightText(state) {
   return `Clients can supply their own trailer if it meets the weight requirements for hauling the equipment. If you tell me which machine you mean, I can give you its weight.`;
 }
 
+function wantsTrailerAddedToTotal(text) {
+  const t = normalize(text);
+  return containsAny(t, [
+    "total with the trailer",
+    "total with trailer",
+    "with the trailer",
+    "with trailer",
+    "including a trailer",
+    "including trailer",
+    "include a trailer",
+    "include trailer",
+    "add the trailer",
+    "add trailer",
+    "plus a trailer",
+    "plus trailer",
+    "and a trailer"
+  ]);
+}
+
+function applyTrailerToQuote(baseQuote, days) {
+  const trailerFee = trailerSurcharge(days);
+  const subtotal = baseQuote.subtotal + trailerFee;
+  const tax = subtotal * SALES_TAX;
+  const total = subtotal + tax;
+
+  return {
+    text:
+      `${baseQuote.text}\n` +
+      `Trailer surcharge: ${money(trailerFee)}\n` +
+      `Updated subtotal: ${money(subtotal)}\n` +
+      `Sales tax (7%): ${money(tax)}\n` +
+      `Total with trailer: ${money(total)}`,
+    quote: {
+      ...baseQuote,
+      subtotal,
+      tax,
+      total,
+      trailerFee,
+      days
+    }
+  };
+}
+
 function singleQuote(item, id) {
   const lines = [];
   if (id === ITEM_IDS.JLG_ET500J) {
@@ -912,13 +955,25 @@ function reply(message, state) {
     };
   }
 
-  if (comboChoice) {
-    const variant = isDetailRequest(message) ? "details" : "quote";
-    const response = buildMulcherComboResponse(comboChoice, days, deliveryFee, variant);
-    const comboIds = MULCHER_COMBOS[comboChoice];
-    const representativeId = comboChoice === "cat" ? ITEM_IDS.CAT_265 : ITEM_IDS.JD_333P;
-    return clearCategoryFields({ text: response.text, lastId: representativeId, lastQuotedItems: comboIds, lastQuote: response.quote, lastMulcherComboChoice: comboChoice });
+ if (comboChoice) {
+  const variant = isDetailRequest(message) ? "details" : "quote";
+  let response = buildMulcherComboResponse(comboChoice, days, deliveryFee, variant);
+
+  if (wantsTrailerAddedToTotal(message)) {
+    response = applyTrailerToQuote(response.quote, days);
   }
+
+  const comboIds = MULCHER_COMBOS[comboChoice];
+  const representativeId = comboChoice === "cat" ? ITEM_IDS.CAT_265 : ITEM_IDS.JD_333P;
+
+  return clearCategoryFields({
+    text: response.text,
+    lastId: representativeId,
+    lastQuotedItems: comboIds,
+    lastQuote: response.quote,
+    lastMulcherComboChoice: comboChoice
+  });
+}
 
   if (text === "cat" || text === "the cat") {
     return {
@@ -977,51 +1032,34 @@ function reply(message, state) {
     return { text: `We deliver within about a ${DELIVERY_RADIUS_MILES}-mile radius. What city or area are you in? Delivery pricing depends on location.`, lastId: state.lastId, lastCategory: state.lastCategory, lastCategoryItems: state.lastCategoryItems, lastQuotedItems: state.lastQuotedItems, lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice };
   }
 
-  if (isTrailerQuestion(message)) {
-    const requestedDays = parseDays(message) || state.lastQuote?.days || 1;
-    const trailerFee = trailerSurcharge(requestedDays);
+ if (isTrailerQuestion(message)) {
+  const requestedDays = parseDays(message) || state.lastQuote?.days || 1;
+  const trailerFee = trailerSurcharge(requestedDays);
 
-    if (
-      state.lastQuote &&
-      containsAny(text, [
-        "total with the trailer",
-        "total with trailer",
-        "with the trailer",
-        "with trailer",
-        "add the trailer",
-        "include the trailer",
-        "included the trailer"
-      ])
-    ) {
-      const subtotal = state.lastQuote.subtotal + trailerFee;
-      const tax = subtotal * SALES_TAX;
-      const total = subtotal + tax;
-
-      return {
-        text:
-          `${trailerSurchargeText(requestedDays)}
-
-` +
-          `Updated subtotal: ${money(subtotal)}
-` +
-          `Sales tax (7%): ${money(tax)}
-` +
-          `Total with trailer: ${money(total)}`,
-        lastId: state.lastId,
-        lastCategory: state.lastCategory,
-        lastCategoryItems: state.lastCategoryItems,
-        lastQuotedItems: state.lastQuotedItems,
-        lastQuote: {
-          ...state.lastQuote,
-          subtotal,
-          tax,
-          total,
-          trailerFee,
-          days: requestedDays
-        },
-        lastMulcherComboChoice: state.lastMulcherComboChoice
-      };
-    }
+  if (state.lastQuote && wantsTrailerAddedToTotal(message)) {
+    const subtotal = state.lastQuote.subtotal + trailerFee;
+    const tax = subtotal * SALES_TAX;
+    const total = subtotal + tax;
+      text:
+        `${trailerSurchargeText(requestedDays)}\n\n` +
+        `Updated subtotal: ${money(subtotal)}\n` +
+        `Sales tax (7%): ${money(tax)}\n` +
+        `Total with trailer: ${money(total)}`,
+      lastId: state.lastId,
+      lastCategory: state.lastCategory,
+      lastCategoryItems: state.lastCategoryItems,
+      lastQuotedItems: state.lastQuotedItems,
+      lastQuote: {
+        ...state.lastQuote,
+        subtotal,
+        tax,
+        total,
+        trailerFee,
+        days: requestedDays
+      },
+      lastMulcherComboChoice: state.lastMulcherComboChoice
+    };
+  }
 
     if (isTrailerIncludedQuestion(message)) {
       return {
