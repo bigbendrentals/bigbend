@@ -581,13 +581,30 @@ function isReferentialFollowup(text) {
 
 function deliveryInfo(text) {
   const t = normalize(text);
-  if (t.includes("steinhatchee") || t.includes("dekle") || t.includes("lamont")) {
-    return { fee: 300, msg: "That falls within our 11–75 mile delivery range." };
-  }
+
   if (t.includes("perry")) {
     return { fee: 200, msg: "That falls within our local delivery range." };
   }
+
+  if (t.includes("steinhatchee") || t.includes("dekle") || t.includes("lamont")) {
+    return { fee: 300, msg: "That falls within our 11–75 mile delivery range." };
+  }
+
   return null;
+}
+
+function isDeliveryPriceQuestion(text) {
+  const t = normalize(text);
+  return [
+    "how much is delivery",
+    "how much delivery",
+    "delivery cost",
+    "what is delivery",
+    "what is the delivery",
+    "what does delivery cost",
+    "how much to deliver",
+    "delivery price"
+  ].some((k) => t.includes(k));
 }
 
 function isPriceQuestion(text) {
@@ -1076,6 +1093,25 @@ function reply(message, state) {
 
   if (text.includes("deliver") || text.includes("delivery")) {
     const info = deliveryInfo(message);
+
+    if (isDeliveryPriceQuestion(message)) {
+      if (info) {
+        return {
+          text: `Delivery for that area is ${money(info.fee)}. ${info.msg}`,
+          lastId: id,
+          lastCategory: state.lastCategory,
+          lastCategoryItems: state.lastCategoryItems
+        };
+      }
+
+      return {
+        text: "Delivery pricing depends on where it is going. Tell me the city or area and I can give you the delivery charge.",
+        lastId: id,
+        lastCategory: state.lastCategory,
+        lastCategoryItems: state.lastCategoryItems
+      };
+    }
+
     if (info) {
       return {
         text: `Yes, we can deliver there. ${info.msg}`,
@@ -1084,6 +1120,7 @@ function reply(message, state) {
         lastCategoryItems: state.lastCategoryItems
       };
     }
+
     return {
       text: "Yes, we deliver within 75 miles.",
       lastId: id,
