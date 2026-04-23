@@ -1320,12 +1320,55 @@ function clearCategoryFields(patch = {}) {
   };
 }
 
+function hasExplicitIntentOverride(text) {
+  const t = normalize(text);
+
+  return containsAny(t, [
+    "cat",
+    "the cat",
+    "cat combo",
+    "caterpillar",
+    "cat 265",
+    "hm316",
+    "cat mulcher",
+    "john deere",
+    "the john deere",
+    "jd",
+    "jd combo",
+    "333p",
+    "mh60d",
+    "jd mulcher",
+    "john deere mulcher",
+    "boxer",
+    "cat 239",
+    "telehandler",
+    "lull",
+    "forklift",
+    "boom lift",
+    "man lift",
+    "scissor lift",
+    "excavator",
+    "mini excavator",
+    "stump grinder",
+    "drain snake",
+    "electric eel",
+    "pressure washer",
+    "surface cleaner",
+    "auger",
+    "breaker",
+    "grapple",
+    "brushcat",
+    "power rake"
+  ]);
+}
+
 function reply(message, state) {
   const text = normalize(message);
   const explicitFound = findEquipment(message);
   const matchedIds = findAllEquipment(message);
   const category = findCategory(message);
-  const useLastId = !explicitFound && isReferentialFollowup(message);
+  const explicitIntentOverride = hasExplicitIntentOverride(message);
+  const useLastId = !explicitFound && !explicitIntentOverride && isReferentialFollowup(message);
   const id = explicitFound ? explicitFound.id : (useLastId ? state.lastId : null);
   const item = id ? EQUIPMENT[id] : null;
   const days = parseDays(message) || 1;
@@ -1391,7 +1434,11 @@ function reply(message, state) {
   }
 
   if (state.lastCategory === "mulcher_combo") {
-    if (containsAny(text, ["cat", "cat 265", "hm316", "cat mulcher"])) {
+    if (
+      text === "cat" ||
+      text.includes("the cat") ||
+      containsAny(text, ["cat combo", "caterpillar", "cat 265", "hm316", "cat mulcher"])
+    ) {
       const quote = buildBundleQuote([ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_265], days, deliveryFee);
       return clearCategoryFields({
         text: quote.text,
@@ -1401,7 +1448,12 @@ function reply(message, state) {
       });
     }
 
-    if (containsAny(text, ["john deere", "jd", "333p", "mh60d", "jd mulcher"])) {
+    if (
+      text === "john deere" ||
+      text === "jd" ||
+      text.includes("the john deere") ||
+      containsAny(text, ["jd combo", "333p", "mh60d", "jd mulcher", "john deere mulcher"])
+    ) {
       const quote = buildBundleQuote([ITEM_IDS.JD_MULCHER, ITEM_IDS.JD_333P], days, deliveryFee);
       return clearCategoryFields({
         text: quote.text,
@@ -1411,11 +1463,89 @@ function reply(message, state) {
       });
     }
 
+    if (text === "both") {
+      return {
+        text: "Which combo do you need — CAT HM316 + CAT 265 or John Deere MH60D + John Deere 333P? The Boxer and CAT 239 cannot be used with either mulcher.",
+        lastId: null,
+        lastCategory: "mulcher_combo",
+        lastCategoryItems: [ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_265, ITEM_IDS.JD_MULCHER, ITEM_IDS.JD_333P],
+        lastQuotedItems: state.lastQuotedItems,
+        lastQuote: state.lastQuote
+      };
+    }
+
     return {
       text: "Which combo do you need — CAT HM316 + CAT 265 or John Deere MH60D + John Deere 333P? The Boxer and CAT 239 cannot be used with either mulcher.",
       lastId: null,
       lastCategory: "mulcher_combo",
       lastCategoryItems: [ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_265, ITEM_IDS.JD_MULCHER, ITEM_IDS.JD_333P],
+      lastQuotedItems: state.lastQuotedItems,
+      lastQuote: state.lastQuote
+    };
+  }
+
+  // CAT disambiguation outside mulcher combo flow.
+  if (text === "cat" || text === "the cat") {
+    return {
+      text: "Which CAT machine are you referring to — CAT 265 skid steer, CAT HM316 mulcher, CAT 301.7 excavator, or CAT 307.5 excavator?",
+      lastId: null,
+      lastCategory: "cat_disambiguation",
+      lastCategoryItems: [ITEM_IDS.CAT_265, ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_3017, ITEM_IDS.CAT_3075],
+      lastQuotedItems: state.lastQuotedItems,
+      lastQuote: state.lastQuote
+    };
+  }
+
+  if (state.lastCategory === "cat_disambiguation") {
+    if (containsAny(text, ["265", "cat 265", "skid steer"])) {
+      const selected = ITEM_IDS.CAT_265;
+      const quote = buildBundleQuote([selected], 1, 0);
+      return clearCategoryFields({
+        text: singleQuote(EQUIPMENT[selected], selected),
+        lastId: selected,
+        lastQuotedItems: [selected],
+        lastQuote: quote
+      });
+    }
+
+    if (containsAny(text, ["hm316", "mulcher", "cat mulcher"])) {
+      const selected = ITEM_IDS.CAT_MULCHER;
+      const quote = buildBundleQuote([selected], 1, 0);
+      return clearCategoryFields({
+        text: singleQuote(EQUIPMENT[selected], selected),
+        lastId: selected,
+        lastQuotedItems: [selected],
+        lastQuote: quote
+      });
+    }
+
+    if (containsAny(text, ["301.7", "3017", "cat 301", "small excavator"])) {
+      const selected = ITEM_IDS.CAT_3017;
+      const quote = buildBundleQuote([selected], 1, 0);
+      return clearCategoryFields({
+        text: singleQuote(EQUIPMENT[selected], selected),
+        lastId: selected,
+        lastQuotedItems: [selected],
+        lastQuote: quote
+      });
+    }
+
+    if (containsAny(text, ["307.5", "3075", "cat 307", "bigger excavator"])) {
+      const selected = ITEM_IDS.CAT_3075;
+      const quote = buildBundleQuote([selected], 1, 0);
+      return clearCategoryFields({
+        text: singleQuote(EQUIPMENT[selected], selected),
+        lastId: selected,
+        lastQuotedItems: [selected],
+        lastQuote: quote
+      });
+    }
+
+    return {
+      text: "Which CAT machine are you referring to — CAT 265 skid steer, CAT HM316 mulcher, CAT 301.7 excavator, or CAT 307.5 excavator?",
+      lastId: null,
+      lastCategory: "cat_disambiguation",
+      lastCategoryItems: [ITEM_IDS.CAT_265, ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_3017, ITEM_IDS.CAT_3075],
       lastQuotedItems: state.lastQuotedItems,
       lastQuote: state.lastQuote
     };
@@ -1477,11 +1607,12 @@ function reply(message, state) {
     });
   }
 
-  // Follow-up quote stays attached to last quote.
+  // Follow-up quote stays attached to last quote only if no explicit override.
   if (
     state.lastQuote &&
     !explicitFound &&
     !category &&
+    !explicitIntentOverride &&
     (isPriceQuestion(message) || parseDays(message) !== null || text === "a week" || text === "week")
   ) {
     const requestedDays = parseDays(message) || state.lastQuote.days || 1;
@@ -1715,7 +1846,7 @@ function reply(message, state) {
   }
 
   // Referential follow-up after category listing.
-  if (!explicitFound && state.lastCategoryItems?.length > 1 && isReferentialFollowup(message)) {
+  if (!explicitFound && state.lastCategoryItems?.length > 1 && !explicitIntentOverride && isReferentialFollowup(message)) {
     return {
       text: categoryDisambiguationText(
         state.lastCategoryItems,
