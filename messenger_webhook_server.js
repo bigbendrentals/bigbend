@@ -979,6 +979,50 @@ function reply(message, state) {
 
   if (isTrailerQuestion(message)) {
     const requestedDays = parseDays(message) || state.lastQuote?.days || 1;
+    const trailerFee = trailerSurcharge(requestedDays);
+
+    if (
+      state.lastQuote &&
+      containsAny(text, [
+        "total with the trailer",
+        "total with trailer",
+        "with the trailer",
+        "with trailer",
+        "add the trailer",
+        "include the trailer",
+        "included the trailer"
+      ])
+    ) {
+      const subtotal = state.lastQuote.subtotal + trailerFee;
+      const tax = subtotal * SALES_TAX;
+      const total = subtotal + tax;
+
+      return {
+        text:
+          `${trailerSurchargeText(requestedDays)}
+
+` +
+          `Updated subtotal: ${money(subtotal)}
+` +
+          `Sales tax (7%): ${money(tax)}
+` +
+          `Total with trailer: ${money(total)}`,
+        lastId: state.lastId,
+        lastCategory: state.lastCategory,
+        lastCategoryItems: state.lastCategoryItems,
+        lastQuotedItems: state.lastQuotedItems,
+        lastQuote: {
+          ...state.lastQuote,
+          subtotal,
+          tax,
+          total,
+          trailerFee,
+          days: requestedDays
+        },
+        lastMulcherComboChoice: state.lastMulcherComboChoice
+      };
+    }
+
     if (isTrailerIncludedQuestion(message)) {
       return {
         text: `No, the trailer does not come with it automatically. ${trailerPolicyText(requestedDays)}`,
@@ -990,6 +1034,7 @@ function reply(message, state) {
         lastMulcherComboChoice: state.lastMulcherComboChoice
       };
     }
+
     if (containsAny(text, ["weight requirements", "what trailer do i need", "what size trailer", "how heavy is it"])) {
       return {
         text: trailerWeightText(state),
@@ -1001,6 +1046,7 @@ function reply(message, state) {
         lastMulcherComboChoice: state.lastMulcherComboChoice
       };
     }
+
     return {
       text: trailerPolicyText(requestedDays),
       lastId: state.lastId,
