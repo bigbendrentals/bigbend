@@ -816,7 +816,20 @@ function isDeliveryQuestion(text) {
   const t = normalize(text);
   return t.includes("delivery") || t.includes("deliver");
 }
-
+function isTrailerQuestion(text) {
+  const t = normalize(text);
+  return containsAny(t, [
+    "trailer",
+    "trailers",
+    "haul it on",
+    "haul it",
+    "hauling trailer",
+    "equipment trailer",
+    "car hauler",
+    "gooseneck",
+    "dump trailer"
+  ]);
+}
 function isDeliveryPriceQuestion(text) {
   const t = normalize(text);
   return containsAny(t, [
@@ -1330,8 +1343,12 @@ function reply(message, state) {
   const category = findCategory(message);
   const explicitIntentOverride = hasExplicitIntentOverride(message);
   const comboChoice = detectMulcherComboChoice(message, state);
-  const useLastId = !explicitFound && !explicitIntentOverride && !comboChoice && isReferentialFollowup(message);
-  const id = explicitFound ? explicitFound.id : useLastId ? state.lastId : null;
+  const useLastId =
+  !explicitFound &&
+  !explicitIntentOverride &&
+  !comboChoice &&
+  !isTrailerQuestion(message) &&
+  isReferentialFollowup(message);  const id = explicitFound ? explicitFound.id : useLastId ? state.lastId : null;
   const item = id ? EQUIPMENT[id] : null;
   const days = parseDays(message) || 1;
   const delivery = deliveryInfo(message);
@@ -1550,8 +1567,18 @@ function reply(message, state) {
     };
   }
 
-  // Bundle quote from explicit multi-item request.
-  if (matchedIds.length >= 2 && isPriceQuestion(message)) {
+  // Trailer questions should not inherit the last quoted machine.
+  if (isTrailerQuestion(message)) {
+    return {
+      text: `Sometimes my inventory database is incomplete, so you may need to check the website at ${WEBSITE} for that item.`,
+      lastId: state.lastId,
+      lastCategory: state.lastCategory,
+      lastCategoryItems: state.lastCategoryItems,
+      lastQuotedItems: state.lastQuotedItems,
+      lastQuote: state.lastQuote,
+      lastMulcherComboChoice: state.lastMulcherComboChoice
+    };
+  }
     const quote = buildBundleQuote(matchedIds, days, deliveryFee);
     return clearCategoryFields({
       text: quote.text,
