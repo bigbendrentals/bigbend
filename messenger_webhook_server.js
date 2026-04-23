@@ -65,7 +65,7 @@ const EQUIPMENT = {
     day: 330,
     protection: true,
     delivery: true,
-    keyword: "mini skid steer",
+    keyword: "Boxer Mini Skid Steer",
     aliases: ["boxer", "mini skid", "mini skid steer", "ride on skid", "ride-on skid", "ride on skid steer", "ride-on skid steer"],
     details: "Bucket is included."
   },
@@ -266,6 +266,38 @@ const EQUIPMENT = {
     aliases: ["stump grinder", "rayco rg37"]
   },
 
+  "cat-hm316-mulcher": {
+    name: "CAT HM316 Forestry Mulcher",
+    category: "attachment",
+    day: 610,
+    aliases: [
+      "cat mulcher",
+      "cat hm316",
+      "hm316",
+      "hm316 mulcher",
+      "cat hm 316",
+      "cat forestry mulcher"
+    ],
+    keyword: "CAT HM316 Forestry Mulcher",
+    details: "Uses carbide teeth that do not need sharpening. High Flow XPS required. 62-inch working width, 74-inch overall width, 58-inch overall height, 53-inch length, 2,959 lb. Axial piston dual-speed motor, polychain belt drive, 34 fixed teeth, max 8-inch cutting diameter, max 4.1-inch cutting depth. Can be rented by itself or paired with the CAT 265 only."
+  },
+  "jd-mh60d-mulcher": {
+    name: "John Deere MH60D Forestry Mulcher",
+    category: "attachment",
+    day: 610,
+    aliases: [
+      "john deere mulcher",
+      "jd mulcher",
+      "mh60d",
+      "mh60d mulcher",
+      "john deere mh60d",
+      "jd mh60d",
+      "john deere forestry mulcher"
+    ],
+    keyword: "John Deere MH60D Forestry Mulcher",
+    details: "Removes up to 8-inch trees and 12-inch stumps. 30 double-carbide-tipped teeth. Two-speed hydraulic system. 60-inch cutting width, 74-inch overall width, 56-inch height, 55-inch length, 2,730 lb. Can be rented by itself or paired with the John Deere 333P only."
+  },
+
   "auger-skid": {
     name: "Skid Steer Auger",
     category: "attachment",
@@ -278,13 +310,6 @@ const EQUIPMENT = {
     category: "attachment",
     day: 350,
     aliases: ["skid steer breaker", "skid steer demolition hammer", "breaker attachment", "breaker"],
-    details: "Attachment can be rented separately."
-  },
-  mulcher: {
-    name: "Forestry Mulcher",
-    category: "attachment",
-    day: 610,
-    aliases: ["mulcher", "forestry mulcher"],
     details: "Attachment can be rented separately."
   },
   "power-rake": {
@@ -575,7 +600,12 @@ function isReferentialFollowup(text) {
     "6 days",
     "six days",
     "7 days",
-    "seven days"
+    "seven days",
+    "just the mulcher",
+    "mulcher and skid steer",
+    "with a skid steer",
+    "with skid steer",
+    "just the attachment"
   ]);
 }
 
@@ -712,7 +742,22 @@ function singleQuote(item, id) {
 
   if (
     item.details &&
-    ["trash-pump", "material-lift", "telehandler", "forklift", "lift-king", "cat-265", "jd-333p", "snake", "eel", "rotary-hammer-drill", "genie-z45", "jlg-et500j"].includes(id)
+    [
+      "trash-pump",
+      "material-lift",
+      "telehandler",
+      "forklift",
+      "lift-king",
+      "cat-265",
+      "jd-333p",
+      "snake",
+      "eel",
+      "rotary-hammer-drill",
+      "genie-z45",
+      "jlg-et500j",
+      "cat-hm316-mulcher",
+      "jd-mh60d-mulcher"
+    ].includes(id)
   ) {
     parts.push(item.details);
   }
@@ -848,6 +893,42 @@ function arrangedBoomLiftIntent(text) {
   ]);
 }
 
+function isMulcherQuestion(text) {
+  const t = normalize(text);
+  return containsAny(t, [
+    "mulcher",
+    "mulchers",
+    "forestry mulcher",
+    "cat mulcher",
+    "jd mulcher",
+    "john deere mulcher",
+    "hm316",
+    "mh60d"
+  ]);
+}
+
+function isMulcherComboQuestion(text) {
+  const t = normalize(text);
+  return containsAny(t, [
+    "mulcher and skid steer",
+    "with a skid steer",
+    "with skid steer",
+    "with the skid steer"
+  ]);
+}
+
+function isMulcherJustAttachmentQuestion(text) {
+  const t = normalize(text);
+  return containsAny(t, [
+    "just the mulcher",
+    "just mulcher",
+    "mulcher only",
+    "just the attachment",
+    "attachment only",
+    "just the head"
+  ]);
+}
+
 function getSession(psid) {
   if (!sessions.has(psid)) {
     sessions.set(psid, {
@@ -893,6 +974,182 @@ function reply(message, state) {
   const delivery = deliveryInfo(message);
   const deliveryFee = delivery?.fee || 0;
   const category = findCategory(message) || null;
+
+  if (isMulcherQuestion(message) && !explicitFound && !state.lastQuotedItems?.length) {
+    return {
+      text: "Do you need the mulcher and skid steer or just the mulcher?",
+      lastId: null,
+      lastCategory: "mulcher",
+      lastCategoryItems: ["cat-hm316-mulcher", "jd-mh60d-mulcher"],
+      lastQuotedItems: [],
+      lastQuote: state.lastQuote
+    };
+  }
+
+  if (
+    state.lastCategory === "mulcher" &&
+    (isMulcherComboQuestion(message) || isMulcherJustAttachmentQuestion(message))
+  ) {
+    if (isMulcherJustAttachmentQuestion(message)) {
+      return {
+        text: `We have a CAT HM316 Forestry Mulcher (${money(EQUIPMENT["cat-hm316-mulcher"].day)}/day) and a John Deere MH60D Forestry Mulcher (${money(EQUIPMENT["jd-mh60d-mulcher"].day)}/day). The CAT mulcher uses carbide teeth that do not need sharpening, so I like to recommend it for weekly rentals if available.`,
+        lastId: null,
+        lastCategory: "mulcher",
+        lastCategoryItems: ["cat-hm316-mulcher", "jd-mh60d-mulcher"],
+        lastQuotedItems: [],
+        lastQuote: state.lastQuote
+      };
+    }
+
+    return {
+      text: `Which combo do you need — CAT HM316 + CAT 265 or John Deere MH60D + John Deere 333P? The Boxer and CAT 239 cannot be used with the mulchers.`,
+      lastId: null,
+      lastCategory: "mulcher_combo",
+      lastCategoryItems: ["cat-hm316-mulcher", "cat-265", "jd-mh60d-mulcher", "jd-333p"],
+      lastQuotedItems: [],
+      lastQuote: state.lastQuote
+    };
+  }
+
+  if (
+    state.lastCategory === "mulcher_combo" &&
+    containsAny(text, ["cat", "cat 265", "hm316", "cat mulcher"])
+  ) {
+    const quote = buildBundleQuote(["cat-hm316-mulcher", "cat-265"], days, deliveryFee);
+    return {
+      text: `${quote.text}\n\nThe CAT mulcher uses carbide teeth that do not need sharpening, so I like to recommend it for weekly rentals if available.`,
+      lastId: "cat-265",
+      lastCategory: null,
+      lastCategoryItems: [],
+      lastQuotedItems: ["cat-hm316-mulcher", "cat-265"],
+      lastQuote: quote
+    };
+  }
+
+  if (
+    state.lastCategory === "mulcher_combo" &&
+    containsAny(text, ["john deere", "jd", "333p", "mh60d", "jd mulcher"])
+  ) {
+    const quote = buildBundleQuote(["jd-mh60d-mulcher", "jd-333p"], days, deliveryFee);
+    return {
+      text: quote.text,
+      lastId: "jd-333p",
+      lastCategory: null,
+      lastCategoryItems: [],
+      lastQuotedItems: ["jd-mh60d-mulcher", "jd-333p"],
+      lastQuote: quote
+    };
+  }
+
+  if (
+    explicitFound &&
+    (explicitFound[0] === "cat-hm316-mulcher" || explicitFound[0] === "jd-mh60d-mulcher") &&
+    !containsAny(text, ["cat 265", "333p", "john deere 333p", "just the mulcher", "mulcher only"])
+  ) {
+    return {
+      text: "Do you need the mulcher and skid steer or just the mulcher?",
+      lastId: explicitFound[0],
+      lastCategory: "mulcher",
+      lastCategoryItems: [explicitFound[0]],
+      lastQuotedItems: [explicitFound[0]],
+      lastQuote: state.lastQuote
+    };
+  }
+
+  if (
+    explicitFound &&
+    (explicitFound[0] === "cat-hm316-mulcher" || explicitFound[0] === "jd-mh60d-mulcher") &&
+    isMulcherJustAttachmentQuestion(message)
+  ) {
+    const singleMulcher = EQUIPMENT[explicitFound[0]];
+    return {
+      text: `${singleQuote(singleMulcher, explicitFound[0])}${explicitFound[0] === "cat-hm316-mulcher" ? " I like to recommend the CAT mulcher for weekly rentals because the teeth do not need sharpening." : ""}`,
+      lastId: explicitFound[0],
+      lastCategory: null,
+      lastCategoryItems: [],
+      lastQuotedItems: [explicitFound[0]],
+      lastQuote: buildBundleQuote([explicitFound[0]], 1, deliveryFee)
+    };
+  }
+
+  if (
+    explicitFound &&
+    explicitFound[0] === "cat-hm316-mulcher" &&
+    containsAny(text, ["cat 265", "with a skid steer", "with skid steer", "mulcher and skid steer"])
+  ) {
+    const quote = buildBundleQuote(["cat-hm316-mulcher", "cat-265"], days, deliveryFee);
+    return {
+      text: `${quote.text}\n\nThe CAT mulcher uses carbide teeth that do not need sharpening, so I like to recommend it for weekly rentals if available.`,
+      lastId: "cat-265",
+      lastCategory: null,
+      lastCategoryItems: [],
+      lastQuotedItems: ["cat-hm316-mulcher", "cat-265"],
+      lastQuote: quote
+    };
+  }
+
+  if (
+    explicitFound &&
+    explicitFound[0] === "jd-mh60d-mulcher" &&
+    containsAny(text, ["333p", "john deere 333p", "with a skid steer", "with skid steer", "mulcher and skid steer"])
+  ) {
+    const quote = buildBundleQuote(["jd-mh60d-mulcher", "jd-333p"], days, deliveryFee);
+    return {
+      text: quote.text,
+      lastId: "jd-333p",
+      lastCategory: null,
+      lastCategoryItems: [],
+      lastQuotedItems: ["jd-mh60d-mulcher", "jd-333p"],
+      lastQuote: quote
+    };
+  }
+
+  if (
+    state.lastQuotedItems &&
+    state.lastQuotedItems.length === 1 &&
+    (state.lastQuotedItems[0] === "cat-hm316-mulcher" || state.lastQuotedItems[0] === "jd-mh60d-mulcher") &&
+    containsAny(text, ["with a skid steer", "with skid steer", "mulcher and skid steer"])
+  ) {
+    if (state.lastQuotedItems[0] === "cat-hm316-mulcher") {
+      const quote = buildBundleQuote(["cat-hm316-mulcher", "cat-265"], days, deliveryFee);
+      return {
+        text: `${quote.text}\n\nThe CAT mulcher uses carbide teeth that do not need sharpening, so I like to recommend it for weekly rentals if available.`,
+        lastId: "cat-265",
+        lastCategory: null,
+        lastCategoryItems: [],
+        lastQuotedItems: ["cat-hm316-mulcher", "cat-265"],
+        lastQuote: quote
+      };
+    }
+
+    const quote = buildBundleQuote(["jd-mh60d-mulcher", "jd-333p"], days, deliveryFee);
+    return {
+      text: quote.text,
+      lastId: "jd-333p",
+      lastCategory: null,
+      lastCategoryItems: [],
+      lastQuotedItems: ["jd-mh60d-mulcher", "jd-333p"],
+      lastQuote: quote
+    };
+  }
+
+  if (
+    state.lastQuotedItems &&
+    state.lastQuotedItems.length === 1 &&
+    (state.lastQuotedItems[0] === "cat-hm316-mulcher" || state.lastQuotedItems[0] === "jd-mh60d-mulcher") &&
+    isMulcherJustAttachmentQuestion(message)
+  ) {
+    const mulcherId = state.lastQuotedItems[0];
+    const mulcher = EQUIPMENT[mulcherId];
+    return {
+      text: `${singleQuote(mulcher, mulcherId)}${mulcherId === "cat-hm316-mulcher" ? " I like to recommend the CAT mulcher for weekly rentals because the teeth do not need sharpening." : ""}`,
+      lastId: mulcherId,
+      lastCategory: null,
+      lastCategoryItems: [],
+      lastQuotedItems: [mulcherId],
+      lastQuote: buildBundleQuote([mulcherId], 1, deliveryFee)
+    };
+  }
 
   if ((category === "boom_lift" || state.lastCategory === "boom_lift" || item?.category === "boom_lift") && arrangedBoomLiftIntent(message)) {
     return {
@@ -1041,7 +1298,9 @@ function reply(message, state) {
       text: item.details || singleQuote(item, id),
       lastId: id,
       lastCategory: null,
-      lastCategoryItems: []
+      lastCategoryItems: [],
+      lastQuotedItems: [id],
+      lastQuote: state.lastQuote
     };
   }
 
@@ -1051,14 +1310,18 @@ function reply(message, state) {
         text: item.thumb,
         lastId: id,
         lastCategory: null,
-        lastCategoryItems: []
+        lastCategoryItems: [],
+        lastQuotedItems: [id],
+        lastQuote: state.lastQuote
       };
     }
     return {
       text: `I don’t have a thumb listed on the ${item.name}. ${item.details || ""}`.trim(),
       lastId: id,
       lastCategory: null,
-      lastCategoryItems: []
+      lastCategoryItems: [],
+      lastQuotedItems: [id],
+      lastQuote: state.lastQuote
     };
   }
 
@@ -1067,7 +1330,9 @@ function reply(message, state) {
       text: item.details || singleQuote(item, id),
       lastId: id,
       lastCategory: null,
-      lastCategoryItems: []
+      lastCategoryItems: [],
+      lastQuotedItems: [id],
+      lastQuote: state.lastQuote
     };
   }
 
@@ -1078,7 +1343,9 @@ function reply(message, state) {
         text: `For scheduling or availability, you’ll need to contact Dave at ${DAVE_PHONE}—text is preferred, but you can call as well. You can also check options by searching "${keyword}" on our website at ${WEBSITE}.`,
         lastId: id,
         lastCategory: null,
-        lastCategoryItems: []
+        lastCategoryItems: [],
+        lastQuotedItems: state.lastQuotedItems,
+        lastQuote: state.lastQuote
       };
     }
 
@@ -1086,7 +1353,9 @@ function reply(message, state) {
       return {
         text: categoryDisambiguationText(state.lastCategoryItems, "want to schedule"),
         lastCategory: state.lastCategory,
-        lastCategoryItems: state.lastCategoryItems
+        lastCategoryItems: state.lastCategoryItems,
+        lastQuotedItems: state.lastQuotedItems,
+        lastQuote: state.lastQuote
       };
     }
   }
@@ -1100,15 +1369,19 @@ function reply(message, state) {
           text: `Delivery for that area is ${money(info.fee)}. ${info.msg}`,
           lastId: id,
           lastCategory: state.lastCategory,
-          lastCategoryItems: state.lastCategoryItems
+          lastCategoryItems: state.lastCategoryItems,
+          lastQuotedItems: state.lastQuotedItems,
+          lastQuote: state.lastQuote
         };
       }
 
       return {
-        text: "Delivery pricing depends on where it is going. Tell me the city or area and I can give you the delivery charge.",
+        text: `Delivery pricing depends on where it is going. Tell me the city or area and I can give you the delivery charge.`,
         lastId: id,
         lastCategory: state.lastCategory,
-        lastCategoryItems: state.lastCategoryItems
+        lastCategoryItems: state.lastCategoryItems,
+        lastQuotedItems: state.lastQuotedItems,
+        lastQuote: state.lastQuote
       };
     }
 
@@ -1117,7 +1390,9 @@ function reply(message, state) {
         text: `Yes, we can deliver there. ${info.msg}`,
         lastId: id,
         lastCategory: state.lastCategory,
-        lastCategoryItems: state.lastCategoryItems
+        lastCategoryItems: state.lastCategoryItems,
+        lastQuotedItems: state.lastQuotedItems,
+        lastQuote: state.lastQuote
       };
     }
 
@@ -1125,15 +1400,21 @@ function reply(message, state) {
       text: "Yes, we deliver within 75 miles.",
       lastId: id,
       lastCategory: state.lastCategory,
-      lastCategoryItems: state.lastCategoryItems
+      lastCategoryItems: state.lastCategoryItems,
+      lastQuotedItems: state.lastQuotedItems,
+      lastQuote: state.lastQuote
     };
   }
 
   if (item && isPriceQuestion(message)) {
     if (days > 1) {
       const quote = multiDayQuote(item, id, days, deliveryFee);
+      const extra =
+        id === "cat-hm316-mulcher"
+          ? "\n\nI like to recommend the CAT mulcher for weekly rentals because the teeth do not need sharpening."
+          : "";
       return {
-        text: quote.text,
+        text: `${quote.text}${extra}`,
         lastId: id,
         lastCategory: null,
         lastCategoryItems: [],
@@ -1145,7 +1426,7 @@ function reply(message, state) {
     const priceText = singleQuote(item, id);
     const quote = buildBundleQuote([id], 1, deliveryFee);
     return {
-      text: priceText,
+      text: `${priceText}${id === "cat-hm316-mulcher" ? " I like to recommend the CAT mulcher for weekly rentals because the teeth do not need sharpening." : ""}`,
       lastId: id,
       lastCategory: null,
       lastCategoryItems: [],
@@ -1156,10 +1437,12 @@ function reply(message, state) {
 
   if (item) {
     return {
-      text: singleQuote(item, id),
+      text: `${singleQuote(item, id)}${id === "cat-hm316-mulcher" ? " I like to recommend the CAT mulcher for weekly rentals because the teeth do not need sharpening." : ""}`,
       lastId: id,
       lastCategory: null,
-      lastCategoryItems: []
+      lastCategoryItems: [],
+      lastQuotedItems: [id],
+      lastQuote: state.lastQuote
     };
   }
 
@@ -1168,7 +1451,9 @@ function reply(message, state) {
       text: `We have ${formatCategoryQuote(CATEGORY_ITEMS.skid_steer)}.`,
       lastId: null,
       lastCategory: "skid_steer",
-      lastCategoryItems: CATEGORY_ITEMS.skid_steer
+      lastCategoryItems: CATEGORY_ITEMS.skid_steer,
+      lastQuotedItems: state.lastQuotedItems,
+      lastQuote: state.lastQuote
     };
   }
 
@@ -1177,7 +1462,9 @@ function reply(message, state) {
       text: `We have ${formatCategoryQuote(CATEGORY_ITEMS.excavator)}.`,
       lastId: null,
       lastCategory: "excavator",
-      lastCategoryItems: CATEGORY_ITEMS.excavator
+      lastCategoryItems: CATEGORY_ITEMS.excavator,
+      lastQuotedItems: state.lastQuotedItems,
+      lastQuote: state.lastQuote
     };
   }
 
@@ -1186,7 +1473,9 @@ function reply(message, state) {
       text: `We have a Genie Z45 Articulating Boom Lift (${money(EQUIPMENT["genie-z45"].day)}/day) and a JLG ET500J Towable 50' Boom Lift. If you need a larger, taller, or specialty boom lift, we can arrange one. Please schedule online at ${WEBSITE} or call/text Dave at ${DAVE_PHONE}.`,
       lastId: null,
       lastCategory: "boom_lift",
-      lastCategoryItems: CATEGORY_ITEMS.boom_lift
+      lastCategoryItems: CATEGORY_ITEMS.boom_lift,
+      lastQuotedItems: state.lastQuotedItems,
+      lastQuote: state.lastQuote
     };
   }
 
@@ -1195,7 +1484,9 @@ function reply(message, state) {
       text: `We have a 6K telehandler for ${money(EQUIPMENT.telehandler.day)}/day, ${money(EQUIPMENT.telehandler.week)}/week, or ${money(EQUIPMENT.telehandler.month)}/month. It’s rated at 42 ft 4 in lift height.`,
       lastId: "telehandler",
       lastCategory: null,
-      lastCategoryItems: []
+      lastCategoryItems: [],
+      lastQuotedItems: ["telehandler"],
+      lastQuote: state.lastQuote
     };
   }
 
@@ -1204,7 +1495,9 @@ function reply(message, state) {
       text: "Yes—we have a standard forklift, a rough-terrain forklift, and a telehandler. Are you looking for a warehouse-style forklift, rough-ground forklift, or a lull?",
       lastId: null,
       lastCategory: "forklift",
-      lastCategoryItems: []
+      lastCategoryItems: [],
+      lastQuotedItems: state.lastQuotedItems,
+      lastQuote: state.lastQuote
     };
   }
 
@@ -1213,88 +1506,9 @@ function reply(message, state) {
       text: `Yes, we have a pressure washer for ${money(EQUIPMENT["pressure-washer"].day)} a day. We also have a surface cleaner for ${money(EQUIPMENT["surface-cleaner"].day)} a day for flatwork.`,
       lastId: null,
       lastCategory: null,
-      lastCategoryItems: []
-    };
-  }
-
-  if (text.includes("move tree limbs") || text.includes("move some tree limbs") || text.includes("tree limbs") || text.includes("move limbs") || text.includes("brush pile") || text.includes("move brush") || text.includes("storm debris")) {
-    return {
-      text: `For moving tree limbs or brush, I’d usually point you toward a skid steer with a grapple. The grapple is ${money(EQUIPMENT.grapple.day)} a day.`,
-      lastId: "grapple",
-      lastCategory: null,
-      lastCategoryItems: []
-    };
-  }
-
-  if (text.includes("grapple")) {
-    return {
-      text: `We have a grapple for ${money(EQUIPMENT.grapple.day)} a day. ${EQUIPMENT.grapple.details}`,
-      lastId: "grapple",
-      lastCategory: null,
-      lastCategoryItems: []
-    };
-  }
-
-  if (text.includes("dig holes") || text.includes("post holes") || text.includes("fence posts")) {
-    return {
-      text: `For that, I’d usually pair the machine with an auger. We have a skid steer auger for ${money(EQUIPMENT["auger-skid"].day)} a day, and if you want the smaller setup, the Boxer mini skid with the auger can be a good fit too.`,
-      lastId: "auger-skid",
-      lastCategory: null,
-      lastCategoryItems: []
-    };
-  }
-
-  if (text.includes("clear land") || text.includes("brush") || text.includes("thick brush") || text.includes("overgrowth")) {
-    return {
-      text: `For land clearing, I’d usually point you toward a mulcher at ${money(EQUIPMENT.mulcher.day)} a day or a Brushcat 60 at ${money(EQUIPMENT.brushcat.day)} a day depending on how aggressive the material is.`,
-      lastId: "mulcher",
-      lastCategory: null,
-      lastCategoryItems: []
-    };
-  }
-
-  if (text.includes("grade") || text.includes("level") || text.includes("smooth out") || text.includes("prep yard") || text.includes("prep soil")) {
-    return {
-      text: `For grading or leveling, the power rake at ${money(EQUIPMENT["power-rake"].day)} a day is usually a strong fit.`,
-      lastId: "power-rake",
-      lastCategory: null,
-      lastCategoryItems: []
-    };
-  }
-
-  if (text.includes("break concrete") || text.includes("demo") || text.includes("demolition") || text.includes("break up concrete")) {
-    return {
-      text: `For demolition work, I’d usually pair it with the skid steer breaker at ${money(EQUIPMENT.breaker.day)} a day.`,
-      lastId: "breaker",
-      lastCategory: null,
-      lastCategoryItems: []
-    };
-  }
-
-  if (text.includes("drain") || text.includes("clogged")) {
-    return {
-      text: `We have a Ridgid K400 for ${money(EQUIPMENT.snake.day)} a day and an Electric Eel for ${money(EQUIPMENT.eel.day)} a day for heavier jobs.`,
-      lastId: "snake",
-      lastCategory: null,
-      lastCategoryItems: []
-    };
-  }
-
-  if (text.includes("drain a pool") || text.includes("pump pool") || text.includes("pump out a pool") || text.includes("pool")) {
-    return {
-      text: `For pumping out a pool, the trash pump is usually the better option. It’s ${money(EQUIPMENT["trash-pump"].day)} a day. We also have a sump pump for ${money(EQUIPMENT["sump-pump"].day)} a day.`,
-      lastId: "trash-pump",
-      lastCategory: null,
-      lastCategoryItems: []
-    };
-  }
-
-  if (text.includes("what do i need to pour concrete") || text.includes("pour concrete")) {
-    return {
-      text: `For pouring concrete, the usual setup is a power trowel for ${money(EQUIPMENT.trowel.day)} a day, a power screed for ${money(EQUIPMENT.screed.day)} a day, a concrete vibrator for ${money(EQUIPMENT.vibrator.day)} a day, and a bull float for ${money(EQUIPMENT["bull-float"].day)} a day. If you need to cut after, we also have a concrete saw for ${money(EQUIPMENT["concrete-saw"].day)} a day.`,
-      lastId: state.lastId,
-      lastCategory: state.lastCategory,
-      lastCategoryItems: state.lastCategoryItems
+      lastCategoryItems: [],
+      lastQuotedItems: state.lastQuotedItems,
+      lastQuote: state.lastQuote
     };
   }
 
