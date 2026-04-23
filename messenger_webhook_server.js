@@ -70,6 +70,11 @@ const ITEM_IDS = {
   BULL_FLOAT: "bull-float"
 };
 
+const MULCHER_COMBOS = {
+  cat: [ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_265],
+  jd: [ITEM_IDS.JD_MULCHER, ITEM_IDS.JD_333P]
+};
+
 const EQUIPMENT = {
   [ITEM_IDS.CAT_3017]: {
     name: "CAT 301.7 Mini Excavator",
@@ -284,12 +289,7 @@ const EQUIPMENT = {
     name: "Sumner Contractor Lift",
     category: "material_handling",
     day: 110,
-    aliases: [
-      "contractor lift",
-      "duct lift",
-      "material lift",
-      "sheetrock lift"
-    ],
+    aliases: ["contractor lift", "duct lift", "material lift", "sheetrock lift"],
     details: "Manual lift, 16 ft max height, 650 lb capacity."
   },
 
@@ -378,14 +378,7 @@ const EQUIPMENT = {
     name: "Pressure Washer",
     category: "small_tool",
     day: 85,
-    aliases: [
-      "pressure washer",
-      "pressure washers",
-      "power washer",
-      "power washers",
-      "rb600",
-      "rb 600"
-    ],
+    aliases: ["pressure washer", "pressure washers", "power washer", "power washers", "rb600", "rb 600"],
     details: "Pressure washer."
   },
 
@@ -393,12 +386,7 @@ const EQUIPMENT = {
     name: "Surface Cleaner",
     category: "small_tool",
     day: 38.5,
-    aliases: [
-      "surface cleaner",
-      "driveway cleaner",
-      "sidewalk cleaner",
-      "flatwork cleaner"
-    ],
+    aliases: ["surface cleaner", "driveway cleaner", "sidewalk cleaner", "flatwork cleaner"],
     details: "Flatwork surface cleaner."
   },
 
@@ -461,13 +449,7 @@ const EQUIPMENT = {
     protection: true,
     delivery: true,
     keyword: "stump grinder",
-    aliases: [
-      "stump grinder",
-      "rayco rg37",
-      "rg37",
-      "stump machine",
-      "grind a stump"
-    ],
+    aliases: ["stump grinder", "rayco rg37", "rg37", "stump machine", "grind a stump"],
     details: "Rental Protection Plan is required on that machine."
   },
 
@@ -475,14 +457,7 @@ const EQUIPMENT = {
     name: "Trash Pump",
     category: "small_tool",
     day: 88,
-    aliases: [
-      "trash pump",
-      "water pump",
-      "pump out water",
-      "pump a pond",
-      "drain pool",
-      "pump pool"
-    ],
+    aliases: ["trash pump", "water pump", "pump out water", "pump a pond", "drain pool", "pump pool"],
     details: "2-inch semi-trash pump."
   },
 
@@ -490,11 +465,7 @@ const EQUIPMENT = {
     name: "Sump Pump",
     category: "small_tool",
     day: 93.5,
-    aliases: [
-      "sump pump",
-      "submersible sump pump",
-      "submersible pump"
-    ],
+    aliases: ["sump pump", "submersible sump pump", "submersible pump"],
     details: "Submersible sump pump."
   },
 
@@ -502,12 +473,7 @@ const EQUIPMENT = {
     name: "Gas Air Compressor",
     category: "small_tool",
     day: 71.5,
-    aliases: [
-      "gas air compressor",
-      "gas compressor",
-      "towable compressor",
-      "air compressor"
-    ],
+    aliases: ["gas air compressor", "gas compressor", "towable compressor", "air compressor"],
     details: "Gas-powered air compressor."
   },
 
@@ -515,11 +481,7 @@ const EQUIPMENT = {
     name: "Pancake Compressor",
     category: "small_tool",
     day: 35,
-    aliases: [
-      "pancake compressor",
-      "portable compressor",
-      "small compressor"
-    ],
+    aliases: ["pancake compressor", "portable compressor", "small compressor"],
     details: "Portable pancake compressor."
   },
 
@@ -527,13 +489,7 @@ const EQUIPMENT = {
     name: "Log Splitter",
     category: "small_tool",
     day: 99,
-    aliases: [
-      "log splitter",
-      "split wood",
-      "split logs",
-      "firewood splitter",
-      "wood splitter"
-    ],
+    aliases: ["log splitter", "split wood", "split logs", "firewood splitter", "wood splitter"],
     details: "Log splitter."
   },
 
@@ -543,14 +499,7 @@ const EQUIPMENT = {
     day: 610,
     protection: true,
     keyword: "CAT HM316 Forestry Mulcher",
-    aliases: [
-      "cat mulcher",
-      "cat hm316",
-      "hm316",
-      "hm316 mulcher",
-      "cat hm 316",
-      "cat forestry mulcher"
-    ],
+    aliases: ["cat mulcher", "cat hm316", "hm316", "hm316 mulcher", "cat hm 316", "cat forestry mulcher"],
     details:
       "Uses carbide teeth that do not need sharpening. High Flow XPS required. 62-inch working width, 74-inch overall width, 58-inch overall height, 53-inch length, 2,959 lb. Axial piston dual-speed motor, polychain belt drive, 34 fixed teeth, max 8-inch cutting diameter, max 4.1-inch cutting depth. Can be rented by itself or paired with the CAT 265 only."
   },
@@ -578,13 +527,7 @@ const EQUIPMENT = {
     name: "Skid Steer Auger",
     category: "attachment",
     day: 225,
-    aliases: [
-      "skid steer auger",
-      "auger attachment",
-      "auger",
-      "post hole auger",
-      "post hole digger"
-    ],
+    aliases: ["skid steer auger", "auger attachment", "auger", "post hole auger", "post hole digger"],
     details: "Bits rented separately. Attachment can be rented separately."
   },
 
@@ -592,13 +535,7 @@ const EQUIPMENT = {
     name: "Skid Steer Breaker",
     category: "attachment",
     day: 350,
-    aliases: [
-      "skid steer breaker",
-      "breaker attachment",
-      "breaker",
-      "skid steer hammer",
-      "demolition hammer attachment"
-    ],
+    aliases: ["skid steer breaker", "breaker attachment", "breaker", "skid steer hammer", "demolition hammer attachment"],
     details: "Attachment can be rented separately."
   },
 
@@ -606,11 +543,7 @@ const EQUIPMENT = {
     name: "Power Rake",
     category: "attachment",
     day: 225,
-    aliases: [
-      "power rake",
-      "soil conditioner",
-      "soil prep attachment"
-    ],
+    aliases: ["power rake", "soil conditioner", "soil prep attachment"],
     details: "Attachment can be rented separately."
   },
 
@@ -618,13 +551,7 @@ const EQUIPMENT = {
     name: "Brushcat 60",
     category: "attachment",
     day: 275,
-    aliases: [
-      "brushcat",
-      "brushcat 60",
-      "skid steer brush cutter",
-      "brush cutter attachment",
-      "bush hog attachment"
-    ],
+    aliases: ["brushcat", "brushcat 60", "skid steer brush cutter", "brush cutter attachment", "bush hog attachment"],
     details: "Attachment can be rented separately."
   },
 
@@ -632,12 +559,7 @@ const EQUIPMENT = {
     name: "Grapple",
     category: "attachment",
     day: 110,
-    aliases: [
-      "grapple",
-      "root grapple",
-      "brush grapple",
-      "tree grapple"
-    ],
+    aliases: ["grapple", "root grapple", "brush grapple", "tree grapple"],
     details: "Attachment can be rented separately."
   },
 
@@ -645,13 +567,7 @@ const EQUIPMENT = {
     name: "Concrete Saw",
     category: "small_tool",
     day: 150,
-    aliases: [
-      "concrete saw",
-      "cut off saw",
-      "cutoff saw",
-      "stihl saw",
-      "demo saw"
-    ],
+    aliases: ["concrete saw", "cut off saw", "cutoff saw", "stihl saw", "demo saw"],
     details: "Blade is sold separately."
   },
 
@@ -659,12 +575,7 @@ const EQUIPMENT = {
     name: "Power Screed",
     category: "small_tool",
     day: 137.5,
-    aliases: [
-      "power screed",
-      "screed",
-      "vibrating screed",
-      "concrete screed"
-    ],
+    aliases: ["power screed", "screed", "vibrating screed", "concrete screed"],
     details: "Screed board rented separately."
   },
 
@@ -672,11 +583,7 @@ const EQUIPMENT = {
     name: "Power Trowel",
     category: "small_tool",
     day: 135,
-    aliases: [
-      "power trowel",
-      "walk behind trowel",
-      "concrete trowel"
-    ],
+    aliases: ["power trowel", "walk behind trowel", "concrete trowel"],
     details: "Power trowel."
   },
 
@@ -684,11 +591,7 @@ const EQUIPMENT = {
     name: "Concrete Vibrator",
     category: "small_tool",
     day: 49,
-    aliases: [
-      "concrete vibrator",
-      "cement vibrator",
-      "pencil vibrator"
-    ],
+    aliases: ["concrete vibrator", "cement vibrator", "pencil vibrator"],
     details: "Concrete vibrator."
   },
 
@@ -696,25 +599,13 @@ const EQUIPMENT = {
     name: "Bull Float",
     category: "small_tool",
     day: 35,
-    aliases: [
-      "bull float",
-      "concrete float"
-    ],
+    aliases: ["bull float", "concrete float"],
     details: "Bull float."
   }
 };
 
 const CATEGORY_ALIASES = {
-  excavator: [
-    "excavator",
-    "excavators",
-    "mini excavator",
-    "mini excavators",
-    "trackhoe",
-    "trackhoes",
-    "digger",
-    "digger machine"
-  ],
+  excavator: ["excavator", "excavators", "mini excavator", "mini excavators", "trackhoe", "trackhoes", "digger", "digger machine"],
   skid_steer: [
     "skid steer",
     "skid steers",
@@ -727,15 +618,7 @@ const CATEGORY_ALIASES = {
     "ride on skid steer",
     "mini skid steer"
   ],
-  boom_lift: [
-    "boom lift",
-    "boom lifts",
-    "man lift",
-    "man lifts",
-    "articulating boom",
-    "towable boom",
-    "towable man lift"
-  ],
+  boom_lift: ["boom lift", "boom lifts", "man lift", "man lifts", "articulating boom", "towable boom", "towable man lift"],
   scissor_lift: [
     "scissor lift",
     "scissor lifts",
@@ -744,26 +627,9 @@ const CATEGORY_ALIASES = {
     "flat scissor lift",
     "flat surface scissor lift"
   ],
-  telehandler: [
-    "telehandler",
-    "telehandlers",
-    "lull",
-    "lulls",
-    "reach forklift"
-  ],
-  forklift: [
-    "forklift",
-    "forklifts",
-    "warehouse forklift",
-    "rough terrain forklift",
-    "rough ground forklift"
-  ],
-  pressure_washer: [
-    "pressure washer",
-    "pressure washers",
-    "power washer",
-    "power washers"
-  ]
+  telehandler: ["telehandler", "telehandlers", "lull", "lulls", "reach forklift"],
+  forklift: ["forklift", "forklifts", "warehouse forklift", "rough terrain forklift", "rough ground forklift"],
+  pressure_washer: ["pressure washer", "pressure washers", "power washer", "power washers"]
 };
 
 const CATEGORY_ITEMS = {
@@ -823,6 +689,7 @@ function getSession(psid) {
       lastCategoryItems: [],
       lastQuotedItems: [],
       lastQuote: null,
+      lastMulcherComboChoice: null,
       updatedAt: Date.now()
     });
   }
@@ -912,14 +779,7 @@ function isPriceQuestion(text) {
 
 function isWeightQuestion(text) {
   const t = normalize(text);
-  return containsAny(t, [
-    "how heavy",
-    "weight",
-    "weigh",
-    "what does it weigh",
-    "how much does it weigh",
-    "how much it weighs"
-  ]);
+  return containsAny(t, ["how heavy", "weight", "weigh", "what does it weigh", "how much does it weigh", "how much it weighs"]);
 }
 
 function isThumbQuestion(text) {
@@ -1081,59 +941,6 @@ function isReferentialFollowup(text) {
   ]);
 }
 
-function isCatComboIntent(text) {
-  const t = normalize(text);
-  return (
-    t === "cat" ||
-    t === "the cat" ||
-    containsAny(t, [
-      "cat combo",
-      "caterpillar combo",
-      "the cat combo",
-      "cat mulcher combo",
-      "tell me about the cat",
-      "tell me about the cat combo",
-      "what about the cat",
-      "what about cat",
-      "how much for the cat combo",
-      "how much for cat combo",
-      "cat hm316 and cat 265",
-      "hm316 and 265"
-    ])
-  );
-}
-
-function isJdComboIntent(text) {
-  const t = normalize(text);
-  return (
-    t === "jd" ||
-    t === "the jd" ||
-    t === "john deere" ||
-    t === "the john deere" ||
-    containsAny(t, [
-      "jd combo",
-      "the jd combo",
-      "john deere combo",
-      "the john deere combo",
-      "john deere mulcher combo",
-      "jd mulcher combo",
-      "tell me about the jd",
-      "tell me about jd",
-      "tell me about the john deere",
-      "tell me about the john deere combo",
-      "what about the jd",
-      "what about jd",
-      "what about the john deere",
-      "how much for the john deere combo",
-      "how much for john deere combo",
-      "how much for the john deere mulcher combo",
-      "how much for the jd combo",
-      "mh60d and 333p",
-      "john deere mh60d and john deere 333p"
-    ])
-  );
-}
-
 function scoreAliasMatch(text, alias) {
   const nText = normalize(text);
   const cText = compact(text);
@@ -1198,9 +1005,7 @@ function findCategory(text) {
 }
 
 function formatCategoryQuote(ids) {
-  return ids
-    .map((id) => `${EQUIPMENT[id].name} (${money(EQUIPMENT[id].day)}/day)`)
-    .join(", ");
+  return ids.map((id) => `${EQUIPMENT[id].name} (${money(EQUIPMENT[id].day)}/day)`).join(", ");
 }
 
 function categoryDisambiguationText(ids, verb = "mean") {
@@ -1376,40 +1181,146 @@ function clearCategoryFields(patch = {}) {
 function hasExplicitIntentOverride(text) {
   const t = normalize(text);
 
+  return containsAny(t, [
+    "cat",
+    "the cat",
+    "cat combo",
+    "caterpillar",
+    "cat 265",
+    "hm316",
+    "cat mulcher",
+    "john deere",
+    "the john deere",
+    "jd",
+    "the jd",
+    "jd combo",
+    "john deere combo",
+    "john deere mulcher combo",
+    "333p",
+    "mh60d",
+    "jd mulcher",
+    "john deere mulcher",
+    "boxer",
+    "cat 239",
+    "telehandler",
+    "lull",
+    "forklift",
+    "boom lift",
+    "man lift",
+    "scissor lift",
+    "excavator",
+    "mini excavator",
+    "stump grinder",
+    "drain snake",
+    "electric eel",
+    "pressure washer",
+    "surface cleaner",
+    "auger",
+    "breaker",
+    "grapple",
+    "brushcat",
+    "power rake"
+  ]);
+}
+
+function isSameItems(a = [], b = []) {
+  if (a.length !== b.length) return false;
+  return a.every((id) => b.includes(id));
+}
+
+function getLastMulcherComboChoice(state) {
+  if (state.lastMulcherComboChoice === "cat" || state.lastMulcherComboChoice === "jd") {
+    return state.lastMulcherComboChoice;
+  }
+
+  if (state.lastQuote?.itemIds) {
+    if (isSameItems(state.lastQuote.itemIds, MULCHER_COMBOS.cat)) return "cat";
+    if (isSameItems(state.lastQuote.itemIds, MULCHER_COMBOS.jd)) return "jd";
+  }
+
+  if (state.lastQuotedItems?.length) {
+    if (isSameItems(state.lastQuotedItems, MULCHER_COMBOS.cat)) return "cat";
+    if (isSameItems(state.lastQuotedItems, MULCHER_COMBOS.jd)) return "jd";
+  }
+
+  return null;
+}
+
+function mentionsCatSide(text) {
   return (
-    isCatComboIntent(t) ||
-    isJdComboIntent(t) ||
-    containsAny(t, [
-      "cat 265",
-      "hm316",
-      "cat mulcher",
-      "john deere 333p",
-      "333p",
-      "mh60d",
-      "jd mulcher",
-      "john deere mulcher",
-      "boxer",
-      "cat 239",
-      "telehandler",
-      "lull",
-      "forklift",
-      "boom lift",
-      "man lift",
-      "scissor lift",
-      "excavator",
-      "mini excavator",
-      "stump grinder",
-      "drain snake",
-      "electric eel",
-      "pressure washer",
-      "surface cleaner",
-      "auger",
-      "breaker",
-      "grapple",
-      "brushcat",
-      "power rake"
-    ])
+    text === "cat" ||
+    text.includes("the cat") ||
+    containsAny(text, ["cat combo", "cat mulcher combo", "caterpillar", "cat 265", "hm316", "cat mulcher"])
   );
+}
+
+function mentionsJdSide(text) {
+  return (
+    text === "john deere" ||
+    text === "jd" ||
+    text.includes("the john deere") ||
+    text.includes("the jd") ||
+    containsAny(text, ["john deere combo", "john deere mulcher combo", "jd combo", "333p", "mh60d", "jd mulcher", "john deere mulcher"])
+  );
+}
+
+function detectMulcherComboChoice(text, state) {
+  const t = normalize(text);
+  const lastCombo = getLastMulcherComboChoice(state);
+  const comboish = containsAny(t, ["combo", "mulcher combo", "mulcher", "skid steer"]) || lastCombo !== null;
+
+  if (!comboish && state.lastCategory !== "mulcher_combo") {
+    return null;
+  }
+
+  if (mentionsCatSide(t)) return "cat";
+  if (mentionsJdSide(t)) return "jd";
+
+  if (lastCombo === "cat" && containsAny(t, ["what about the jd", "what about jd", "what about john deere", "tell me about the jd", "tell me about john deere"])) {
+    return "jd";
+  }
+
+  if (lastCombo === "jd" && containsAny(t, ["what about the cat", "what about cat", "tell me about the cat", "tell me about cat"])) {
+    return "cat";
+  }
+
+  return null;
+}
+
+function buildMulcherComboResponse(choice, days, deliveryFee = 0, variant = "quote") {
+  const comboIds = MULCHER_COMBOS[choice];
+  const quote = buildBundleQuote(comboIds, days, deliveryFee);
+
+  if (choice === "cat") {
+    if (variant === "details") {
+      return {
+        text:
+          `${quote.text}\n\n` +
+          "The CAT HM316 Forestry Mulcher can be rented by itself or paired with the CAT 265 only. " +
+          "The Boxer and CAT 239 cannot be used with either mulcher.",
+        quote
+      };
+    }
+
+    return { text: quote.text, quote };
+  }
+
+  if (variant === "details") {
+    return {
+      text:
+        `${quote.text}\n\n` +
+        "The John Deere MH60D Forestry Mulcher can be rented by itself or paired with the John Deere 333P only. " +
+        "The Boxer and CAT 239 cannot be used with either mulcher.",
+      quote
+    };
+  }
+
+  return { text: quote.text, quote };
+}
+
+function isDetailRequest(text) {
+  const t = normalize(text);
+  return containsAny(t, ["tell me about", "what about", "details", "info", "information", "more about"]);
 }
 
 function reply(message, state) {
@@ -1418,14 +1329,15 @@ function reply(message, state) {
   const matchedIds = findAllEquipment(message);
   const category = findCategory(message);
   const explicitIntentOverride = hasExplicitIntentOverride(message);
-  const useLastId = !explicitFound && !explicitIntentOverride && isReferentialFollowup(message);
-  const id = explicitFound ? explicitFound.id : (useLastId ? state.lastId : null);
+  const comboChoice = detectMulcherComboChoice(message, state);
+  const useLastId = !explicitFound && !explicitIntentOverride && !comboChoice && isReferentialFollowup(message);
+  const id = explicitFound ? explicitFound.id : useLastId ? state.lastId : null;
   const item = id ? EQUIPMENT[id] : null;
   const days = parseDays(message) || 1;
   const delivery = deliveryInfo(message);
   const deliveryFee = delivery?.fee || 0;
 
-  // Mulcher flow first.
+  // Mulcher entry flow.
   if (isMulcherQuestion(message)) {
     if (isMulcherComboQuestion(message)) {
       return {
@@ -1434,7 +1346,8 @@ function reply(message, state) {
         lastCategory: "mulcher_combo",
         lastCategoryItems: [ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_265, ITEM_IDS.JD_MULCHER, ITEM_IDS.JD_333P],
         lastQuotedItems: [],
-        lastQuote: state.lastQuote
+        lastQuote: state.lastQuote,
+        lastMulcherComboChoice: state.lastMulcherComboChoice
       };
     }
 
@@ -1445,7 +1358,8 @@ function reply(message, state) {
         lastCategory: "mulcher",
         lastCategoryItems: [ITEM_IDS.CAT_MULCHER, ITEM_IDS.JD_MULCHER],
         lastQuotedItems: [],
-        lastQuote: state.lastQuote
+        lastQuote: state.lastQuote,
+        lastMulcherComboChoice: state.lastMulcherComboChoice
       };
     }
 
@@ -1455,7 +1369,8 @@ function reply(message, state) {
       lastCategory: "mulcher",
       lastCategoryItems: [ITEM_IDS.CAT_MULCHER, ITEM_IDS.JD_MULCHER],
       lastQuotedItems: [],
-      lastQuote: state.lastQuote
+      lastQuote: state.lastQuote,
+      lastMulcherComboChoice: state.lastMulcherComboChoice
     };
   }
 
@@ -1467,7 +1382,8 @@ function reply(message, state) {
         lastCategory: "mulcher",
         lastCategoryItems: [ITEM_IDS.CAT_MULCHER, ITEM_IDS.JD_MULCHER],
         lastQuotedItems: [],
-        lastQuote: state.lastQuote
+        lastQuote: state.lastQuote,
+        lastMulcherComboChoice: state.lastMulcherComboChoice
       };
     }
 
@@ -1478,99 +1394,37 @@ function reply(message, state) {
         lastCategory: "mulcher_combo",
         lastCategoryItems: [ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_265, ITEM_IDS.JD_MULCHER, ITEM_IDS.JD_333P],
         lastQuotedItems: [],
-        lastQuote: state.lastQuote
+        lastQuote: state.lastQuote,
+        lastMulcherComboChoice: state.lastMulcherComboChoice
       };
     }
   }
 
-  if (state.lastCategory === "mulcher_combo") {
-    if (isCatComboIntent(text)) {
-      const quote = buildBundleQuote([ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_265], days, deliveryFee);
-      return clearCategoryFields({
-        text: quote.text,
-        lastId: ITEM_IDS.CAT_265,
-        lastQuotedItems: [ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_265],
-        lastQuote: quote
-      });
-    }
-
-    if (isJdComboIntent(text)) {
-      const quote = buildBundleQuote([ITEM_IDS.JD_MULCHER, ITEM_IDS.JD_333P], days, deliveryFee);
-      return clearCategoryFields({
-        text: quote.text,
-        lastId: ITEM_IDS.JD_333P,
-        lastQuotedItems: [ITEM_IDS.JD_MULCHER, ITEM_IDS.JD_333P],
-        lastQuote: quote
-      });
-    }
-
-    if (text === "both") {
-      return {
-        text: "Which combo do you need — CAT HM316 + CAT 265 or John Deere MH60D + John Deere 333P? The Boxer and CAT 239 cannot be used with either mulcher.",
-        lastId: null,
-        lastCategory: "mulcher_combo",
-        lastCategoryItems: [ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_265, ITEM_IDS.JD_MULCHER, ITEM_IDS.JD_333P],
-        lastQuotedItems: state.lastQuotedItems,
-        lastQuote: state.lastQuote
-      };
-    }
-
+  if (state.lastCategory === "mulcher_combo" && text === "both") {
     return {
       text: "Which combo do you need — CAT HM316 + CAT 265 or John Deere MH60D + John Deere 333P? The Boxer and CAT 239 cannot be used with either mulcher.",
       lastId: null,
       lastCategory: "mulcher_combo",
       lastCategoryItems: [ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_265, ITEM_IDS.JD_MULCHER, ITEM_IDS.JD_333P],
       lastQuotedItems: state.lastQuotedItems,
-      lastQuote: state.lastQuote
+      lastQuote: state.lastQuote,
+      lastMulcherComboChoice: state.lastMulcherComboChoice
     };
   }
 
-  // Strong combo-intent layer after mulcher flow has cleared.
-  if (isCatComboIntent(message)) {
-    const quote = buildBundleQuote([ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_265], days, deliveryFee);
-
-    if (containsAny(text, ["tell me about", "what about"])) {
-      return clearCategoryFields({
-        text:
-          `CAT HM316 Forestry Mulcher + CAT 265:\n` +
-          `CAT HM316 Forestry Mulcher: ${money(EQUIPMENT[ITEM_IDS.CAT_MULCHER].day)}/day\n` +
-          `CAT 265: ${money(EQUIPMENT[ITEM_IDS.CAT_265].day)}/day\n` +
-          `The CAT mulcher can be rented by itself or paired with the CAT 265 only. The Boxer and CAT 239 cannot be used with either mulcher. The CAT HM316 is usually better for longer rentals since the carbide teeth don’t need sharpening.`,
-        lastId: ITEM_IDS.CAT_265,
-        lastQuotedItems: [ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_265],
-        lastQuote: quote
-      });
-    }
+  // Explicit CAT/JD mulcher combo choice should override sticky lastQuote logic.
+  if (comboChoice) {
+    const variant = isDetailRequest(message) ? "details" : "quote";
+    const response = buildMulcherComboResponse(comboChoice, days, deliveryFee, variant);
+    const comboIds = MULCHER_COMBOS[comboChoice];
+    const representativeId = comboChoice === "cat" ? ITEM_IDS.CAT_265 : ITEM_IDS.JD_333P;
 
     return clearCategoryFields({
-      text: quote.text,
-      lastId: ITEM_IDS.CAT_265,
-      lastQuotedItems: [ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_265],
-      lastQuote: quote
-    });
-  }
-
-  if (isJdComboIntent(message)) {
-    const quote = buildBundleQuote([ITEM_IDS.JD_MULCHER, ITEM_IDS.JD_333P], days, deliveryFee);
-
-    if (containsAny(text, ["tell me about", "what about"])) {
-      return clearCategoryFields({
-        text:
-          `John Deere MH60D Forestry Mulcher + John Deere 333P:\n` +
-          `John Deere MH60D Forestry Mulcher: ${money(EQUIPMENT[ITEM_IDS.JD_MULCHER].day)}/day\n` +
-          `John Deere 333P: ${money(EQUIPMENT[ITEM_IDS.JD_333P].day)}/day\n` +
-          `The John Deere mulcher can be rented by itself or paired with the John Deere 333P only. The Boxer and CAT 239 cannot be used with either mulcher.`,
-        lastId: ITEM_IDS.JD_333P,
-        lastQuotedItems: [ITEM_IDS.JD_MULCHER, ITEM_IDS.JD_333P],
-        lastQuote: quote
-      });
-    }
-
-    return clearCategoryFields({
-      text: quote.text,
-      lastId: ITEM_IDS.JD_333P,
-      lastQuotedItems: [ITEM_IDS.JD_MULCHER, ITEM_IDS.JD_333P],
-      lastQuote: quote
+      text: response.text,
+      lastId: representativeId,
+      lastQuotedItems: comboIds,
+      lastQuote: response.quote,
+      lastMulcherComboChoice: comboChoice
     });
   }
 
@@ -1582,7 +1436,8 @@ function reply(message, state) {
       lastCategory: "cat_disambiguation",
       lastCategoryItems: [ITEM_IDS.CAT_265, ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_3017, ITEM_IDS.CAT_3075],
       lastQuotedItems: state.lastQuotedItems,
-      lastQuote: state.lastQuote
+      lastQuote: state.lastQuote,
+      lastMulcherComboChoice: state.lastMulcherComboChoice
     };
   }
 
@@ -1594,7 +1449,8 @@ function reply(message, state) {
         text: singleQuote(EQUIPMENT[selected], selected),
         lastId: selected,
         lastQuotedItems: [selected],
-        lastQuote: quote
+        lastQuote: quote,
+        lastMulcherComboChoice: state.lastMulcherComboChoice
       });
     }
 
@@ -1605,7 +1461,8 @@ function reply(message, state) {
         text: singleQuote(EQUIPMENT[selected], selected),
         lastId: selected,
         lastQuotedItems: [selected],
-        lastQuote: quote
+        lastQuote: quote,
+        lastMulcherComboChoice: state.lastMulcherComboChoice
       });
     }
 
@@ -1616,7 +1473,8 @@ function reply(message, state) {
         text: singleQuote(EQUIPMENT[selected], selected),
         lastId: selected,
         lastQuotedItems: [selected],
-        lastQuote: quote
+        lastQuote: quote,
+        lastMulcherComboChoice: state.lastMulcherComboChoice
       });
     }
 
@@ -1627,7 +1485,8 @@ function reply(message, state) {
         text: singleQuote(EQUIPMENT[selected], selected),
         lastId: selected,
         lastQuotedItems: [selected],
-        lastQuote: quote
+        lastQuote: quote,
+        lastMulcherComboChoice: state.lastMulcherComboChoice
       });
     }
 
@@ -1637,7 +1496,8 @@ function reply(message, state) {
       lastCategory: "cat_disambiguation",
       lastCategoryItems: [ITEM_IDS.CAT_265, ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_3017, ITEM_IDS.CAT_3075],
       lastQuotedItems: state.lastQuotedItems,
-      lastQuote: state.lastQuote
+      lastQuote: state.lastQuote,
+      lastMulcherComboChoice: state.lastMulcherComboChoice
     };
   }
 
@@ -1651,7 +1511,8 @@ function reply(message, state) {
           lastCategory: state.lastCategory,
           lastCategoryItems: state.lastCategoryItems,
           lastQuotedItems: state.lastQuotedItems,
-          lastQuote: state.lastQuote
+          lastQuote: state.lastQuote,
+          lastMulcherComboChoice: state.lastMulcherComboChoice
         };
       }
 
@@ -1661,7 +1522,8 @@ function reply(message, state) {
         lastCategory: state.lastCategory,
         lastCategoryItems: state.lastCategoryItems,
         lastQuotedItems: state.lastQuotedItems,
-        lastQuote: state.lastQuote
+        lastQuote: state.lastQuote,
+        lastMulcherComboChoice: state.lastMulcherComboChoice
       };
     }
 
@@ -1672,7 +1534,8 @@ function reply(message, state) {
         lastCategory: state.lastCategory,
         lastCategoryItems: state.lastCategoryItems,
         lastQuotedItems: state.lastQuotedItems,
-        lastQuote: state.lastQuote
+        lastQuote: state.lastQuote,
+        lastMulcherComboChoice: state.lastMulcherComboChoice
       };
     }
 
@@ -1682,7 +1545,8 @@ function reply(message, state) {
       lastCategory: state.lastCategory,
       lastCategoryItems: state.lastCategoryItems,
       lastQuotedItems: state.lastQuotedItems,
-      lastQuote: state.lastQuote
+      lastQuote: state.lastQuote,
+      lastMulcherComboChoice: state.lastMulcherComboChoice
     };
   }
 
@@ -1693,7 +1557,8 @@ function reply(message, state) {
       text: quote.text,
       lastId: matchedIds[0],
       lastQuotedItems: matchedIds,
-      lastQuote: quote
+      lastQuote: quote,
+      lastMulcherComboChoice: state.lastMulcherComboChoice
     });
   }
 
@@ -1703,6 +1568,7 @@ function reply(message, state) {
     !explicitFound &&
     !category &&
     !explicitIntentOverride &&
+    !comboChoice &&
     (isPriceQuestion(message) || parseDays(message) !== null || text === "a week" || text === "week")
   ) {
     const requestedDays = parseDays(message) || state.lastQuote.days || 1;
@@ -1714,7 +1580,8 @@ function reply(message, state) {
         text: quote.text,
         lastId: state.lastId,
         lastQuotedItems: state.lastQuote.itemIds,
-        lastQuote: quote
+        lastQuote: quote,
+        lastMulcherComboChoice: state.lastMulcherComboChoice
       });
     }
 
@@ -1728,7 +1595,8 @@ function reply(message, state) {
             text: `Monthly pricing for ${singleItem.name} is quoted by Dave based on current market conditions. Please call or text Dave at ${DAVE_PHONE}.`,
             lastId: singleId,
             lastQuotedItems: [singleId],
-            lastQuote: state.lastQuote
+            lastQuote: state.lastQuote,
+            lastMulcherComboChoice: state.lastMulcherComboChoice
           });
         }
 
@@ -1737,7 +1605,8 @@ function reply(message, state) {
           text: quote.text,
           lastId: singleId,
           lastQuotedItems: [singleId],
-          lastQuote: quote
+          lastQuote: quote,
+          lastMulcherComboChoice: state.lastMulcherComboChoice
         });
       }
     }
@@ -1755,7 +1624,8 @@ function reply(message, state) {
       lastCategory: "scissor_lift",
       lastCategoryItems: CATEGORY_ITEMS.scissor_lift,
       lastQuotedItems: state.lastQuotedItems,
-      lastQuote: state.lastQuote
+      lastQuote: state.lastQuote,
+      lastMulcherComboChoice: state.lastMulcherComboChoice
     };
   }
 
@@ -1766,7 +1636,8 @@ function reply(message, state) {
       lastCategory: "boom_lift",
       lastCategoryItems: CATEGORY_ITEMS.boom_lift,
       lastQuotedItems: state.lastQuotedItems,
-      lastQuote: state.lastQuote
+      lastQuote: state.lastQuote,
+      lastMulcherComboChoice: state.lastMulcherComboChoice
     };
   }
 
@@ -1777,7 +1648,8 @@ function reply(message, state) {
       lastCategory: "excavator",
       lastCategoryItems: CATEGORY_ITEMS.excavator,
       lastQuotedItems: state.lastQuotedItems,
-      lastQuote: state.lastQuote
+      lastQuote: state.lastQuote,
+      lastMulcherComboChoice: state.lastMulcherComboChoice
     };
   }
 
@@ -1788,7 +1660,8 @@ function reply(message, state) {
       lastCategory: "skid_steer",
       lastCategoryItems: CATEGORY_ITEMS.skid_steer,
       lastQuotedItems: state.lastQuotedItems,
-      lastQuote: state.lastQuote
+      lastQuote: state.lastQuote,
+      lastMulcherComboChoice: state.lastMulcherComboChoice
     };
   }
 
@@ -1799,7 +1672,8 @@ function reply(message, state) {
       lastCategory: null,
       lastCategoryItems: [],
       lastQuotedItems: [ITEM_IDS.TELEHANDLER],
-      lastQuote: buildBundleQuote([ITEM_IDS.TELEHANDLER], 1, 0)
+      lastQuote: buildBundleQuote([ITEM_IDS.TELEHANDLER], 1, 0),
+      lastMulcherComboChoice: state.lastMulcherComboChoice
     };
   }
 
@@ -1810,7 +1684,8 @@ function reply(message, state) {
       lastCategory: "forklift",
       lastCategoryItems: [ITEM_IDS.FORKLIFT, ITEM_IDS.LIFT_KING, ITEM_IDS.TELEHANDLER],
       lastQuotedItems: state.lastQuotedItems,
-      lastQuote: state.lastQuote
+      lastQuote: state.lastQuote,
+      lastMulcherComboChoice: state.lastMulcherComboChoice
     };
   }
 
@@ -1821,7 +1696,8 @@ function reply(message, state) {
       lastCategory: null,
       lastCategoryItems: [],
       lastQuotedItems: [ITEM_IDS.PRESSURE_WASHER],
-      lastQuote: buildBundleQuote([ITEM_IDS.PRESSURE_WASHER], 1, 0)
+      lastQuote: buildBundleQuote([ITEM_IDS.PRESSURE_WASHER], 1, 0),
+      lastMulcherComboChoice: state.lastMulcherComboChoice
     };
   }
 
@@ -1835,7 +1711,8 @@ function reply(message, state) {
       lastCategory: "boom_lift",
       lastCategoryItems: CATEGORY_ITEMS.boom_lift,
       lastQuotedItems: state.lastQuotedItems,
-      lastQuote: state.lastQuote
+      lastQuote: state.lastQuote,
+      lastMulcherComboChoice: state.lastMulcherComboChoice
     };
   }
 
@@ -1847,7 +1724,8 @@ function reply(message, state) {
       lastCategory: state.lastCategory,
       lastCategoryItems: state.lastCategoryItems,
       lastQuotedItems: state.lastQuotedItems,
-      lastQuote: state.lastQuote
+      lastQuote: state.lastQuote,
+      lastMulcherComboChoice: state.lastMulcherComboChoice
     };
   }
 
@@ -1858,7 +1736,8 @@ function reply(message, state) {
         text: schedulingText(item),
         lastId: id,
         lastQuotedItems: state.lastQuotedItems,
-        lastQuote: state.lastQuote
+        lastQuote: state.lastQuote,
+        lastMulcherComboChoice: state.lastMulcherComboChoice
       });
     }
 
@@ -1867,7 +1746,8 @@ function reply(message, state) {
         text: `Monthly pricing for ${item.name} is quoted by Dave based on current market conditions. Please call or text Dave at ${DAVE_PHONE}.`,
         lastId: id,
         lastQuotedItems: [id],
-        lastQuote: state.lastQuote
+        lastQuote: state.lastQuote,
+        lastMulcherComboChoice: state.lastMulcherComboChoice
       });
     }
 
@@ -1877,7 +1757,8 @@ function reply(message, state) {
           text: `${item.name} weighs ${item.weight.toLocaleString()} lb.`,
           lastId: id,
           lastQuotedItems: [id],
-          lastQuote: state.lastQuote
+          lastQuote: state.lastQuote,
+          lastMulcherComboChoice: state.lastMulcherComboChoice
         });
       }
 
@@ -1885,7 +1766,8 @@ function reply(message, state) {
         text: item.details || singleQuote(item, id),
         lastId: id,
         lastQuotedItems: [id],
-        lastQuote: state.lastQuote
+        lastQuote: state.lastQuote,
+        lastMulcherComboChoice: state.lastMulcherComboChoice
       });
     }
 
@@ -1894,7 +1776,8 @@ function reply(message, state) {
         text: item.thumb || `I don’t have a thumb listed on the ${item.name}. ${item.details || ""}`.trim(),
         lastId: id,
         lastQuotedItems: [id],
-        lastQuote: state.lastQuote
+        lastQuote: state.lastQuote,
+        lastMulcherComboChoice: state.lastMulcherComboChoice
       });
     }
 
@@ -1903,7 +1786,8 @@ function reply(message, state) {
         text: item.details || singleQuote(item, id),
         lastId: id,
         lastQuotedItems: [id],
-        lastQuote: state.lastQuote
+        lastQuote: state.lastQuote,
+        lastMulcherComboChoice: state.lastMulcherComboChoice
       });
     }
 
@@ -1914,7 +1798,8 @@ function reply(message, state) {
           text: quote.text,
           lastId: id,
           lastQuotedItems: [id],
-          lastQuote: quote
+          lastQuote: quote,
+          lastMulcherComboChoice: state.lastMulcherComboChoice
         });
       }
 
@@ -1923,7 +1808,8 @@ function reply(message, state) {
         text: singleQuote(item, id),
         lastId: id,
         lastQuotedItems: [id],
-        lastQuote: quote
+        lastQuote: quote,
+        lastMulcherComboChoice: state.lastMulcherComboChoice
       });
     }
 
@@ -1931,12 +1817,13 @@ function reply(message, state) {
       text: singleQuote(item, id),
       lastId: id,
       lastQuotedItems: [id],
-      lastQuote: state.lastQuote
+      lastQuote: state.lastQuote,
+      lastMulcherComboChoice: state.lastMulcherComboChoice
     });
   }
 
   // Referential follow-up after category listing.
-  if (!explicitFound && state.lastCategoryItems?.length > 1 && !explicitIntentOverride && isReferentialFollowup(message)) {
+  if (!explicitFound && state.lastCategoryItems?.length > 1 && !explicitIntentOverride && !comboChoice && isReferentialFollowup(message)) {
     return {
       text: categoryDisambiguationText(
         state.lastCategoryItems,
@@ -1946,7 +1833,8 @@ function reply(message, state) {
       lastCategory: state.lastCategory,
       lastCategoryItems: state.lastCategoryItems,
       lastQuotedItems: state.lastQuotedItems,
-      lastQuote: state.lastQuote
+      lastQuote: state.lastQuote,
+      lastMulcherComboChoice: state.lastMulcherComboChoice
     };
   }
 
@@ -1957,7 +1845,8 @@ function reply(message, state) {
     lastCategory: state.lastCategory,
     lastCategoryItems: state.lastCategoryItems,
     lastQuotedItems: state.lastQuotedItems,
-    lastQuote: state.lastQuote
+    lastQuote: state.lastQuote,
+    lastMulcherComboChoice: state.lastMulcherComboChoice
   };
 }
 
@@ -2000,4 +1889,68 @@ async function sendMessengerText(recipientId, text) {
 
     const bodyText = await response.text();
     if (!response.ok) {
-      throw new Error(`Facebook send
+      throw new Error(`Facebook send failed: ${response.status} ${bodyText}`);
+    }
+  }
+}
+
+app.get("/", (_req, res) => {
+  res.status(200).send("Messenger webhook is running.");
+});
+
+app.get("/webhook", (req, res) => {
+  const mode = req.query["hub.mode"];
+  const token = req.query["hub.verify_token"];
+  const challenge = req.query["hub.challenge"];
+
+  if (mode === "subscribe" && token === VERIFY_TOKEN) {
+    return res.status(200).send(challenge);
+  }
+
+  return res.sendStatus(403);
+});
+
+app.post("/webhook", async (req, res) => {
+  try {
+    const body = req.body;
+
+    if (body.object !== "page") {
+      return res.sendStatus(404);
+    }
+
+    for (const entry of body.entry || []) {
+      for (const event of entry.messaging || []) {
+        if (!event.sender?.id) continue;
+        const senderId = event.sender.id;
+
+        if (event.message?.text) {
+          const session = getSession(senderId);
+          const result = reply(event.message.text, session);
+
+          updateSession(senderId, {
+            lastId: result.lastId !== undefined ? result.lastId : session.lastId,
+            lastCategory: result.lastCategory !== undefined ? result.lastCategory : session.lastCategory,
+            lastCategoryItems: result.lastCategoryItems !== undefined ? result.lastCategoryItems : session.lastCategoryItems,
+            lastQuotedItems: result.lastQuotedItems !== undefined ? result.lastQuotedItems : session.lastQuotedItems,
+            lastQuote: result.lastQuote !== undefined ? result.lastQuote : session.lastQuote,
+            lastMulcherComboChoice:
+              result.lastMulcherComboChoice !== undefined
+                ? result.lastMulcherComboChoice
+                : session.lastMulcherComboChoice
+          });
+
+          await sendMessengerText(senderId, result.text);
+        }
+      }
+    }
+
+    return res.sendStatus(200);
+  } catch (error) {
+    console.error("Webhook error:", error);
+    return res.sendStatus(500);
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Messenger webhook listening on port ${PORT}`);
+});
