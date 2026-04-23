@@ -816,6 +816,7 @@ function isDeliveryQuestion(text) {
   const t = normalize(text);
   return t.includes("delivery") || t.includes("deliver");
 }
+
 function isTrailerQuestion(text) {
   const t = normalize(text);
   return containsAny(t, [
@@ -830,6 +831,7 @@ function isTrailerQuestion(text) {
     "dump trailer"
   ]);
 }
+
 function isDeliveryPriceQuestion(text) {
   const t = normalize(text);
   return containsAny(t, [
@@ -1232,7 +1234,11 @@ function hasExplicitIntentOverride(text) {
     "breaker",
     "grapple",
     "brushcat",
-    "power rake"
+    "power rake",
+    "trailer",
+    "trailers",
+    "gooseneck",
+    "dump trailer"
   ]);
 }
 
@@ -1344,17 +1350,17 @@ function reply(message, state) {
   const explicitIntentOverride = hasExplicitIntentOverride(message);
   const comboChoice = detectMulcherComboChoice(message, state);
   const useLastId =
-  !explicitFound &&
-  !explicitIntentOverride &&
-  !comboChoice &&
-  !isTrailerQuestion(message) &&
-  isReferentialFollowup(message);  const id = explicitFound ? explicitFound.id : useLastId ? state.lastId : null;
+    !explicitFound &&
+    !explicitIntentOverride &&
+    !comboChoice &&
+    !isTrailerQuestion(message) &&
+    isReferentialFollowup(message);
+  const id = explicitFound ? explicitFound.id : useLastId ? state.lastId : null;
   const item = id ? EQUIPMENT[id] : null;
   const days = parseDays(message) || 1;
   const delivery = deliveryInfo(message);
   const deliveryFee = delivery?.fee || 0;
 
-  // Mulcher entry flow.
   if (isMulcherQuestion(message)) {
     if (isMulcherComboQuestion(message)) {
       return {
@@ -1429,7 +1435,6 @@ function reply(message, state) {
     };
   }
 
-  // Explicit CAT/JD mulcher combo choice should override sticky lastQuote logic.
   if (comboChoice) {
     const variant = isDetailRequest(message) ? "details" : "quote";
     const response = buildMulcherComboResponse(comboChoice, days, deliveryFee, variant);
@@ -1445,7 +1450,6 @@ function reply(message, state) {
     });
   }
 
-  // CAT disambiguation outside mulcher combo flow.
   if (text === "cat" || text === "the cat") {
     return {
       text: "Which CAT machine are you referring to — CAT 265 skid steer, CAT HM316 mulcher, CAT 301.7 excavator, or CAT 307.5 excavator?",
@@ -1518,7 +1522,6 @@ function reply(message, state) {
     };
   }
 
-  // Delivery logic.
   if (isDeliveryQuestion(message)) {
     if (isDeliveryPriceQuestion(message)) {
       if (delivery) {
@@ -1567,7 +1570,6 @@ function reply(message, state) {
     };
   }
 
-  // Trailer questions should not inherit the last quoted machine.
   if (isTrailerQuestion(message)) {
     return {
       text: `Sometimes my inventory database is incomplete, so you may need to check the website at ${WEBSITE} for that item.`,
@@ -1579,6 +1581,8 @@ function reply(message, state) {
       lastMulcherComboChoice: state.lastMulcherComboChoice
     };
   }
+
+  if (matchedIds.length >= 2 && isPriceQuestion(message)) {
     const quote = buildBundleQuote(matchedIds, days, deliveryFee);
     return clearCategoryFields({
       text: quote.text,
@@ -1589,7 +1593,6 @@ function reply(message, state) {
     });
   }
 
-  // Follow-up quote stays attached to last quote only if no explicit override.
   if (
     state.lastQuote &&
     !explicitFound &&
@@ -1639,7 +1642,6 @@ function reply(message, state) {
     }
   }
 
-  // Category-level flows.
   if (category === "scissor_lift" && !explicitFound) {
     return {
       text:
@@ -1743,7 +1745,6 @@ function reply(message, state) {
     };
   }
 
-  // If user tries to schedule after a category list, force clarification.
   if (bookingIntent(message) && !item && state.lastCategoryItems?.length > 1) {
     return {
       text: categoryDisambiguationText(state.lastCategoryItems, "want to schedule"),
@@ -1756,7 +1757,6 @@ function reply(message, state) {
     };
   }
 
-  // Explicit item logic.
   if (item) {
     if (bookingIntent(message)) {
       return clearCategoryFields({
@@ -1849,7 +1849,6 @@ function reply(message, state) {
     });
   }
 
-  // Referential follow-up after category listing.
   if (!explicitFound && state.lastCategoryItems?.length > 1 && !explicitIntentOverride && !comboChoice && isReferentialFollowup(message)) {
     return {
       text: categoryDisambiguationText(
@@ -1865,7 +1864,6 @@ function reply(message, state) {
     };
   }
 
-  // Final fallback does not clear context.
   return {
     text: unknownItemFallback(),
     lastId: state.lastId,
