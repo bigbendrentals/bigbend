@@ -1,5 +1,4 @@
 import express from "express";
-import fetch from "node-fetch";
 import { EQUIPMENT } from "./inventory.js";
 import { money } from "./pricing.js";
 import {
