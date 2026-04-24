@@ -39,7 +39,7 @@ export const ITEM_IDS = {
   BULL_FLOAT: "bull-float",
   BOBCAT_BRUSHCAT_60_HIGH_FLOW_BRUSH_CUTTER: "bobcat-brushcat-60-high-flow-brush-cutter",
   IGNITE_3_POINT_72_BOX_BLADE: "ignite-3-point-72-box-blade",
-  2_STORY_MOBILE_BAKER_SCAFFOLDING_TOWER_OUTRIG: "2-story-mobile-baker-scaffolding-tower-with-outriggers-guard",
+  ITEM_2_STORY_MOBILE_BAKER_SCAFFOLDING_TOWER_OUTRIG: "2-story-mobile-baker-scaffolding-tower-with-outriggers-guard",
   BLUE_DIAMOND_EX2_MINI_SKID_AUGER_10_12_OR_18: "blue-diamond-ex2-mini-skid-auger-10-12-or-18-bit-rented-sepa",
   STIHL_BT131_AUGER: "stihl-bt131-auger",
   DITCH_WITCH_C30X: "ditch-witch-c30x",
@@ -51,14 +51,14 @@ export const ITEM_IDS = {
   ELECTRIC_EEL_COMMERCIAL_DRAIN_CLEANER: "electric-eel-commercial-drain-cleaner",
   TROY_BILT_HORSE_REAR_TINE_TILLER: "troy-bilt-horse-rear-tine-tiller",
   DEMOLITION_HAMMER_SKID_STEER_OR_EXCAVATOR: "demolition-hammer-skid-steer-or-excavator",
-  9_CUBIC_FT_TOWABLE_CONCRETE_MIXER: "9-cubic-ft-towable-concrete-mixer",
+  ITEM_9_CUBIC_FT_TOWABLE_CONCRETE_MIXER: "9-cubic-ft-towable-concrete-mixer",
   PROLUX_20_COMMERCIAL_FLOOR_BUFFER_SCRUBBER_PO: "prolux-20-commercial-floor-buffer-scrubber-polisher-sander",
-  6_5_HP_HONDA_REVERSE_HYDRAULIC_PLATE_COMPACTO: "6-5-hp-honda-reverse-hydraulic-plate-compactor-for-asphalt-a",
+  ITEM_6_5_HP_HONDA_REVERSE_HYDRAULIC_PLATE_COMPACTO: "6-5-hp-honda-reverse-hydraulic-plate-compactor-for-asphalt-a",
   STIHL_RB_600_PRESSURE_WASHER_3200_PSI: "stihl-rb-600-pressure-washer-3200-psi",
   RIDGID_10_WET_TILE_SAW_STAND_DIAMOND_BLADE_SO: "ridgid-10-wet-tile-saw-with-stand-diamond-blade-sold-separat",
   TR_89305_JACKHAMMER: "tr-89305-jackhammer",
   SCAFFOLDING_W_ALUMINUM_PLATFORMS: "scaffolding-w-aluminum-platforms",
-  18_TRENCHER_NOT_SELF_PROPELLED: "18-trencher-not-self-propelled",
+  ITEM_18_TRENCHER_NOT_SELF_PROPELLED: "18-trencher-not-self-propelled",
   ROTARY_LASER_LEVEL: "rotary-laser-level",
   PORTABLE_PANCAKE_COMPRESSOR: "portable-pancake-compressor",
   JOHN_DEERE_TRACTOR_BACKHOE: "john-deere-tractor-backhoe",
@@ -468,7 +468,7 @@ export const EQUIPMENT = {
     details: "Ignite 3 Point 72 Box Blade"
   },
 
-  [ITEM_IDS.2_STORY_MOBILE_BAKER_SCAFFOLDING_TOWER_OUTRIG]: {
+  [ITEM_IDS.ITEM_2_STORY_MOBILE_BAKER_SCAFFOLDING_TOWER_OUTRIG]: {
     name: "2-Story Mobile Baker Scaffolding Tower with Outriggers, Guard Rail, and Scaffolding Platform",
     category: "material_handling",
     day: 93.5,
@@ -591,7 +591,7 @@ export const EQUIPMENT = {
     details: "Demolition Hammer Skid Steer or Excavator"
   },
 
-  [ITEM_IDS.9_CUBIC_FT_TOWABLE_CONCRETE_MIXER]: {
+  [ITEM_IDS.ITEM_9_CUBIC_FT_TOWABLE_CONCRETE_MIXER]: {
     name: "9 cubic ft Towable Concrete Mixer",
     category: "small_tool",
     day: 80,
@@ -611,7 +611,7 @@ export const EQUIPMENT = {
     details: "Prolux 20' Commercial Floor Buffer Scrubber/Polisher/Sander"
   },
 
-  [ITEM_IDS.6_5_HP_HONDA_REVERSE_HYDRAULIC_PLATE_COMPACTO]: {
+  [ITEM_IDS.ITEM_6_5_HP_HONDA_REVERSE_HYDRAULIC_PLATE_COMPACTO]: {
     name: "6.5 HP Honda Reverse Hydraulic Plate Compactor for Asphalt, Aggregate, Cohesive Soil Compaction",
     category: "small_tool",
     day: 100,
@@ -661,7 +661,7 @@ export const EQUIPMENT = {
     details: "Scaffolding w/aluminum platforms"
   },
 
-  [ITEM_IDS.18_TRENCHER_NOT_SELF_PROPELLED]: {
+  [ITEM_IDS.ITEM_18_TRENCHER_NOT_SELF_PROPELLED]: {
     name: "18' Trencher (not self-propelled)",
     category: "small_tool",
     day: 125,
