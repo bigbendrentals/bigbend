@@ -5,6 +5,7 @@ import {
   normalize,
   findEquipment,
   findAllEquipment,
+  findCategory,
   isTrailerQuestion,
   wantsTrailerAddedToTotal,
   isPriceQuestion,
@@ -15,7 +16,7 @@ const app = express();
 app.use(express.json());
 
 /* =========================
-   ENV (FIXED FOR RENDER)
+   ENV
 ========================= */
 const PAGE_ACCESS_TOKEN = process.env.META_PAGE_ACCESS_TOKEN;
 const VERIFY_TOKEN = process.env.META_VERIFY_TOKEN;
@@ -38,7 +39,7 @@ function getState(senderId) {
 }
 
 /* =========================
-   SEND MESSAGE (FIXED)
+   SEND MESSAGE
 ========================= */
 async function sendMessage(senderId, text) {
   try {
@@ -97,12 +98,31 @@ function handleMessage(message, senderId) {
   const explicit = findEquipment(message);
   const matches = findAllEquipment(message);
 
-  /* CATEGORY LIST */
+  /* =========================
+     CATEGORY HANDLING (NEW FIX)
+  ========================= */
+  const category = findCategory(message);
+
+  if (category) {
+    const ids = Object.keys(EQUIPMENT).filter(id =>
+      EQUIPMENT[id].name.toLowerCase().includes(category)
+    );
+
+    if (ids.length > 0) {
+      return `We have these options:\n\n${formatOptions(ids)}\n\nWhich one are you interested in?`;
+    }
+  }
+
+  /* =========================
+     MULTI MATCH
+  ========================= */
   if (matches.length > 1 && !explicit) {
     return `We have these options:\n\n${formatOptions(matches)}\n\nWhich one are you interested in?`;
   }
 
-  /* SET CONTEXT */
+  /* =========================
+     SET CONTEXT
+  ========================= */
   if (explicit) {
     state.lastItemId = explicit.id;
     return `${explicit.name} is ${money(explicit.day)} per day.`;
@@ -110,13 +130,17 @@ function handleMessage(message, senderId) {
 
   const item = state.lastItemId ? EQUIPMENT[state.lastItemId] : null;
 
-  /* TRAILER QUESTION */
+  /* =========================
+     TRAILER QUESTION
+  ========================= */
   if (isTrailerQuestion(message)) {
     if (!item) return "Which machine are you planning to haul?";
     return "We can supply a trailer for $49.99 for the first day and $15 for each additional day.";
   }
 
-  /* TOTAL WITH TRAILER */
+  /* =========================
+     TOTAL WITH TRAILER
+  ========================= */
   if (wantsTrailerAddedToTotal(message)) {
     if (!item) return "Which machine are you referring to?";
 
@@ -144,7 +168,9 @@ Total: ${money(total)}
 Want me to reserve it for you?`;
   }
 
-  /* TOTAL WITHOUT TRAILER */
+  /* =========================
+     TOTAL WITHOUT TRAILER
+  ========================= */
   if (isPriceQuestion(message)) {
     if (!item) return "Which machine are you referring to?";
 
@@ -174,7 +200,9 @@ app.post("/webhook", async (req, res) => {
 
     if (senderId && message) {
       console.log("Incoming:", message);
+
       const reply = handleMessage(message, senderId);
+
       console.log("Reply:", reply);
 
       await sendMessage(senderId, reply);
@@ -203,7 +231,7 @@ app.get("/webhook", (req, res) => {
 });
 
 /* =========================
-   START SERVER
+   START
 ========================= */
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
