@@ -327,9 +327,8 @@ if (
   !containsAny(text, ["combo", "with skid steer", "with a skid steer", "package"])
 ) {
 
-  // Step 1: filter based on keywords in user message
   const filtered = matchedIds.filter(id => {
-    const name = EQUIPMENT[id].name.toLowerCase();
+    const name = EQUIPMENT[id]?.name?.toLowerCase() || "";
 
     if (text.includes("mini") && !name.includes("mini")) return false;
     if (text.includes("skid") && !name.includes("skid")) return false;
@@ -338,6 +337,28 @@ if (
     return true;
   });
 
+  const finalList = filtered.length > 0 ? filtered : matchedIds;
+
+  finalList.sort((a, b) => {
+    const aName = EQUIPMENT[a]?.name?.toLowerCase() || "";
+    const bName = EQUIPMENT[b]?.name?.toLowerCase() || "";
+
+    const score = (name) =>
+      (text.includes("mini") && name.includes("mini") ? 2 : 0) +
+      (text.includes("skid") && name.includes("skid") ? 2 : 0) +
+      (text.includes("auger") && name.includes("auger") ? 2 : 0);
+
+    return score(bName) - score(aName);
+  });
+
+  return preserveContext(state, {
+    text: `We have these options:\n\n${formatMatchedOptions(finalList)}\n\nWhich one are you interested in?`,
+    lastId: null,
+    lastCategory: "multi_match",
+    lastCategoryItems: finalList,
+    lastQuotedItems: finalList
+  });
+}
   const FinalList = filtered.length > 0 ? filtered : matchedIds;
 
   // Step 2: score + sort best matches to top
