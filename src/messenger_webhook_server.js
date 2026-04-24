@@ -769,12 +769,24 @@ function reply(message, state) {
 }
 
 function addCloseLine(text) {
-  if (!text || !text.includes("Total:")) return text;
+  text = String(text || "");
+
+  if (!text.trim()) {
+    return "Sorry, I had trouble reading that request. Please try asking another way.";
+  }
+
+  if (!text.includes("Total:")) return text;
   if (text.includes("Want me to get this reserved")) return text;
   return `${text}\n\nWant me to get this reserved for you?`;
 }
 
 function splitMessage(text, maxLen = 1800) {
+  text = String(text || "");
+
+  if (!text.trim()) {
+    text = "Sorry, I had trouble reading that request. Please try asking another way.";
+  }
+
   if (text.length <= maxLen) return [text];
 
   const parts = [];
@@ -842,17 +854,18 @@ app.post("/webhook", async (req, res) => {
           const result = reply(event.message.text, session);
 
           updateSession(senderId, {
-            lastId: result.lastId !== undefined ? result.lastId : session.lastId,
-            lastCategory: result.lastCategory !== undefined ? result.lastCategory : session.lastCategory,
-            lastCategoryItems: result.lastCategoryItems !== undefined ? result.lastCategoryItems : session.lastCategoryItems,
-            lastQuotedItems: result.lastQuotedItems !== undefined ? result.lastQuotedItems : session.lastQuotedItems,
-            lastQuote: result.lastQuote !== undefined ? result.lastQuote : session.lastQuote,
-            lastMulcherComboChoice: result.lastMulcherComboChoice !== undefined ? result.lastMulcherComboChoice : session.lastMulcherComboChoice,
-            lastDeliveryFee: result.lastDeliveryFee !== undefined ? result.lastDeliveryFee : session.lastDeliveryFee,
-            lastDeliveryPlace: result.lastDeliveryPlace !== undefined ? result.lastDeliveryPlace : session.lastDeliveryPlace
+            lastId: result?.lastId !== undefined ? result.lastId : session.lastId,
+            lastCategory: result?.lastCategory !== undefined ? result.lastCategory : session.lastCategory,
+            lastCategoryItems: result?.lastCategoryItems !== undefined ? result.lastCategoryItems : session.lastCategoryItems,
+            lastQuotedItems: result?.lastQuotedItems !== undefined ? result.lastQuotedItems : session.lastQuotedItems,
+            lastQuote: result?.lastQuote !== undefined ? result.lastQuote : session.lastQuote,
+            lastMulcherComboChoice: result?.lastMulcherComboChoice !== undefined ? result.lastMulcherComboChoice : session.lastMulcherComboChoice,
+            lastDeliveryFee: result?.lastDeliveryFee !== undefined ? result.lastDeliveryFee : session.lastDeliveryFee,
+            lastDeliveryPlace: result?.lastDeliveryPlace !== undefined ? result.lastDeliveryPlace : session.lastDeliveryPlace
           });
 
-          await sendMessengerText(senderId, addCloseLine(result.text));
+          const responseText = typeof result === "string" ? result : result?.text;
+          await sendMessengerText(senderId, addCloseLine(responseText));
         }
       }
     }
