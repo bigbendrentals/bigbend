@@ -550,7 +550,42 @@ function reply(message, state) {
   }
 
   if (isTrailerQuestion(message)) {
-    const requestedDays = parseDays(message) || state.lastQuote?.days || 1;
+
+  const id = explicitFound?.id || state.lastId;
+
+  // ✅ If we know the machine, build FULL quote (machine + trailer)
+  if (id && EQUIPMENT[id]) {
+
+    const days = parseDays(message) || 1;
+
+    const baseQuote = multiDayQuote(EQUIPMENT[id], id, days, 0);
+    const trailer = applyTrailerToQuote(baseQuote, days);
+
+    const tax = trailer.quote.total * 0.07;
+    const finalTotal = trailer.quote.total + tax;
+
+    return preserveContext(state, {
+      text:
+`${EQUIPMENT[id].name} pricing:
+
+Machine (${days} day${days > 1 ? "s" : ""}): $${baseQuote.base.toFixed(2)}
+Trailer: $${trailer.trailerFee.toFixed(2)}
+
+Subtotal: $${trailer.quote.total.toFixed(2)}
+Sales tax (7%): $${tax.toFixed(2)}
+Total: $${finalTotal.toFixed(2)}`,
+
+      lastId: id,
+      lastQuotedItems: [id],
+      lastQuote: buildBundleQuote([id], days, trailer.trailerFee),
+      lastDeliveryFee: state.lastDeliveryFee,
+      lastDeliveryPlace: state.lastDeliveryPlace
+    });
+  }
+
+  // ❌ fallback only if we DON’T know the machine
+  return trailerWeightText(state);
+}
 
     if (state.lastQuote && wantsTrailerTotal) {
       const response = applyTrailerToQuote(state.lastQuote, requestedDays);
