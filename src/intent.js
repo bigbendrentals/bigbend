@@ -157,6 +157,56 @@ export function arrangedBoomLiftIntent(text) {
     "higher reach"
   ]);
 }
+export function deliveryInfo(text) {
+  const t = normalize(text);
+  if (t.includes("perry")) return { fee: 200, placeLabel: "Perry" };
+  if (t.includes("steinhatchee") || t.includes("dekle") || t.includes("lamont")) {
+    return { fee: 300, placeLabel: "that area" };
+  }
+  return null;
+}
+
+export function isMulcherQuestion(text) {
+  const t = normalize(text);
+  return containsAny(t, [
+    "mulcher",
+    "mulchers",
+    "forestry mulcher",
+    "forestry mulchers",
+    "mulcher combo",
+    "mulcher combos",
+    "cat mulcher",
+    "jd mulcher",
+    "john deere mulcher",
+    "hm316",
+    "mh60d"
+  ]);
+}
+
+export function isMulcherComboQuestion(text) {
+  const t = normalize(text);
+  return containsAny(t, [
+    "mulcher combo",
+    "mulcher combos",
+    "forestry mulcher combo",
+    "mulcher and skid steer",
+    "with a skid steer",
+    "with skid steer",
+    "combo"
+  ]) || t === "both";
+}
+
+export function isMulcherOnlyQuestion(text) {
+  const t = normalize(text);
+  return containsAny(t, [
+    "just the mulcher",
+    "mulcher only",
+    "just mulcher",
+    "just the attachment",
+    "attachment only",
+    "just the head"
+  ]);
+}
 export function findEquipment(text) { const candidates = []; for (const [id, item] of Object.entries(EQUIPMENT)) { let score = 0; for (const alias of item.aliases || []) score = Math.max(score, scoreAliasMatch(text, alias)); if (score > 0) candidates.push({ id, item, score }); } candidates.sort((a, b) => b.score - a.score); return candidates[0] || null; }
 export function findAllEquipment(text) { const found = []; for (const [id, item] of Object.entries(EQUIPMENT)) { let score = 0; for (const alias of item.aliases || []) score = Math.max(score, scoreAliasMatch(text, alias)); if (score > 0) found.push(id); } return [...new Set(found)]; }
 export function findCategory(text) { const t = normalize(text); for (const [category, aliases] of Object.entries(CATEGORY_ALIASES)) { if (aliases.some((alias) => t.includes(normalize(alias)))) return category; } return null; }
