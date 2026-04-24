@@ -405,3 +405,20 @@ export const EQUIPMENT = {
   }
 
 };
+export const CATEGORY_ALIASES = {
+  excavator: ["excavator", "excavators", "mini excavator", "mini excavators", "trackhoe", "trackhoes", "digger", "digger machine"],
+  skid_steer: ["skid steer", "skid steers", "skid steer4s", "track loader", "track loaders", "compact track loader", "compact track loaders", "ctl", "ride on skid steer", "mini skid steer"],
+  boom_lift: ["boom lift", "boom lifts", "man lift", "man lifts", "articulating boom", "towable boom", "towable man lift"],
+  scissor_lift: ["scissor lift", "scissor lifts", "slab scissor lift", "slab scissor lifts", "flat scissor lift", "flat surface scissor lift"],
+  telehandler: ["telehandler", "telehandlers", "lull", "lulls", "reach forklift"],
+  forklift: ["forklift", "forklifts", "warehouse forklift", "rough terrain forklift", "rough ground forklift"],
+  pressure_washer: ["pressure washer", "pressure washers", "power washer", "power washers"],
+  trailer: ["trailer", "trailers", "equipment trailer", "dump trailer", "gooseneck"]
+};
+
+export const CATEGORY_ITEMS = {
+  excavator: [ITEM_IDS.CAT_3017, ITEM_IDS.JD_50P, ITEM_IDS.CAT_3075],
+  skid_steer: [ITEM_IDS.BOXER, ITEM_IDS.CAT_239, ITEM_IDS.CAT_265, ITEM_IDS.JD_333P],
+  boom_lift: [ITEM_IDS.GENIE_Z45, ITEM_IDS.JLG_ET500J],
+  scissor_lift: [ITEM_IDS.GS1930, ITEM_IDS.GS3246]
+};
