@@ -356,12 +356,31 @@ function reply(message, state) {
   const text = normalize(message);
   const explicitFound = findEquipment(message);
   const matchedIds = findAllEquipment(message);
+  // 🔥 AUTO-SELECT if user clearly picked one item
+let selectedId = explicitFound?.id || null;
+
+if (!selectedId && matchedIds.length > 0) {
+  if (matchedIds.length === 1) {
+    selectedId = matchedIds[0];
+  } else {
+    // try strong keyword match (like "skid steer auger")
+    const textLower = text.toLowerCase();
+
+    const strongMatch = matchedIds.find(id => {
+      const name = EQUIPMENT[id].name.toLowerCase();
+      return textLower.split(" ").every(word => name.includes(word));
+    });
+
+    if (strongMatch) selectedId = strongMatch;
+  }
+}
   const category = findCategory(message);
 
-  if (
-    matchedIds.length > 1 &&
-    !containsAny(text, ["combo", "with skid steer", "with a skid steer", "package"])
-  ) {
+ if (
+  !selectedId &&   // 🔥 THIS LINE FIXES YOUR LOOP
+  matchedIds.length > 1 &&
+  !containsAny(text, ["combo", "with skid steer", "with a skid steer", "package"])
+)
     const finalList = getRelevantMultiMatches(message, matchedIds);
 
     return preserveContext(state, {
@@ -382,7 +401,7 @@ function reply(message, state) {
     !isTrailerQuestion(message) &&
     isReferentialFollowup(message);
 
-  const id = explicitFound ? explicitFound.id : useLastId ? state.lastId : null;
+  const id = selectedId || (useLastId ? state.lastId : null);
   const item = id ? EQUIPMENT[id] : null;
   const days = parseDays(message) || 1;
   const delivery = deliveryInfo(message);
