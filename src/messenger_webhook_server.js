@@ -6,6 +6,8 @@ import {
   findEquipment,
   findAllEquipment,
   findCategory,
+  isDeliveryQuestion,
+  deliveryInfo,
   isTrailerQuestion,
   wantsTrailerAddedToTotal,
   isPriceQuestion,
@@ -80,7 +82,7 @@ function cleanWords(message) {
     .split(/\s+/)
     .map((w) => w.replace(/[^a-z0-9]/g, ""))
     .filter((w) => w.length > 1)
-    .filter((w) => !["the", "a", "an", "for", "how", "much", "total", "with", "what", "about", "one", "it"].includes(w));
+    .filter((w) => !["the", "a", "an", "for", "how", "much", "total", "with", "what", "about", "one", "it", "do", "you", "deliver", "delivery"].includes(w));
 }
 
 function resolveFromLastOptions(message, state) {
@@ -237,6 +239,19 @@ function handleMessage(message, senderId) {
 
   if (selectedItem) {
     state.lastItemId = selectedId;
+  }
+
+  // DELIVERY QUESTIONS MUST BE HANDLED BEFORE ITEM CONTEXT.
+  // Otherwise a follow-up like "do you deliver" gets treated like a repeat question
+  // about the last selected item.
+  if (isDeliveryQuestion(message)) {
+    const delivery = deliveryInfo(message);
+
+    if (delivery) {
+      return `Yes, we can deliver there. Delivery for ${delivery.placeLabel} is ${money(delivery.fee)}.`;
+    }
+
+    return "We deliver within about a 75-mile radius. What city or area are you in? Delivery pricing depends on location.";
   }
 
   if (wantsTrailerAddedToTotal(message)) {
