@@ -196,6 +196,14 @@ if (
   matchedIds.length > 1 &&
   !containsAny(text, ["combo", "with skid steer", "with a skid steer", "package"])
 ) {
+  return preserveContext(state, {
+    text: `We have these options:\n\n${formatMatchedOptions(matchedIds)}\n\nWhich one are you interested in?`,
+    lastId: null,
+    lastCategory: "multi_match",
+    lastCategoryItems: matchedIds,
+    lastQuotedItems: matchedIds
+  });
+}
   return `We have these options:\n\n${formatMatchedOptions(matchedIds)}\n\nWhich one are you interested in?`;
 }
   const explicitIntentOverride = hasExplicitIntentOverride(message);
