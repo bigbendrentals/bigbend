@@ -148,37 +148,6 @@ function isDetailRequest(text) {
   return containsAny(t, ["tell me about", "what about", "details", "info", "information", "more about"]);
 }
 
-function rebuildLastQuoteWithAddons(state, message) {
-  if (!state.lastQuote?.itemIds?.length) return null;
-
-  const requestedDays = parseDays(message) || state.lastQuote.days || 1;
-  const delivery = deliveryInfo(message);
-  const requestedDeliveryFee = delivery?.fee || state.lastQuote.deliveryFee || state.lastDeliveryFee || 0;
-  const addDelivery = wantsDeliveryAddedToTotal(message) || Boolean(state.lastQuote.deliveryFee);
-  const addTrailer = wantsTrailerAddedToTotal(message) || Boolean(state.lastQuote.trailerFee);
-
-  let quote;
-  if (state.lastQuote.itemIds.length >= 2) {
-    quote = buildBundleQuote(state.lastQuote.itemIds, requestedDays, addDelivery ? requestedDeliveryFee : 0);
-  } else {
-    const singleId = state.lastQuote.itemIds[0];
-    const singleItem = EQUIPMENT[singleId];
-    if (!singleItem) return null;
-    quote = multiDayQuote(singleItem, singleId, requestedDays, addDelivery ? requestedDeliveryFee : 0);
-  }
-
-  if (addTrailer) {
-    quote = applyTrailerToQuote(quote, requestedDays).quote;
-  }
-
-  return {
-    quote,
-    requestedDeliveryFee,
-    deliveryPlace: delivery?.placeLabel || state.lastDeliveryPlace
-  };
-}
-
-
 function singleQuote(item, id) {
   const lines = [];
   if (id === ITEM_IDS.JLG_ET500J) {
@@ -220,26 +189,6 @@ function reply(message, state) {
     return preserveContext(state, { text: `Yes, we can deliver there. Delivery for ${delivery.placeLabel} is ${money(delivery.fee)}.`, lastCategory: null, lastCategoryItems: [], lastDeliveryFee: delivery.fee, lastDeliveryPlace: delivery.placeLabel });
   }
 
-  if (
-    state.lastQuote &&
-    !explicitFound &&
-    !comboChoice &&
-    isFinalTotalFollowup(message)
-  ) {
-    const rebuilt = rebuildLastQuoteWithAddons(state, message);
-    if (rebuilt) {
-      return clearCategoryFields({
-        text: rebuilt.quote.text,
-        lastId: state.lastId,
-        lastQuotedItems: rebuilt.quote.itemIds,
-        lastQuote: rebuilt.quote,
-        lastMulcherComboChoice: state.lastMulcherComboChoice,
-        lastDeliveryFee: rebuilt.requestedDeliveryFee || state.lastDeliveryFee,
-        lastDeliveryPlace: rebuilt.deliveryPlace
-      });
-    }
-  }
-
   if (isMulcherQuestion(message)) {
     if (isMulcherComboQuestion(message)) {
       return preserveContext(state, { text: "Which combo do you need — CAT HM316 + CAT 265 or John Deere MH60D + John Deere 333P? The Boxer and CAT 239 cannot be used with either mulcher.", lastId: null, lastCategory: "mulcher_combo", lastCategoryItems: [ITEM_IDS.CAT_MULCHER, ITEM_IDS.CAT_265, ITEM_IDS.JD_MULCHER, ITEM_IDS.JD_333P], lastQuotedItems: [] });
@@ -260,7 +209,7 @@ function reply(message, state) {
 
   if (comboChoice) {
     const variant = isDetailRequest(message) ? "details" : "quote";
-    let response = buildMulcherComboResponse(comboChoice, days, (wantsDeliveryTotal || deliveryFee) ? effectiveDeliveryFee : 0, variant);
+    let response = buildMulcherComboResponse(comboChoice, days, wantsDeliveryTotal ? effectiveDeliveryFee : 0, variant);
     if (wantsTrailerTotal) response = applyTrailerToQuote(response.quote, days);
     const comboIds = MULCHER_COMBOS[comboChoice];
     const representativeId = comboChoice === "cat" ? ITEM_IDS.CAT_265 : ITEM_IDS.JD_333P;
@@ -288,7 +237,7 @@ function reply(message, state) {
   }
 
   if (matchedIds.length >= 2 && isPriceQuestion(message)) {
-    let quote = buildBundleQuote(matchedIds, days, (wantsDeliveryTotal || deliveryFee) ? effectiveDeliveryFee : 0);
+    let quote = buildBundleQuote(matchedIds, days, wantsDeliveryTotal ? effectiveDeliveryFee : 0);
     if (wantsTrailerTotal) quote = applyTrailerToQuote(quote, days).quote;
     return clearCategoryFields({ text: quote.text, lastId: matchedIds[0], lastQuotedItems: matchedIds, lastQuote: quote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: effectiveDeliveryFee, lastDeliveryPlace: delivery?.placeLabel || state.lastDeliveryPlace });
   }
@@ -331,7 +280,7 @@ function reply(message, state) {
     if (isThumbQuestion(message)) return clearCategoryFields({ text: item.thumb || `I don’t have a thumb listed on the ${item.name}. ${item.details || ""}`.trim(), lastId: id, lastQuotedItems: [id], lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace });
     if (isBucketOrCabQuestion(message)) return clearCategoryFields({ text: item.details || singleQuote(item, id), lastId: id, lastQuotedItems: [id], lastQuote: state.lastQuote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: state.lastDeliveryFee, lastDeliveryPlace: state.lastDeliveryPlace });
     if (isPriceQuestion(message)) {
-      let quote = days > 1 ? multiDayQuote(item, id, days, (wantsDeliveryTotal || deliveryFee) ? effectiveDeliveryFee : 0) : buildBundleQuote([id], 1, (wantsDeliveryTotal || deliveryFee) ? effectiveDeliveryFee : 0);
+      let quote = days > 1 ? multiDayQuote(item, id, days, wantsDeliveryTotal ? effectiveDeliveryFee : 0) : buildBundleQuote([id], 1, wantsDeliveryTotal ? effectiveDeliveryFee : 0);
       if (wantsTrailerTotal) quote = applyTrailerToQuote(quote, days).quote;
       return clearCategoryFields({ text: quote.text, lastId: id, lastQuotedItems: [id], lastQuote: quote, lastMulcherComboChoice: state.lastMulcherComboChoice, lastDeliveryFee: effectiveDeliveryFee, lastDeliveryPlace: delivery?.placeLabel || state.lastDeliveryPlace });
     }
@@ -341,12 +290,6 @@ function reply(message, state) {
   if (!explicitFound && state.lastCategoryItems?.length > 1 && !explicitIntentOverride && !comboChoice && isReferentialFollowup(message)) return preserveContext(state, { text: categoryDisambiguationText(state.lastCategoryItems, bookingIntent(message) ? "want to schedule" : "mean") });
 
   return preserveContext(state, { text: unknownItemFallback() });
-}
-
-function addCloseLine(text) {
-  if (!text || !text.includes("Total:")) return text;
-  if (text.includes("Want me to get this reserved")) return text;
-  return `${text}\n\nWant me to get this reserved for you?`;
 }
 
 function splitMessage(text, maxLen = 1800) {
@@ -408,7 +351,7 @@ app.post("/webhook", async (req, res) => {
             lastDeliveryFee: result.lastDeliveryFee !== undefined ? result.lastDeliveryFee : session.lastDeliveryFee,
             lastDeliveryPlace: result.lastDeliveryPlace !== undefined ? result.lastDeliveryPlace : session.lastDeliveryPlace
           });
-          await sendMessengerText(senderId, addCloseLine(result.text));
+          await sendMessengerText(senderId, result.text);
         }
       }
     }
