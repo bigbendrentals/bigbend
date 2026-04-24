@@ -141,6 +141,22 @@ export function wantsTrailerAddedToTotal(text) {
     "and trailer"
   ]);
 }
+export function arrangedBoomLiftIntent(text) {
+  const t = normalize(text);
+  return containsAny(t, [
+    "larger",
+    "larger boom",
+    "larger boom lift",
+    "taller",
+    "taller boom",
+    "taller boom lift",
+    "bigger",
+    "specialty boom",
+    "specialty equipment",
+    "different boom",
+    "higher reach"
+  ]);
+}
 export function findEquipment(text) { const candidates = []; for (const [id, item] of Object.entries(EQUIPMENT)) { let score = 0; for (const alias of item.aliases || []) score = Math.max(score, scoreAliasMatch(text, alias)); if (score > 0) candidates.push({ id, item, score }); } candidates.sort((a, b) => b.score - a.score); return candidates[0] || null; }
 export function findAllEquipment(text) { const found = []; for (const [id, item] of Object.entries(EQUIPMENT)) { let score = 0; for (const alias of item.aliases || []) score = Math.max(score, scoreAliasMatch(text, alias)); if (score > 0) found.push(id); } return [...new Set(found)]; }
 export function findCategory(text) { const t = normalize(text); for (const [category, aliases] of Object.entries(CATEGORY_ALIASES)) { if (aliases.some((alias) => t.includes(normalize(alias)))) return category; } return null; }
