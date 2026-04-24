@@ -1,8 +1,0 @@
-{
-  "name": "bigbend-messenger-modular",
-  "version": "1.0.0",
-  "type": "module",
-  "main": "src/messenger_webhook_server.js",
-  "scripts": { "start": "node src/messenger_webhook_server.js" },
-  "dependencies": { "dotenv": "^16.4.7", "express": "^4.21.2" }
-}
