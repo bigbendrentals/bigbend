@@ -264,9 +264,29 @@ function isDetailRequest(message) {
 }
 
 function rebuildLastQuoteWithAddons(state, message) {
-  if (!state.lastQuote?.itemIds?.length) return null;
+  if (!state.lastQuote?.itemIds?.length && !state.lastId) return null;
 
-  const requestedDays = parseDays(message) || state.lastQuote.days || 1;
+  const requestedDays = parseDays(message) || state.lastQuote?.days || 1;
+
+  // If the customer just selected a single item, quote that item instead of an older stale quote.
+  if (state.lastId && (!state.lastQuote?.itemIds?.includes(state.lastId) || state.lastQuote?.itemIds?.length > 1)) {
+    const singleItem = EQUIPMENT[state.lastId];
+    if (!singleItem) return null;
+
+    const delivery = deliveryInfo(message);
+    const requestedDeliveryFee = delivery?.fee || state.lastDeliveryFee || 0;
+    const addDelivery = wantsDeliveryAddedToTotal(message);
+    const addTrailer = wantsTrailerAddedToTotal(message);
+
+    let quote = multiDayQuote(singleItem, state.lastId, requestedDays, addDelivery ? requestedDeliveryFee : 0);
+    if (addTrailer) quote = applyTrailerToQuote(quote, requestedDays).quote;
+
+    return {
+      quote,
+      requestedDeliveryFee,
+      deliveryPlace: delivery?.placeLabel || state.lastDeliveryPlace
+    };
+  }
   const delivery = deliveryInfo(message);
   const requestedDeliveryFee = delivery?.fee || state.lastQuote.deliveryFee || state.lastDeliveryFee || 0;
   const addDelivery = wantsDeliveryAddedToTotal(message) || Boolean(state.lastQuote.deliveryFee);
@@ -292,6 +312,26 @@ function rebuildLastQuoteWithAddons(state, message) {
     requestedDeliveryFee,
     deliveryPlace: delivery?.placeLabel || state.lastDeliveryPlace
   };
+}
+
+
+function rememberSingleItemQuote(state, id) {
+  const item = EQUIPMENT[id];
+  if (!item) {
+    return preserveContext(state, {
+      lastId: id,
+      lastQuotedItems: [id]
+    });
+  }
+
+  return preserveContext(state, {
+    lastId: id,
+    lastQuotedItems: [id],
+    lastQuote: buildBundleQuote([id], 1, 0),
+    // Keep lastCategoryItems alive so "how about the other one" still works
+    lastCategory: state.lastCategory,
+    lastCategoryItems: state.lastCategoryItems
+  });
 }
 
 function singleQuote(item, id) {
@@ -756,15 +796,13 @@ function reply(message, state) {
       });
     }
 
-    return clearCategoryFields({
+    return rememberSingleItemQuote(state, id) && {
+      ...rememberSingleItemQuote(state, id),
       text: singleQuote(item, id),
-      lastId: id,
-      lastQuotedItems: [id],
-      lastQuote: state.lastQuote,
       lastMulcherComboChoice: state.lastMulcherComboChoice,
       lastDeliveryFee: state.lastDeliveryFee,
       lastDeliveryPlace: state.lastDeliveryPlace
-    });
+    };
   }
 
   if (!selectedId && state.lastCategoryItems?.length > 1 && !explicitIntentOverride && !comboChoice && isReferentialFollowup(message)) {
