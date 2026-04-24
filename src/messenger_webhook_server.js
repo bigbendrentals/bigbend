@@ -36,6 +36,11 @@ import {
   findCategory,
   hasExplicitIntentOverride
 } from "./intent.js";
+import {
+  getRelevantMultiMatches,
+  resolveSmartSelection,
+  shouldShowMultiMatchOptions
+} from "./smart_response_engine.js";
 
 dotenv.config();
 
@@ -312,131 +317,19 @@ function singleQuote(item, id) {
   if (id === ITEM_IDS.BOXER) lines.push("Bucket is included.");
   if (item.details) lines.push(item.details);
 
-  return lines.join(" ");
-}
-
-function getRelevantMultiMatches(message, matchedIds) {
-  const text = normalize(message);
-
-  const filtered = matchedIds.filter((id) => {
-    const item = EQUIPMENT[id];
-    const haystack = `${item?.name || ""} ${(item?.aliases || []).join(" ")} ${item?.details || ""}`.toLowerCase();
-
-    if (text.includes("mini") && !haystack.includes("mini")) return false;
-    if (text.includes("skid") && !haystack.includes("skid")) return false;
-    if (text.includes("auger") && !haystack.includes("auger")) return false;
-    if ((text.includes("bush hog") || text.includes("brush hog")) && !(haystack.includes("bush hog") || haystack.includes("brush hog") || haystack.includes("brush cutter"))) return false;
-    if (text.includes("compactor") && !haystack.includes("compactor")) return false;
-
-    return true;
-  });
-
-  const finalList = filtered.length ? filtered : matchedIds;
-
-  finalList.sort((a, b) => {
-    const aItem = EQUIPMENT[a] || {};
-    const bItem = EQUIPMENT[b] || {};
-    const aHaystack = `${aItem.name || ""} ${(aItem.aliases || []).join(" ")} ${aItem.details || ""}`.toLowerCase();
-    const bHaystack = `${bItem.name || ""} ${(bItem.aliases || []).join(" ")} ${bItem.details || ""}`.toLowerCase();
-
-    const score = (haystack) =>
-      (text.includes("mini") && haystack.includes("mini") ? 2 : 0) +
-      (text.includes("skid") && haystack.includes("skid") ? 2 : 0) +
-      (text.includes("auger") && haystack.includes("auger") ? 2 : 0) +
-      ((text.includes("bush hog") || text.includes("brush hog")) && (haystack.includes("bush hog") || haystack.includes("brush hog") || haystack.includes("brush cutter")) ? 2 : 0) +
-      (text.includes("compactor") && haystack.includes("compactor") ? 2 : 0);
-
-    return score(bHaystack) - score(aHaystack);
-  });
-
-  return finalList;
-}
-
-
-function meaningfulWords(message) {
-  return normalize(message)
-    .split(/\s+/)
-    .map((w) => w.replace(/[^a-z0-9]/g, ""))
-    .filter((w) => w.length > 2)
-    .filter((w) => ![
-      "the", "and", "for", "how", "much", "price", "cost", "total",
-      "about", "what", "with", "that", "this", "one", "want", "need",
-      "rent", "rental", "have", "available", "option", "options"
-    ].includes(w));
-}
-
-function resolveFromLastOptions(message, state) {
-  if (!state.lastCategoryItems || state.lastCategoryItems.length === 0) return null;
-
-  const words = meaningfulWords(message);
-  if (words.length === 0) return null;
-
-  const scored = state.lastCategoryItems
-    .map((id) => {
-      const item = EQUIPMENT[id];
-      if (!item) return null;
-
-      const haystack = `${item.name || ""} ${(item.aliases || []).join(" ")} ${item.details || ""}`.toLowerCase();
-      let score = 0;
-
-      for (const word of words) {
-        if (haystack.includes(word)) score += 3;
-      }
-
-      // phrase boosts for common customer shorthand
-      const text = normalize(message);
-      if (text.includes("mini") && haystack.includes("mini")) score += 3;
-      if (text.includes("skid") && haystack.includes("skid")) score += 2;
-      if (text.includes("stihl") && haystack.includes("stihl")) score += 5;
-      if (text.includes("blue diamond") && haystack.includes("blue diamond")) score += 5;
-
-      return { id, score };
-    })
-    .filter(Boolean)
-    .filter((x) => x.score > 0)
-    .sort((a, b) => b.score - a.score);
-
-  if (!scored.length) return null;
-  return scored[0].id;
-}
-
-
-function shouldAutoSelect(message) {
-  const text = normalize(message);
-  if (containsAny(text, ["do you have", "do u have", "carry", "rent", "available", "options"])) return false;
-  return text.split(/\s+/).filter(Boolean).length > 1;
+  return [...new Set(lines)].join(" ");
 }
 
 function reply(message, state) {
   const text = normalize(message);
   const explicitFound = findEquipment(message);
   const matchedIds = findAllEquipment(message);
-  const contextualMatch = resolveFromLastOptions(message, state);
   const category = findCategory(message);
 
-  let selectedId = contextualMatch || null;
+  const smartSelection = resolveSmartSelection(message, state, explicitFound, matchedIds);
+  const selectedId = smartSelection.selectedId;
 
-  if (matchedIds.length === 1) {
-    selectedId = matchedIds[0];
-  } else if (explicitFound && shouldAutoSelect(message)) {
-    selectedId = explicitFound.id;
-  } else if (matchedIds.length > 1 && shouldAutoSelect(message)) {
-    const strongMatch = matchedIds.find((id) => {
-      const item = EQUIPMENT[id];
-      const haystack = `${item?.name || ""} ${(item?.aliases || []).join(" ")} ${item?.details || ""}`.toLowerCase();
-      const words = text.split(/\s+/).filter((w) => !["the", "a", "an", "for", "how", "much", "price", "cost"].includes(w));
-      return words.length > 0 && words.every((word) => haystack.includes(word));
-    });
-
-    if (strongMatch) selectedId = strongMatch;
-  }
-
-  if (
-    !contextualMatch &&
-    !selectedId &&
-    matchedIds.length > 1 &&
-    !containsAny(text, ["combo", "with skid steer", "with a skid steer", "package"])
-  ) {
+  if (shouldShowMultiMatchOptions(message, selectedId, matchedIds)) {
     const finalList = getRelevantMultiMatches(message, matchedIds);
 
     return preserveContext(state, {
@@ -458,7 +351,7 @@ function reply(message, state) {
     !isTrailerQuestion(message) &&
     isReferentialFollowup(message);
 
-  const id = contextualMatch || selectedId || (useLastId ? state.lastId : null);
+  const id = selectedId || (useLastId ? state.lastId : null);
   const item = id ? EQUIPMENT[id] : null;
   const days = parseDays(message) || 1;
   const delivery = deliveryInfo(message);
@@ -637,7 +530,7 @@ function reply(message, state) {
     return preserveContext(state, { text: trailerPolicyText(requestedDays) });
   }
 
-  if (matchedIds.length >= 2 && isPriceQuestion(message)) {
+  if (matchedIds.length >= 2 && isPriceQuestion(message) && !selectedId) {
     let quote = buildBundleQuote(matchedIds, days, wantsDeliveryTotal || deliveryFee ? effectiveDeliveryFee : 0);
     if (wantsTrailerTotal) quote = applyTrailerToQuote(quote, days).quote;
 
