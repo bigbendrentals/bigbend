@@ -352,6 +352,55 @@ function getRelevantMultiMatches(message, matchedIds) {
   return finalList;
 }
 
+
+function meaningfulWords(message) {
+  return normalize(message)
+    .split(/\s+/)
+    .map((w) => w.replace(/[^a-z0-9]/g, ""))
+    .filter((w) => w.length > 2)
+    .filter((w) => ![
+      "the", "and", "for", "how", "much", "price", "cost", "total",
+      "about", "what", "with", "that", "this", "one", "want", "need",
+      "rent", "rental", "have", "available", "option", "options"
+    ].includes(w));
+}
+
+function resolveFromLastOptions(message, state) {
+  if (!state.lastCategoryItems || state.lastCategoryItems.length === 0) return null;
+
+  const words = meaningfulWords(message);
+  if (words.length === 0) return null;
+
+  const scored = state.lastCategoryItems
+    .map((id) => {
+      const item = EQUIPMENT[id];
+      if (!item) return null;
+
+      const haystack = `${item.name || ""} ${(item.aliases || []).join(" ")} ${item.details || ""}`.toLowerCase();
+      let score = 0;
+
+      for (const word of words) {
+        if (haystack.includes(word)) score += 3;
+      }
+
+      // phrase boosts for common customer shorthand
+      const text = normalize(message);
+      if (text.includes("mini") && haystack.includes("mini")) score += 3;
+      if (text.includes("skid") && haystack.includes("skid")) score += 2;
+      if (text.includes("stihl") && haystack.includes("stihl")) score += 5;
+      if (text.includes("blue diamond") && haystack.includes("blue diamond")) score += 5;
+
+      return { id, score };
+    })
+    .filter(Boolean)
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  if (!scored.length) return null;
+  return scored[0].id;
+}
+
+
 function shouldAutoSelect(message) {
   const text = normalize(message);
   if (containsAny(text, ["do you have", "do u have", "carry", "rent", "available", "options"])) return false;
@@ -362,9 +411,10 @@ function reply(message, state) {
   const text = normalize(message);
   const explicitFound = findEquipment(message);
   const matchedIds = findAllEquipment(message);
+  const contextualMatch = resolveFromLastOptions(message, state);
   const category = findCategory(message);
 
-  let selectedId = null;
+  let selectedId = contextualMatch || null;
 
   if (matchedIds.length === 1) {
     selectedId = matchedIds[0];
@@ -382,6 +432,7 @@ function reply(message, state) {
   }
 
   if (
+    !contextualMatch &&
     !selectedId &&
     matchedIds.length > 1 &&
     !containsAny(text, ["combo", "with skid steer", "with a skid steer", "package"])
@@ -391,7 +442,7 @@ function reply(message, state) {
     return preserveContext(state, {
       text: `We have these options:\n\n${formatMatchedOptions(finalList)}\n\nWhich one are you interested in?`,
       lastId: null,
-      lastCategory: "multi_match",
+      lastCategory: category || "multi_match",
       lastCategoryItems: finalList,
       lastQuotedItems: finalList
     });
@@ -407,7 +458,7 @@ function reply(message, state) {
     !isTrailerQuestion(message) &&
     isReferentialFollowup(message);
 
-  const id = selectedId || (useLastId ? state.lastId : null);
+  const id = contextualMatch || selectedId || (useLastId ? state.lastId : null);
   const item = id ? EQUIPMENT[id] : null;
   const days = parseDays(message) || 1;
   const delivery = deliveryInfo(message);
