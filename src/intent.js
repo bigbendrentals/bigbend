@@ -40,7 +40,75 @@ export function parseDays(text) {
 export function isMonthlyRequest(text) { const t = normalize(text); return t.includes("month") || t.includes("monthly"); }
 export function isPriceQuestion(text) {
   const t = normalize(text);
-  return containsAny(t, ["how much","what does it cost","whats it cost","what's it cost","what is the cost","what is the total","what's the total","total","price","pricing","quote","cost","day rate","daily rate","rental rate","a week","week","weekly","monthly","month","and 1 day","and one day","and 2 days","and two days","and 3 days","and three days","and 4 days","and four days","and 5 days","and five days","and 6 days","and six days","and 7 days","and seven days"]) || parseDays(t) !== null;
+  return containsAny(t, [
+    "how much",
+    "what does it cost",
+    "whats it cost",
+    "what's it cost",
+    "what is the cost",
+    "what is the total",
+    "what's the total",
+    "total",
+    "final price",
+    "final cost",
+    "all in",
+    "all-in",
+    "out the door",
+    "out-the-door",
+    "otd",
+    "grand total",
+    "total price",
+    "total cost",
+    "with tax",
+    "including tax",
+    "include tax",
+    "after tax",
+    "price",
+    "pricing",
+    "quote",
+    "cost",
+    "day rate",
+    "daily rate",
+    "rental rate",
+    "a week",
+    "week",
+    "weekly",
+    "monthly",
+    "month",
+    "and 1 day",
+    "and one day",
+    "and 2 days",
+    "and two days",
+    "and 3 days",
+    "and three days",
+    "and 4 days",
+    "and four days",
+    "and 5 days",
+    "and five days",
+    "and 6 days",
+    "and six days",
+    "and 7 days",
+    "and seven days"
+  ]) || parseDays(t) !== null;
+}
+
+export function isFinalTotalFollowup(text) {
+  const t = normalize(text);
+  return containsAny(t, [
+    "total",
+    "final price",
+    "final cost",
+    "grand total",
+    "all in",
+    "all-in",
+    "out the door",
+    "out-the-door",
+    "otd",
+    "with tax",
+    "including tax",
+    "include tax",
+    "after tax"
+  ]);
 }
 export function isWeightQuestion(text) { const t = normalize(text); return containsAny(t, ["how heavy","weight","weigh","what does it weigh","how much does it weigh","how much it weighs"]); }
 export function isThumbQuestion(text) { return normalize(text).includes("thumb"); }
@@ -50,26 +118,28 @@ export function isDeliveryQuestion(text) { const t = normalize(text); return t.i
 export function isTrailerQuestion(text) { const t = normalize(text); return containsAny(t, ["trailer","trailers","haul it on","haul it","hauling trailer","equipment trailer","car hauler","gooseneck","dump trailer","supply a trailer","provide a trailer","rent a trailer","trailer for it","trailer from you"]); }
 export function isDeliveryPriceQuestion(text) { const t = normalize(text); return containsAny(t, ["how much is delivery","how much delivery","delivery cost","delivery price","what is delivery","what does delivery cost","what is the delivery charge","delivery charge","how much to deliver"]); }
 export function isTrailerIncludedQuestion(text) { const t = normalize(text); return containsAny(t, ["does a trailer come with it","does trailer come with it","come with a trailer","comes with a trailer","does it come with a trailer","included trailer","trailer included"]); }
-export function wantsTrailerAddedToTotal(text) { const t = normalize(text); return containsAny(t, ["total with the trailer","total with trailer","with the trailer","with trailer","including a trailer","including trailer","include a trailer","include trailer","include the trailer","add the trailer","add trailer","plus a trailer","plus trailer","and a trailer","and trailer"]); }
-export function wantsDeliveryAddedToTotal(text) { const t = normalize(text); return containsAny(t, ["with delivery","including delivery","include delivery","include the delivery","delivery included","and delivery","plus delivery"]); }
-export function deliveryInfo(text) { const t = normalize(text); if (t.includes("perry")) return { fee: 200, placeLabel: "Perry" }; if (t.includes("steinhatchee") || t.includes("dekle") || t.includes("lamont")) return { fee: 300, placeLabel: "that area" }; return null; }
-export function arrangedBoomLiftIntent(text) { const t = normalize(text); return containsAny(t, ["larger","larger boom","larger boom lift","taller","taller boom","taller boom lift","bigger","specialty boom","specialty equipment","different boom","higher reach"]); }
-export function isMulcherQuestion(text) { const t = normalize(text); return containsAny(t, ["mulcher","mulchers","forestry mulcher","forestry mulchers","mulcher combo","mulcher combos","cat mulcher","jd mulcher","john deere mulcher","hm316","mh60d"]); }
-export function isMulcherComboQuestion(text) { const t = normalize(text); return containsAny(t, ["mulcher combo","mulcher combos","forestry mulcher combo","mulcher and skid steer","with a skid steer","with skid steer","combo"]) || t === "both"; }
-export function isMulcherOnlyQuestion(text) { const t = normalize(text); return containsAny(t, ["just the mulcher","mulcher only","just mulcher","just the attachment","attachment only","just the head"]); }
-export function isReferentialFollowup(text) { const t = normalize(text); if (parseDays(t) !== null || t === "both") return true; return containsAny(t, ["it","that one","that machine","how much","price","pricing","cost","quote","week","weekly","monthly","month","weight","weigh","thumb","bucket","cab","delivery","deliver","reserve","available","availability","schedule","book"]); }
-
-function scoreAliasMatch(text, alias) {
-  const nText = normalize(text);
-  const cText = compact(text);
-  const variants = aliasVariants(alias);
-  let best = 0;
-  for (const variant of variants) {
-    if (nText === variant) best = Math.max(best, 100);
-    if (nText.includes(variant)) best = Math.max(best, 80);
-    if (cText.includes(variant.replace(/[\s.-]/g, ""))) best = Math.max(best, 70);
-  }
-  return best;
+export function wantsTrailerAddedToTotal(text) {
+  const t = normalize(text);
+  return containsAny(t, [
+    "total with the trailer",
+    "total with trailer",
+    "with the trailer",
+    "with trailer",
+    "including a trailer",
+    "including trailer",
+    "include a trailer",
+    "include trailer",
+    "include the trailer",
+    "trailer included",
+    "trailer included in total",
+    "with trailer included",
+    "add the trailer",
+    "add trailer",
+    "plus a trailer",
+    "plus trailer",
+    "and a trailer",
+    "and trailer"
+  ]);
 }
 export function findEquipment(text) { const candidates = []; for (const [id, item] of Object.entries(EQUIPMENT)) { let score = 0; for (const alias of item.aliases || []) score = Math.max(score, scoreAliasMatch(text, alias)); if (score > 0) candidates.push({ id, item, score }); } candidates.sort((a, b) => b.score - a.score); return candidates[0] || null; }
 export function findAllEquipment(text) { const found = []; for (const [id, item] of Object.entries(EQUIPMENT)) { let score = 0; for (const alias of item.aliases || []) score = Math.max(score, scoreAliasMatch(text, alias)); if (score > 0) found.push(id); } return [...new Set(found)]; }
