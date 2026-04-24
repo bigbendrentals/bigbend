@@ -1,5 +1,6 @@
 import express from "express";
 import bodyParser from "body-parser";
+import fetch from "node-fetch";
 
 import {
   findEquipment,
@@ -14,7 +15,10 @@ import { EQUIPMENT, CATEGORY_ALIASES } from "./inventory.js";
 const app = express();
 app.use(bodyParser.json());
 
-const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
+// ✅ CORRECT ENV VARIABLES
+const PAGE_ACCESS_TOKEN = process.env.META_PAGE_ACCESS_TOKEN;
+const VERIFY_TOKEN = process.env.META_VERIFY_TOKEN;
+const GRAPH_VERSION = process.env.META_GRAPH_VERSION || "v22.0";
 
 // ---------------- HELPERS ----------------
 
@@ -51,13 +55,17 @@ function splitMessage(text, maxLength = 1500) {
   return parts;
 }
 
+// ✅ FIXED SEND FUNCTION
 async function sendMessengerText(psid, text) {
   const messages = splitMessage(text);
 
   for (const msg of messages) {
-    await fetch(`https://graph.facebook.com/v18.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`, {
+    await fetch(`https://graph.facebook.com/${GRAPH_VERSION}/me/messages`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${PAGE_ACCESS_TOKEN}`
+      },
       body: JSON.stringify({
         recipient: { id: psid },
         message: { text: msg }
@@ -93,7 +101,7 @@ function reply(message, state = {}) {
   const explicitFound = findEquipment(message);
   const matchedIds = findAllEquipment(message);
 
-  // ---------- AUTO SELECT ----------
+  // 🔥 AUTO SELECT
   let selectedId = explicitFound?.id || null;
 
   if (!selectedId && matchedIds.length > 0) {
@@ -111,7 +119,7 @@ function reply(message, state = {}) {
 
   const category = findCategory(message);
 
-  // ---------- MULTI MATCH ----------
+  // 🔥 MULTI MATCH FIX (NO LOOP)
   if (
     !selectedId &&
     matchedIds.length > 1 &&
@@ -128,7 +136,7 @@ function reply(message, state = {}) {
 
   const days = parseDays(text) || 1;
 
-  // ---------- PRICING ----------
+  // 🔥 PRICING
   if (item) {
     let total = item.day * days;
 
@@ -144,7 +152,7 @@ function reply(message, state = {}) {
     };
   }
 
-  // ---------- CATEGORY ----------
+  // CATEGORY
   if (category) {
     const ids = CATEGORY_ALIASES[category] || [];
     if (ids.length) {
@@ -185,8 +193,6 @@ app.post("/webhook", async (req, res) => {
 });
 
 app.get("/webhook", (req, res) => {
-  const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
-
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
