@@ -194,7 +194,7 @@ function handleMessage(message, senderId) {
       `Sales Tax (7%): ${money(tax)}`,
       `Total: ${money(total)}`,
       "",
-      "Want me to reserve it for you?"
+      "To reserve, call 850-295-5373 during business hours or book online at www.bigbendrentals.net."rve it for you?"
     );
 
     return lines.join("\n");
