@@ -22,6 +22,26 @@ function aliasVariants(alias) {
   return [...new Set([n, c, spaced])];
 }
 
+export function isFinalTotalFollowup(text) {
+  const t = normalize(text);
+
+  return containsAny(t, [
+    "total",
+    "final price",
+    "final cost",
+    "grand total",
+    "all in",
+    "all-in",
+    "out the door",
+    "out-the-door",
+    "otd",
+    "with tax",
+    "including tax",
+    "include tax",
+    "after tax"
+  ]);
+}
+
 export function parseDays(text) {
   const t = normalize(text);
   const numeric = t.match(/\b(\d+)\s*day/);
