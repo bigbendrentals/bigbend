@@ -207,6 +207,39 @@ export function isMulcherOnlyQuestion(text) {
     "just the head"
   ]);
 }
+export function isReferentialFollowup(text) {
+  const t = normalize(text);
+
+  if (parseDays(t) !== null) return true;
+  if (t === "both") return true;
+
+  return containsAny(t, [
+    "it",
+    "that one",
+    "that machine",
+    "how much",
+    "price",
+    "pricing",
+    "cost",
+    "quote",
+    "week",
+    "weekly",
+    "monthly",
+    "month",
+    "weight",
+    "weigh",
+    "thumb",
+    "bucket",
+    "cab",
+    "delivery",
+    "deliver",
+    "reserve",
+    "available",
+    "availability",
+    "schedule",
+    "book"
+  ]);
+}
 export function findEquipment(text) { const candidates = []; for (const [id, item] of Object.entries(EQUIPMENT)) { let score = 0; for (const alias of item.aliases || []) score = Math.max(score, scoreAliasMatch(text, alias)); if (score > 0) candidates.push({ id, item, score }); } candidates.sort((a, b) => b.score - a.score); return candidates[0] || null; }
 export function findAllEquipment(text) { const found = []; for (const [id, item] of Object.entries(EQUIPMENT)) { let score = 0; for (const alias of item.aliases || []) score = Math.max(score, scoreAliasMatch(text, alias)); if (score > 0) found.push(id); } return [...new Set(found)]; }
 export function findCategory(text) { const t = normalize(text); for (const [category, aliases] of Object.entries(CATEGORY_ALIASES)) { if (aliases.some((alias) => t.includes(normalize(alias)))) return category; } return null; }
