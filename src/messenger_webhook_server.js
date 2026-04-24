@@ -74,16 +74,34 @@ function formatCategoryQuote(ids) {
   return ids.map((id) => `${EQUIPMENT[id].name} (${money(EQUIPMENT[id].day)}/day)`).join(", ");
 }
 
+function formatMatchedOptions(ids) {
+  const uniqueIds = [...new Set(ids)];
+
+  return uniqueIds
+    .map((id) => {
+      const item = EQUIPMENT[id];
+      if (!item) return null;
+
+      const priceParts = [];
+      if (item.day) priceParts.push(`${money(item.day)}/day`);
+      if (item.week) priceParts.push(`${money(item.week)}/week`);
+      if (item.month) priceParts.push(`${money(item.month)}/month`);
+
+      const priceText = priceParts.length ? ` — ${priceParts.join(", ")}` : "";
+      return `• ${item.name}${priceText}`;
+    })
+    .filter(Boolean)
+    .join("\n");
+}
+
 function categoryDisambiguationText(ids, verb = "mean") {
   const names = ids.map((id) => EQUIPMENT[id].name).join(", ");
   return `Which machine do you ${verb} — ${names}?`;
 }
 
 function schedulingText(item) {
-  if (item?.keyword) return `For availability or scheduling, call or text Dave at ${DAVE_PHONE}. You can also check the website at ${WEBSITE} and search for "${item.keyword}".`;
   return `For availability or scheduling, call or text Dave at ${DAVE_PHONE}. You can also check the website at ${WEBSITE}.`;
 }
-
 function unknownItemFallback() {
   return `Sometimes my inventory database is incomplete, so you may need to check the website at ${WEBSITE} for that item.`;
 }
@@ -173,6 +191,13 @@ function reply(message, state) {
   const explicitFound = findEquipment(message);
   const matchedIds = findAllEquipment(message);
   const category = findCategory(message);
+  // CATEGORY / MULTI-MATCH HANDLING (FIX)
+if (
+  matchedIds.length > 1 &&
+  !containsAny(text, ["combo", "with skid steer", "with a skid steer", "package"])
+) {
+  return `We have these options:\n\n${formatMatchedOptions(matchedIds)}\n\nWhich one are you interested in?`;
+}
   const explicitIntentOverride = hasExplicitIntentOverride(message);
   const comboChoice = detectMulcherComboChoice(message, state);
   const useLastId = !explicitFound && !explicitIntentOverride && !comboChoice && !isTrailerQuestion(message) && isReferentialFollowup(message);
