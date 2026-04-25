@@ -1,7 +1,10 @@
 import { EQUIPMENT, CATEGORY_ALIASES } from "./inventory.js";
 
+const STOP_WORDS = new Set(["the", "and", "for", "how", "much", "what", "about", "with", "you", "have", "rent", "rental", "more", "info", "details", "this", "that", "one", "do", "does", "can", "it", "is", "are", "price", "cost", "quote", "total", "need", "want", "please", "me", "my", "a", "an", "to", "of", "on", "in"]);
+
 export function normalize(text) {
   let t = String(text || "").toLowerCase();
+  t = t.replace(/[’']/g, "");
   t = t.replace(/skid steer4s/g, "skid steers");
   t = t.replace(/(\d+)[^\da-z]+(\d+[a-z]?)/g, "$1$2");
   t = t.replace(/cat\s*(\d+)\s*(\d+)/g, "cat $1$2");
@@ -13,34 +16,7 @@ export function normalize(text) {
 }
 
 export function compact(text) { return normalize(text).replace(/[\s.-]/g, ""); }
-export function containsAny(text, phrases) { return phrases.some((phrase) => text.includes(phrase)); }
-
-function aliasVariants(alias) {
-  const n = normalize(alias);
-  const c = compact(alias);
-  const spaced = c.replace(/([a-z]+)(\d+)/g, "$1 $2").replace(/(\d+)([a-z]+)/g, "$1 $2").trim();
-  return [...new Set([n, c, spaced])];
-}
-
-export function isFinalTotalFollowup(text) {
-  const t = normalize(text);
-
-  return containsAny(t, [
-    "total",
-    "final price",
-    "final cost",
-    "grand total",
-    "all in",
-    "all-in",
-    "out the door",
-    "out-the-door",
-    "otd",
-    "with tax",
-    "including tax",
-    "include tax",
-    "after tax"
-  ]);
-}
+export function containsAny(text, phrases) { const t = normalize(text); return phrases.some((phrase) => t.includes(normalize(phrase))); }
 
 export function parseDays(text) {
   const t = normalize(text);
@@ -58,26 +34,27 @@ export function parseDays(text) {
 }
 
 export function isMonthlyRequest(text) { const t = normalize(text); return t.includes("month") || t.includes("monthly"); }
-export function isPriceQuestion(text) {
-  const t = normalize(text);
-  return containsAny(t, ["how much","what does it cost","whats it cost","what's it cost","what is the cost","what is the total","what's the total","total","price","pricing","quote","cost","day rate","daily rate","rental rate","a week","week","weekly","monthly","month","and 1 day","and one day","and 2 days","and two days","and 3 days","and three days","and 4 days","and four days","and 5 days","and five days","and 6 days","and six days","and 7 days","and seven days"]) || parseDays(t) !== null;
-}
-export function isWeightQuestion(text) { const t = normalize(text); return containsAny(t, ["how heavy","weight","weigh","what does it weigh","how much does it weigh","how much it weighs"]); }
+export function isPriceQuestion(text) { return containsAny(text, ["how much", "what does it cost", "whats it cost", "what's it cost", "what is the cost", "what is the total", "what's the total", "total", "price", "pricing", "quote", "cost", "day rate", "daily rate", "rental rate", "a week", "week", "weekly", "monthly", "month"]) || parseDays(text) !== null; }
+export function isWeightQuestion(text) { return containsAny(text, ["how heavy", "weight", "weigh", "what does it weigh", "how much does it weigh"]); }
 export function isThumbQuestion(text) { return normalize(text).includes("thumb"); }
 export function isBucketOrCabQuestion(text) { const t = normalize(text); return t.includes("bucket") || t.includes("cab"); }
-export function bookingIntent(text) { const t = normalize(text); return containsAny(t, ["reserve","availability","available","today","tomorrow","this morning","this afternoon","next week","book","hold it","schedule","scheduled","pickup","pick up","pick it up"]); }
+export function bookingIntent(text) { return containsAny(text, ["reserve", "availability", "available", "today", "tomorrow", "this morning", "this afternoon", "next week", "book", "hold it", "schedule", "scheduled", "pickup", "pick up", "pick it up"]); }
 export function isDeliveryQuestion(text) { const t = normalize(text); return t.includes("delivery") || t.includes("deliver"); }
-export function isTrailerQuestion(text) { const t = normalize(text); return containsAny(t, ["trailer","trailers","haul it on","haul it","hauling trailer","equipment trailer","car hauler","gooseneck","dump trailer","supply a trailer","provide a trailer","rent a trailer","trailer for it","trailer from you"]); }
-export function isDeliveryPriceQuestion(text) { const t = normalize(text); return containsAny(t, ["how much is delivery","how much delivery","delivery cost","delivery price","what is delivery","what does delivery cost","what is the delivery charge","delivery charge","how much to deliver"]); }
-export function isTrailerIncludedQuestion(text) { const t = normalize(text); return containsAny(t, ["does a trailer come with it","does trailer come with it","come with a trailer","comes with a trailer","does it come with a trailer","included trailer","trailer included"]); }
-export function wantsTrailerAddedToTotal(text) { const t = normalize(text); return containsAny(t, ["total with the trailer","total with trailer","with the trailer","with trailer","including a trailer","including trailer","include a trailer","include trailer","include the trailer","add the trailer","add trailer","plus a trailer","plus trailer","and a trailer","and trailer"]); }
-export function wantsDeliveryAddedToTotal(text) { const t = normalize(text); return containsAny(t, ["with delivery","including delivery","include delivery","include the delivery","delivery included","and delivery","plus delivery"]); }
+export function isTrailerQuestion(text) { return containsAny(text, ["trailer", "trailers", "haul it on", "haul it", "hauling trailer", "equipment trailer", "car hauler", "gooseneck", "dump trailer", "supply a trailer", "provide a trailer", "rent a trailer", "trailer for it", "trailer from you"]); }
+export function wantsTrailerAddedToTotal(text) { return containsAny(text, ["total with the trailer", "total with trailer", "with the trailer", "with trailer", "including a trailer", "including trailer", "include a trailer", "include trailer", "include the trailer", "add the trailer", "add trailer", "plus a trailer", "plus trailer", "and a trailer", "and trailer"]); }
+export function wantsDeliveryAddedToTotal(text) { return containsAny(text, ["with delivery", "including delivery", "include delivery", "include the delivery", "delivery included", "and delivery", "plus delivery"]); }
 export function deliveryInfo(text) { const t = normalize(text); if (t.includes("perry")) return { fee: 200, placeLabel: "Perry" }; if (t.includes("steinhatchee") || t.includes("dekle") || t.includes("lamont")) return { fee: 300, placeLabel: "that area" }; return null; }
-export function arrangedBoomLiftIntent(text) { const t = normalize(text); return containsAny(t, ["larger","larger boom","larger boom lift","taller","taller boom","taller boom lift","bigger","specialty boom","specialty equipment","different boom","higher reach"]); }
-export function isMulcherQuestion(text) { const t = normalize(text); return containsAny(t, ["mulcher","mulchers","forestry mulcher","forestry mulchers","mulcher combo","mulcher combos","cat mulcher","jd mulcher","john deere mulcher","hm316","mh60d"]); }
-export function isMulcherComboQuestion(text) { const t = normalize(text); return containsAny(t, ["mulcher combo","mulcher combos","forestry mulcher combo","mulcher and skid steer","with a skid steer","with skid steer","combo"]) || t === "both"; }
-export function isMulcherOnlyQuestion(text) { const t = normalize(text); return containsAny(t, ["just the mulcher","mulcher only","just mulcher","just the attachment","attachment only","just the head"]); }
-export function isReferentialFollowup(text) { const t = normalize(text); if (parseDays(t) !== null || t === "both") return true; return containsAny(t, ["it","that one","that machine","how much","price","pricing","cost","quote","week","weekly","monthly","month","weight","weigh","thumb","bucket","cab","delivery","deliver","reserve","available","availability","schedule","book"]); }
+
+export function meaningfulWords(message) {
+  return normalize(message).split(/\s+/).filter((w) => w.length > 2 && !STOP_WORDS.has(w));
+}
+
+function aliasVariants(alias) {
+  const n = normalize(alias);
+  const c = compact(alias);
+  const spaced = c.replace(/([a-z]+)(\d+)/g, "$1 $2").replace(/(\d+)([a-z]+)/g, "$1 $2").trim();
+  return [...new Set([n, c, spaced])];
+}
 
 function scoreAliasMatch(text, alias) {
   const nText = normalize(text);
@@ -85,13 +62,69 @@ function scoreAliasMatch(text, alias) {
   const variants = aliasVariants(alias);
   let best = 0;
   for (const variant of variants) {
+    const vc = variant.replace(/[\s.-]/g, "");
     if (nText === variant) best = Math.max(best, 100);
     if (nText.includes(variant)) best = Math.max(best, 80);
-    if (cText.includes(variant.replace(/[\s.-]/g, ""))) best = Math.max(best, 70);
+    if (cText.includes(vc)) best = Math.max(best, 70);
   }
   return best;
 }
-export function findEquipment(text) { const candidates = []; for (const [id, item] of Object.entries(EQUIPMENT)) { let score = 0; for (const alias of item.aliases || []) score = Math.max(score, scoreAliasMatch(text, alias)); if (score > 0) candidates.push({ id, item, score }); } candidates.sort((a, b) => b.score - a.score); return candidates[0] || null; }
-export function findAllEquipment(text) { const found = []; for (const [id, item] of Object.entries(EQUIPMENT)) { let score = 0; for (const alias of item.aliases || []) score = Math.max(score, scoreAliasMatch(text, alias)); if (score > 0) found.push(id); } return [...new Set(found)]; }
-export function findCategory(text) { const t = normalize(text); for (const [category, aliases] of Object.entries(CATEGORY_ALIASES)) { if (aliases.some((alias) => t.includes(normalize(alias)))) return category; } return null; }
-export function hasExplicitIntentOverride(text) { const t = normalize(text); return containsAny(t, ["cat","the cat","cat combo","caterpillar","cat 265","hm316","cat mulcher","john deere","the john deere","jd","the jd","jd combo","john deere combo","john deere mulcher combo","333p","mh60d","jd mulcher","john deere mulcher","boxer","cat 239","telehandler","lull","forklift","boom lift","man lift","scissor lift","excavator","mini excavator","stump grinder","drain snake","electric eel","pressure washer","surface cleaner","auger","breaker","grapple","brushcat","power rake","trailer","trailers","gooseneck","dump trailer"]); }
+
+export function scoreItem(id, text) {
+  const item = EQUIPMENT[id];
+  if (!item) return 0;
+  const t = normalize(text);
+  const c = compact(text);
+  const haystack = normalize(`${item.name || ""} ${(item.aliases || []).join(" ")} ${item.keyword || ""} ${item.details || ""} ${item.category || ""}`);
+  const hc = haystack.replace(/[\s.-]/g, "");
+  let score = 0;
+  for (const alias of item.aliases || []) score = Math.max(score, scoreAliasMatch(text, alias));
+  if (t.includes("stihl") && hc.includes("bt131")) score += 1000;
+  if (c.includes("bt131") && hc.includes("bt131")) score += 1000;
+  if (t.includes("blue diamond") && haystack.includes("blue diamond")) score += 800;
+  if (t.includes("lift king") && haystack.includes("lift king")) score += 800;
+  if ((t.includes("8k") || t.includes("8000")) && haystack.includes("lift king")) score += 500;
+  if (c.includes("gs1930") && hc.includes("gs1930")) score += 800;
+  if (c.includes("gs3246") && hc.includes("gs3246")) score += 800;
+  if (c.includes("et500") && hc.includes("et500")) score += 800;
+  for (const word of meaningfulWords(text)) if (haystack.includes(word)) score += 8;
+  return score;
+}
+
+export function findEquipment(text) {
+  const candidates = Object.keys(EQUIPMENT)
+    .map((id) => ({ id, item: EQUIPMENT[id], score: scoreItem(id, text) }))
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score);
+  return candidates[0] || null;
+}
+
+export function findAllEquipment(text) {
+  return Object.keys(EQUIPMENT)
+    .map((id) => ({ id, score: scoreItem(id, text) }))
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map((x) => x.id);
+}
+
+export function findCategory(text) {
+  const t = normalize(text);
+  for (const [category, aliases] of Object.entries(CATEGORY_ALIASES)) {
+    if (aliases.some((alias) => t.includes(normalize(alias)))) return category;
+  }
+  return null;
+}
+
+export function isBroadCategoryRequest(text) {
+  const t = normalize(text);
+  return containsAny(t, ["do you have", "do u have", "do you rent", "do u rent", "what do you have", "what all do you have", "available", "options", "show me", "list"]) || /\b(augers|boom lifts|scissor lifts|excavators|skid steers|trailers|forklifts|fork lifts|compactors|mowers|trenchers|brush cutters|bush hogs|drain snakes|drain cleaners|pressure washers|compressors|pumps)\b/.test(t);
+}
+
+export function isMoreInfoQuestion(text) {
+  return containsAny(text, ["more about", "more info", "tell me more", "details", "info about", "information", "what is it", "what does it do", "handheld", "hand held", "is this", "does it", "do it", "can it"]);
+}
+
+export function isPronounFollowup(text) {
+  const t = normalize(text);
+  return containsAny(t, ["about it", "more about it", "tell me more about it", "is this", "is it", "does it", "can it"]) || t === "more info" || t === "details";
+}
