@@ -627,9 +627,27 @@ export function handleMessage(message, senderId = "local-test") {
     return quoteText(selectedItem, days, { trailerFee: trailerSurcharge(days) });
   }
 
-  if (isTrailerQuestion(message)) {
-    return trailerOptionText();
+if (isTrailerQuestion(message)) {
+  // If user is asking about using OUR trailer for hauling equipment
+  if (
+    message.toLowerCase().includes("use") ||
+    message.toLowerCase().includes("haul") ||
+    message.toLowerCase().includes("borrow") ||
+    message.toLowerCase().includes("your trailer") ||
+    message.toLowerCase().includes("rent your trailer") ||
+    message.toLowerCase().includes("rent a trailer") ||
+    message.toLowerCase().includes("come with a trailer") ||
+    message.toLowerCase().includes("do you have trailers") ||
+    message.toLowerCase().includes("do you have a trailer") ||
+    message.toLowerCase().includes("we can use")
+  ) {
+    return "If you need to use our trailer to haul the machine, there is a $49.99 surcharge. You can also use your own trailer if it meets the weight requirements.";
   }
+
+  // Otherwise they are asking about renting a trailer itself
+  const ids = categoryIds("trailer");
+  return `We have these options:\n\n${formatOptions(ids)}\n\nWhich one are you interested in?`;
+}
 
   if (bookingIntent(message)) {
     if (selectedItem) rememberSelected(state, selectedId);
