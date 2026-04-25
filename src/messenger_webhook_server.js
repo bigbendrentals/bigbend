@@ -1,5 +1,5 @@
 import express from "express";
-import { EQUIPMENT, CATEGORY_ITEMS } from "./inventory.js";
+import { EQUIPMENT, CATEGORY_ITEMS, ITEM_IDS, MULCHER_COMBOS } from "./inventory.js";
 import { money, getWeeklyRate, getMonthlyRate, getRentalAmount, protectionTotal, quoteTotals, trailerSurcharge } from "./pricing.js";
 import {
   normalize,
@@ -47,7 +47,9 @@ function getState(senderId) {
       lastCategoryItems: [],
       lastDeliveryFee: 0,
       lastDeliveryPlace: null,
-      awaitingDeliveryLocation: false
+      awaitingDeliveryLocation: false,
+      awaitingMulcherChoice: false,
+      pendingMulcherIds: []
     };
   }
   return stateStore[senderId];
@@ -71,6 +73,7 @@ function normalizeCategory(category) {
   if (c.includes("mini skid") || c === "boxer") return "mini_skid";
   if (c.includes("skid")) return "skid_steer";
   if (c.includes("auger")) return "auger";
+  if (c.includes("mulcher")) return "mulcher";
   if (c.includes("excavator") || c.includes("trackhoe")) return "excavator";
   if (c.includes("forklift") || c.includes("fork lift") || c.includes("lift king")) return "forklift";
   if (c.includes("telehandler") || c.includes("lull")) return "telehandler";
@@ -247,6 +250,18 @@ export function handleMessage(message, senderId = "local-test") {
     return handleDeliveryOnly(message, state);
   }
 
+  if (category === "mulcher" && isMulcherComboRequest(message)) {
+    const ids = categoryIds("mulcher").filter((id) => isMulcherId(id));
+    state.lastCategory = "mulcher";
+    state.lastCategoryItems = ids;
+    state.awaitingMulcherChoice = true;
+    state.pendingMulcherIds = ids;
+    return `Which skid steer + mulcher combo do you want?
+
+• CAT HM316 Forestry Mulcher + CAT 265
+• John Deere MH60D Forestry Mulcher + John Deere 333P`;
+  }
+
   if (category && isBroadCategoryRequest(message)) {
     const response = categoryResponse(category, state);
     if (response) return response;
@@ -266,6 +281,35 @@ export function handleMessage(message, senderId = "local-test") {
   if (!globalDirectId && category && !contextualId && isBroadCategoryRequest(message)) {
     const response = categoryResponse(category, state);
     if (response) return response;
+  }
+
+  if (selectedItem && isMulcherId(selectedId) && !isMoreInfoQuestion(message) && !isPriceQuestion(message)) {
+    rememberSelected(state, selectedId);
+    state.awaitingMulcherChoice = true;
+    state.pendingMulcherIds = [selectedId];
+    return `${itemBasicText(selectedItem)}
+
+${mulcherChoicePrompt([selectedId])}`;
+  }
+
+  if (selectedItem && isMulcherId(selectedId) && isMulcherComboRequest(message)) {
+    const days = getDays(message, state);
+    state.lastDays = days;
+    rememberSelected(state, selectedId);
+    state.awaitingMulcherChoice = false;
+    state.pendingMulcherIds = [];
+    return quoteBundleText(mulcherComboIdsForMulcher(selectedId), days);
+  }
+
+  if (selectedItem && isMulcherId(selectedId) && isPriceQuestion(message) && !isMulcherAttachmentOnlyRequest(message)) {
+    rememberSelected(state, selectedId);
+    state.awaitingMulcherChoice = true;
+    state.pendingMulcherIds = [selectedId];
+    return `Do you want pricing for just the mulcher attachment or the skid steer + mulcher combo?
+
+${EQUIPMENT[selectedId].name} pairs only with ${pairedMachineNameForMulcher(selectedId)}.
+
+Reply "attachment only" or "combo".`;
   }
 
   if (selectedItem && isMoreInfoQuestion(message)) {
