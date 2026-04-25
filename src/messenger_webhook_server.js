@@ -1,5 +1,5 @@
 import express from "express";
-import { EQUIPMENT, CATEGORY_ITEMS } from "./inventory.js";
+import { EQUIPMENT, CATEGORY_ITEMS, ITEM_IDS, MULCHER_COMBOS } from "./inventory.js";
 import { money, getWeeklyRate, getMonthlyRate, getRentalAmount, protectionTotal, quoteTotals, trailerSurcharge } from "./pricing.js";
 import {
   normalize,
@@ -47,7 +47,11 @@ function getState(senderId) {
       lastCategoryItems: [],
       lastDeliveryFee: 0,
       lastDeliveryPlace: null,
-      awaitingDeliveryLocation: false
+      awaitingDeliveryLocation: false,
+      awaitingMulcherChoice: false,
+      pendingMulcherIds: [],
+      awaitingMulcherComboSelection: false,
+      lastBundleItemIds: []
     };
   }
   return stateStore[senderId];
@@ -230,18 +234,235 @@ function handleDeliveryOnly(message, state) {
   return "We deliver within about a 75-mile radius. What city or area are you in?";
 }
 
+
+function isMulcherId(id) {
+  return id === ITEM_IDS.CAT_MULCHER || id === ITEM_IDS.JD_MULCHER;
+}
+
+function isMulcherComboRequest(message) {
+  const t = safeNormalize(message);
+  return (
+    t === "both" ||
+    t.includes("both") ||
+    t.includes("combo") ||
+    t.includes("combination") ||
+    t.includes("with skid steer") ||
+    t.includes("with a skid steer") ||
+    t.includes("mulcher and skid steer") ||
+    t.includes("skid steer and mulcher")
+  );
+}
+
+function isMulcherAttachmentOnlyRequest(message) {
+  const t = safeNormalize(message);
+  return (
+    t.includes("attachment only") ||
+    t.includes("just the attachment") ||
+    t.includes("just attachment") ||
+    t.includes("mulcher only") ||
+    t.includes("just the mulcher") ||
+    t.includes("just mulcher") ||
+    t.includes("only the mulcher") ||
+    t === "attachment"
+  );
+}
+
+function mulcherIdFromText(message) {
+  const t = safeNormalize(message);
+  const c = compact(message);
+
+  if (t.includes("cat") || t.includes("hm316") || c.includes("cathm316")) return ITEM_IDS.CAT_MULCHER;
+  if (t.includes("john deere") || t.includes("deere") || t.includes("jd") || t.includes("mh60d") || c.includes("jdmh60d")) return ITEM_IDS.JD_MULCHER;
+
+  return null;
+}
+
+function comboIdsForMulcher(mulcherId) {
+  if (mulcherId === ITEM_IDS.CAT_MULCHER) return MULCHER_COMBOS.cat;
+  if (mulcherId === ITEM_IDS.JD_MULCHER) return MULCHER_COMBOS.jd;
+  return null;
+}
+
+function pairedMachineName(mulcherId) {
+  const ids = comboIdsForMulcher(mulcherId);
+  return ids?.[1] && EQUIPMENT[ids[1]] ? EQUIPMENT[ids[1]].name : "the matching skid steer";
+}
+
+function mulcherChoicePrompt(ids) {
+  const mulcherIds = [...new Set(ids || [])].filter((id) => isMulcherId(id) && EQUIPMENT[id]);
+  const pairLines = mulcherIds.map((id) => `• ${EQUIPMENT[id].name} pairs with ${pairedMachineName(id)} only`).join("\n");
+
+  return `Do you want just the mulcher attachment, or the skid steer + mulcher combo?\n\n${pairLines}\n\nReply "attachment only" or "combo".`;
+}
+
+function quoteBundleText(itemIds, days, extras = {}) {
+  const ids = [...new Set(itemIds || [])].filter((id) => EQUIPMENT[id]);
+  const items = ids.map((id) => EQUIPMENT[id]);
+  const deliveryFee = extras.deliveryFee || 0;
+  const trailerFee = extras.trailerFee || 0;
+
+  let rental = 0;
+  let protection = 0;
+
+  const locationText = deliveryFee ? ` delivered to ${extras.deliveryPlace || "that area"}` : "";
+  const trailerText = trailerFee ? " with trailer" : "";
+  const lines = [`${items.map((item) => item.name).join(" + ")} total for ${durationLabel(days)}${locationText}${trailerText}:`, ""];
+
+  for (const item of items) {
+    const itemRental = getRentalAmount(item, days);
+    rental += itemRental;
+    lines.push(`${item.name}: ${money(itemRental)}`);
+    if (item.protection) protection += protectionTotal(days);
+  }
+
+  if (protection) lines.push(`Rental Protection Plan: ${money(protection)}`);
+  if (deliveryFee) lines.push(`Delivery: ${money(deliveryFee)}`);
+  if (trailerFee) lines.push(`Trailer: ${money(trailerFee)}`);
+
+  const subtotal = rental + protection + deliveryFee + trailerFee;
+  const tax = subtotal * 0.07;
+  const total = subtotal + tax;
+
+  lines.push(`Subtotal: ${money(subtotal)}`, `Sales Tax (7%): ${money(tax)}`, `Total: ${money(total)}`, "", CONTACT_TEXT);
+  return lines.join("\n");
+}
+
+function askWhichMulcherCombo() {
+  return `Which skid steer + mulcher combo do you want?\n\n• CAT HM316 Forestry Mulcher + CAT 265\n• John Deere MH60D Forestry Mulcher + John Deere 333P`;
+}
+
 function categoryResponse(category, state) {
   const ids = categoryIds(category);
   if (!ids.length) return null;
-  state.lastCategory = normalizeCategory(category);
+  const normalizedCategory = normalizeCategory(category);
+  state.lastCategory = normalizedCategory;
   state.lastCategoryItems = ids;
   state.lastItemId = null;
-  return `We have these options:\n\n${formatOptions(ids)}\n\nWhich one are you interested in?`;
+
+  if (normalizedCategory === "mulcher") {
+    state.awaitingMulcherChoice = true;
+    state.pendingMulcherIds = ids.filter((id) => isMulcherId(id));
+    return `We have these mulcher options:
+
+${formatOptions(ids)}
+
+${mulcherChoicePrompt(ids)}`;
+  }
+
+  return `We have these options:
+
+${formatOptions(ids)}
+
+Which one are you interested in?`;
 }
+
 
 export function handleMessage(message, senderId = "local-test") {
   const state = getState(senderId);
   const category = categoryFromText(message);
+
+  if (state.awaitingMulcherChoice) {
+    const pendingMulchers = (state.pendingMulcherIds || []).filter((id) => isMulcherId(id) && EQUIPMENT[id]);
+    const requestedMulcherId = mulcherIdFromText(message);
+    const resolvedMulcherId = requestedMulcherId || (pendingMulchers.length === 1 ? pendingMulchers[0] : null);
+
+    if (state.awaitingMulcherComboSelection && resolvedMulcherId) {
+      const days = getDays(message, state);
+      const delivery = deliveryInfo(message);
+      if (delivery) {
+        state.lastDeliveryFee = delivery.fee;
+        state.lastDeliveryPlace = delivery.placeLabel;
+        state.awaitingDeliveryLocation = false;
+      }
+      const deliveryFee = delivery ? delivery.fee : isDeliveryQuestion(message) ? state.lastDeliveryFee || 0 : 0;
+      const deliveryPlace = delivery?.placeLabel || state.lastDeliveryPlace;
+      const comboIds = comboIdsForMulcher(resolvedMulcherId);
+
+      state.lastDays = days;
+      state.awaitingMulcherChoice = false;
+      state.awaitingMulcherComboSelection = false;
+      state.pendingMulcherIds = [];
+      state.lastBundleItemIds = comboIds;
+      rememberSelected(state, resolvedMulcherId);
+
+      return quoteBundleText(comboIds, days, { deliveryFee, deliveryPlace });
+    }
+
+    if (isMulcherComboRequest(message)) {
+      if (!resolvedMulcherId) {
+        state.awaitingMulcherComboSelection = true;
+        return askWhichMulcherCombo();
+      }
+
+      const days = getDays(message, state);
+      const delivery = deliveryInfo(message);
+      if (delivery) {
+        state.lastDeliveryFee = delivery.fee;
+        state.lastDeliveryPlace = delivery.placeLabel;
+        state.awaitingDeliveryLocation = false;
+      }
+
+      const deliveryFee = delivery ? delivery.fee : isDeliveryQuestion(message) ? state.lastDeliveryFee || 0 : 0;
+      const deliveryPlace = delivery?.placeLabel || state.lastDeliveryPlace;
+      const comboIds = comboIdsForMulcher(resolvedMulcherId);
+
+      state.lastDays = days;
+      state.awaitingMulcherChoice = false;
+      state.awaitingMulcherComboSelection = false;
+      state.pendingMulcherIds = [];
+      state.lastBundleItemIds = comboIds;
+      rememberSelected(state, resolvedMulcherId);
+
+      return quoteBundleText(comboIds, days, { deliveryFee, deliveryPlace });
+    }
+
+    if (isMulcherAttachmentOnlyRequest(message)) {
+      if (!resolvedMulcherId) {
+        return `Which mulcher attachment do you want?\n\n• CAT HM316 Forestry Mulcher\n• John Deere MH60D Forestry Mulcher`;
+      }
+
+      state.awaitingMulcherChoice = false;
+      state.awaitingMulcherComboSelection = false;
+      state.pendingMulcherIds = [];
+      state.lastBundleItemIds = [];
+      rememberSelected(state, resolvedMulcherId);
+      return itemBasicText(EQUIPMENT[resolvedMulcherId]);
+    }
+
+    if (requestedMulcherId && pendingMulchers.length > 1) {
+      state.pendingMulcherIds = [requestedMulcherId];
+      return `${itemBasicText(EQUIPMENT[requestedMulcherId])}\n\n${mulcherChoicePrompt([requestedMulcherId])}`;
+    }
+  }
+
+  if (category === "mulcher" && isMulcherComboRequest(message)) {
+    const requestedMulcherId = mulcherIdFromText(message);
+    const ids = categoryIds("mulcher").filter((id) => isMulcherId(id));
+    state.lastCategory = "mulcher";
+    state.lastCategoryItems = ids;
+    state.awaitingMulcherChoice = true;
+    state.awaitingMulcherComboSelection = !requestedMulcherId;
+    state.pendingMulcherIds = requestedMulcherId ? [requestedMulcherId] : ids;
+
+    if (!requestedMulcherId) return askWhichMulcherCombo();
+
+    const days = getDays(message, state);
+    const delivery = deliveryInfo(message);
+    if (delivery) {
+      state.lastDeliveryFee = delivery.fee;
+      state.lastDeliveryPlace = delivery.placeLabel;
+      state.awaitingDeliveryLocation = false;
+    }
+    const deliveryFee = delivery ? delivery.fee : isDeliveryQuestion(message) ? state.lastDeliveryFee || 0 : 0;
+    const deliveryPlace = delivery?.placeLabel || state.lastDeliveryPlace;
+    const comboIds = comboIdsForMulcher(requestedMulcherId);
+    state.awaitingMulcherChoice = false;
+    state.awaitingMulcherComboSelection = false;
+    state.pendingMulcherIds = [];
+    state.lastBundleItemIds = comboIds;
+    rememberSelected(state, requestedMulcherId);
+    return quoteBundleText(comboIds, days, { deliveryFee, deliveryPlace });
+  }
 
   if (state.awaitingDeliveryLocation && !isPriceQuestion(message) && !isTrailerQuestion(message)) {
     return handleDeliveryOnly(message, state);
@@ -261,6 +482,33 @@ export function handleMessage(message, senderId = "local-test") {
   const explicit = globalDirectId || contextualId ? null : findEquipment(message);
   const selectedId = globalDirectId || contextualId || explicit?.id || state.lastItemId || null;
   const selectedItem = selectedId ? EQUIPMENT[selectedId] : null;
+
+  if (selectedItem && isMulcherId(selectedId) && isMulcherComboRequest(message)) {
+    const days = getDays(message, state);
+    const delivery = deliveryInfo(message);
+    if (delivery) {
+      state.lastDeliveryFee = delivery.fee;
+      state.lastDeliveryPlace = delivery.placeLabel;
+      state.awaitingDeliveryLocation = false;
+    }
+    const deliveryFee = delivery ? delivery.fee : isDeliveryQuestion(message) ? state.lastDeliveryFee || 0 : 0;
+    const deliveryPlace = delivery?.placeLabel || state.lastDeliveryPlace;
+    const comboIds = comboIdsForMulcher(selectedId);
+    state.lastDays = days;
+    state.awaitingMulcherChoice = false;
+    state.awaitingMulcherComboSelection = false;
+    state.pendingMulcherIds = [];
+    state.lastBundleItemIds = comboIds;
+    rememberSelected(state, selectedId);
+    return quoteBundleText(comboIds, days, { deliveryFee, deliveryPlace });
+  }
+
+  if (selectedItem && isMulcherId(selectedId) && isPriceQuestion(message) && !isMulcherAttachmentOnlyRequest(message)) {
+    rememberSelected(state, selectedId);
+    state.awaitingMulcherChoice = true;
+    state.pendingMulcherIds = [selectedId];
+    return `Do you want pricing for just the mulcher attachment, or the skid steer + mulcher combo?\n\n${selectedItem.name} pairs with ${pairedMachineName(selectedId)} only.\n\nReply "attachment only" or "combo".`;
+  }
 
   // Broad shared terms should show all options unless the user clearly selected one.
   if (!globalDirectId && category && !contextualId && isBroadCategoryRequest(message)) {
@@ -306,6 +554,16 @@ export function handleMessage(message, senderId = "local-test") {
     return quoteText(selectedItem, days, { deliveryFee, deliveryPlace });
   }
 
+  if (wantsDelivery && state.lastBundleItemIds?.length) {
+    const deliveryOnly = deliveryInfo(message);
+    if (!deliveryOnly) return handleDeliveryOnly(message, state);
+    state.lastDeliveryFee = deliveryOnly.fee;
+    state.lastDeliveryPlace = deliveryOnly.placeLabel;
+    state.awaitingDeliveryLocation = false;
+    const days = getDays(message, state);
+    return quoteBundleText(state.lastBundleItemIds, days, { deliveryFee: deliveryOnly.fee, deliveryPlace: deliveryOnly.placeLabel });
+  }
+
   if (wantsDelivery) return handleDeliveryOnly(message, state);
 
   if (wantsTrailerAddedToTotal(message)) {
@@ -340,6 +598,15 @@ export function handleMessage(message, senderId = "local-test") {
 
   if (selectedItem) {
     rememberSelected(state, selectedId);
+
+    if (isMulcherId(selectedId)) {
+      state.awaitingMulcherChoice = true;
+      state.pendingMulcherIds = [selectedId];
+      return `${itemBasicText(selectedItem)}
+
+${mulcherChoicePrompt([selectedId])}`;
+    }
+
     return itemBasicText(selectedItem);
   }
 
