@@ -3,7 +3,7 @@ import { EQUIPMENT } from "./inventory.js";
 export const SALES_TAX = 0.07;
 export const RENTAL_PROTECTION_PLAN_BASE = 49.99;
 export const TRAILER_SURCHARGE_FIRST_DAY = 49.99;
-export const TRAILER_SURCHARGE_ADDITIONAL_DAY = 15;
+export const TRAILER_SURCHARGE_ADDITIONAL_DAY = 0;
 
 export function money(value) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(value || 0));
@@ -38,9 +38,7 @@ export function getRentalAmount(item, days = 1) {
 }
 
 export function trailerSurcharge(days = 1) {
-  const d = Number(days || 1);
-  if (d <= 1) return TRAILER_SURCHARGE_FIRST_DAY;
-  return TRAILER_SURCHARGE_FIRST_DAY + ((d - 1) * TRAILER_SURCHARGE_ADDITIONAL_DAY);
+  return TRAILER_SURCHARGE_FIRST_DAY;
 }
 
 export function quoteTotals(item, days = 1, extras = {}) {

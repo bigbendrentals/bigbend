@@ -143,6 +143,43 @@ function itemKeyword(item) {
   return item.keyword || item.searchKeyword || item.name;
 }
 
+
+function isDumpTrailerItem(item) {
+  const name = normalize(item?.name || "");
+  const keyword = normalize(item?.keyword || "");
+  const category = normalize(item?.category || "");
+  return category === "trailer" || name.includes("dump trailer") || keyword.includes("dump trailer");
+}
+
+function wantsOurTrailerIncluded(message) {
+  const t = normalize(message);
+  return (
+    t.includes("include your trailer") ||
+    t.includes("include the trailer") ||
+    t.includes("add your trailer") ||
+    t.includes("add the trailer") ||
+    t.includes("with your trailer") ||
+    t.includes("with the trailer") ||
+    t.includes("need your trailer") ||
+    t.includes("need the trailer") ||
+    t.includes("use your trailer") ||
+    t.includes("use the trailer") ||
+    t.includes("rent your trailer") ||
+    t.includes("rent the trailer") ||
+    t.includes("borrow your trailer") ||
+    t.includes("borrow the trailer") ||
+    t === "with trailer" ||
+    t === "with the trailer" ||
+    t === "include trailer" ||
+    t === "add trailer"
+  );
+}
+
+function trailerOptionText() {
+  return "If you need to use our trailer to haul the machine, it is a $49.99 surcharge. You can also use your own trailer if it meets the weight requirements.";
+}
+
+
 function hasUsefulDetails(item) {
   const details = String(item.details || "").trim();
   if (!details) return false;
@@ -211,7 +248,9 @@ function durationLabel(days) {
 }
 
 function quoteText(item, days, extras = {}) {
-  const totals = quoteTotals(item, days, extras);
+  const adjustedExtras = { ...extras };
+  if (isDumpTrailerItem(item) || adjustedExtras.deliveryFee) adjustedExtras.trailerFee = 0;
+  const totals = quoteTotals(item, days, adjustedExtras);
   const locationText = totals.deliveryFee ? ` delivered to ${extras.deliveryPlace || "that area"}` : "";
   const trailerText = totals.trailerFee ? " with trailer" : "";
   const lines = [`${item.name} total for ${durationLabel(days)}${locationText}${trailerText}:`, "", `Rental: ${money(totals.rental)}`];
@@ -299,7 +338,8 @@ function quoteBundleText(itemIds, days, extras = {}) {
   const ids = [...new Set(itemIds || [])].filter((id) => EQUIPMENT[id]);
   const items = ids.map((id) => EQUIPMENT[id]);
   const deliveryFee = extras.deliveryFee || 0;
-  const trailerFee = extras.trailerFee || 0;
+  let trailerFee = extras.trailerFee || 0;
+  if (items.some((item) => isDumpTrailerItem(item)) || deliveryFee) trailerFee = 0;
 
   let rental = 0;
   let protection = 0;
@@ -566,8 +606,21 @@ export function handleMessage(message, senderId = "local-test") {
 
   if (wantsDelivery) return handleDeliveryOnly(message, state);
 
-  if (wantsTrailerAddedToTotal(message)) {
+  if (wantsTrailerAddedToTotal(message) || wantsOurTrailerIncluded(message)) {
     if (!selectedItem) return "Which machine are you referring to?";
+
+    if (isDumpTrailerItem(selectedItem)) {
+      return `${selectedItem.name} is rented as its own trailer item, so the $49.99 machine-hauling trailer surcharge does not apply.`;
+    }
+
+    const delivery = deliveryInfo(message);
+    const wantsDelivery = isDeliveryQuestion(message);
+    const deliveryFee = delivery ? delivery.fee : wantsDelivery ? state.lastDeliveryFee || 0 : 0;
+
+    if (deliveryFee) {
+      return `For delivery jobs, we do not add the trailer surcharge. ${trailerOptionText()}`;
+    }
+
     rememberSelected(state, selectedId);
     const days = getDays(message, state);
     state.lastDays = days;
@@ -575,7 +628,7 @@ export function handleMessage(message, senderId = "local-test") {
   }
 
   if (isTrailerQuestion(message)) {
-    return "We can supply a trailer for a $49.99 surcharge for the first day and $15.00 for each additional day. Clients can supply their own trailer if it meets the weight requirements for hauling the equipment.";
+    return trailerOptionText();
   }
 
   if (bookingIntent(message)) {
