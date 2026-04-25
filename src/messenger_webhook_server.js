@@ -137,6 +137,163 @@ function handleMessage(message, senderId) {
   const matches = findAllEquipment(message);
   const category = findCategory(message);
 
+  const delivery = deliveryInfo(message);
+  const wantsDelivery = isDeliveryQuestion(message);
+
+  // CATEGORY LIST MUST COME BEFORE EXPLICIT ITEM MATCH
+  // This prevents "do you have augers" from selecting the first auger.
+  if (category && normalize(message).includes("do you have")) {
+    const ids = categoryIds(category);
+
+    if (ids.length) {
+      state.lastCategory = normalizeCategory(category);
+      state.lastCategoryItems = ids;
+      state.lastItemId = null;
+
+      return `We have these options:\n\n${formatOptions(ids)}\n\nWhich one are you interested in?`;
+    }
+  }
+
+  if (explicit?.id && EQUIPMENT[explicit.id]) {
+    state.lastItemId = explicit.id;
+  }
+
+  const selectedItem = explicit?.id
+    ? EQUIPMENT[explicit.id]
+    : state.lastItemId
+      ? EQUIPMENT[state.lastItemId]
+      : null;
+
+  // PRICE + DELIVERY / PRICE ONLY
+  if (isPriceQuestion(message)) {
+    const item = selectedItem;
+    if (!item) return "Which machine are you referring to?";
+
+    const days = getDays(message, state);
+    state.lastDays = days;
+
+    if (delivery) {
+      state.lastDeliveryFee = delivery.fee;
+      state.lastDeliveryPlace = delivery.placeLabel;
+    }
+
+    const deliveryFee = delivery
+      ? delivery.fee
+      : wantsDelivery
+        ? state.lastDeliveryFee || 0
+        : 0;
+
+    const deliveryPlace = delivery?.placeLabel || state.lastDeliveryPlace;
+
+    const rental = getRentalAmount(item, days);
+    const subtotal = rental + deliveryFee;
+    const tax = subtotal * 0.07;
+    const total = subtotal + tax;
+
+    const durationLabel =
+      days === 30 ? "a month" :
+      days === 7 ? "a week" :
+      `${days} day(s)`;
+
+    const lines = [
+      `${item.name} total for ${durationLabel}${deliveryFee ? ` delivered to ${deliveryPlace || "that area"}` : ""}:`,
+      "",
+      `Rental: ${money(rental)}`
+    ];
+
+    if (deliveryFee) lines.push(`Delivery: ${money(deliveryFee)}`);
+
+    lines.push(
+      `Subtotal: ${money(subtotal)}`,
+      `Sales Tax (7%): ${money(tax)}`,
+      `Total: ${money(total)}`,
+      "",
+      "To reserve, call 850-295-5373 during business hours or book online at www.bigbendrentals.net."
+    );
+
+    return lines.join("\n");
+  }
+
+  // DELIVERY ONLY
+  if (wantsDelivery) {
+    if (delivery) {
+      state.lastDeliveryFee = delivery.fee;
+      state.lastDeliveryPlace = delivery.placeLabel;
+      return `Yes, we can deliver there. Delivery for ${delivery.placeLabel} is ${money(delivery.fee)}.`;
+    }
+
+    if (state.lastDeliveryFee) {
+      return `Yes, we can deliver. The last delivery area quoted was ${state.lastDeliveryPlace || "that area"} at ${money(state.lastDeliveryFee)}.`;
+    }
+
+    return "We deliver within about a 75-mile radius. What city or area are you in?";
+  }
+
+  // TRAILER TOTAL
+  if (wantsTrailerAddedToTotal(message)) {
+    const item = selectedItem;
+    if (!item) return "Which machine are you referring to?";
+
+    const days = getDays(message, state);
+    state.lastDays = days;
+
+    const rental = getRentalAmount(item, days);
+    const trailer = getTrailerCost(days);
+    const subtotal = rental + trailer;
+    const tax = subtotal * 0.07;
+    const total = subtotal + tax;
+
+    return `${item.name} total for ${days === 7 ? "a week" : `${days} day(s)`} with trailer:
+
+Rental: ${money(rental)}
+Trailer: ${money(trailer)}
+Subtotal: ${money(subtotal)}
+Sales Tax (7%): ${money(tax)}
+Total: ${money(total)}
+
+To reserve, call 850-295-5373 during business hours or book online at www.bigbendrentals.net.`;
+  }
+
+  // TRAILER ONLY
+  if (isTrailerQuestion(message)) {
+    return "We can supply a trailer for a $49.99 surcharge for the first day and $15.00 for each additional day. Clients can supply their own trailer if it meets the weight requirements for hauling the equipment.";
+  }
+
+  // CATEGORY LIST
+  if (category && !explicit) {
+    const ids = categoryIds(category);
+
+    if (ids.length) {
+      state.lastCategory = normalizeCategory(category);
+      state.lastCategoryItems = ids;
+      state.lastItemId = null;
+
+      return `We have these options:\n\n${formatOptions(ids)}\n\nWhich one are you interested in?`;
+    }
+  }
+
+  // MULTI-MATCH LIST
+  if (matches.length > 1 && !explicit) {
+    state.lastCategory = "multi_match";
+    state.lastCategoryItems = matches;
+    state.lastItemId = null;
+
+    return `We have these options:\n\n${formatOptions(matches)}\n\nWhich one are you interested in?`;
+  }
+
+  // SINGLE ITEM
+  if (selectedItem) {
+    return itemBasicText(selectedItem);
+  }
+
+  return "Can you clarify what you're looking to rent?";
+}
+  const state = getState(senderId);
+
+  const explicit = findEquipment(message);
+  const matches = findAllEquipment(message);
+  const category = findCategory(message);
+
   if (explicit?.id && EQUIPMENT[explicit.id]) {
     state.lastItemId = explicit.id;
   }
