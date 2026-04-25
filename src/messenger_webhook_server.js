@@ -93,26 +93,25 @@ function normalizeCategory(category) {
 }
 
 function categoryFromText(message) {
-  const t = safeNormalize(message);
-  if (/\baugers?\b/.test(t) || t.includes("post hole")) return "auger";
+  if (isMachineHaulingTrailerRequest(message)) return null;
+  if (isTrailerRentalCategoryRequest(message)) return "trailer";
+
+  const t = normalize(message);
+
+  if (/\baugers?\b/.test(t)) return "auger";
+  if (/\bmulchers?\b/.test(t) || t.includes("forestry mulcher")) return "mulcher";
   if (t.includes("scissor")) return "scissor_lift";
-  if (t.includes("boom lift") || t.includes("boom lifts") || t.includes("man lift")) return "boom_lift";
-  if (t.includes("mini skid") || t.includes("boxer")) return "mini_skid";
-  if (t.includes("skid steer") || t.includes("skid steers") || t.includes("track loader")) return "skid_steer";
-  if (/\bexcavators?\b/.test(t) || t.includes("trackhoe")) return "excavator";
+  if (t.includes("boom lift") || t.includes("boom lifts")) return "boom_lift";
+  if (t.includes("mini skid")) return "mini_skid";
+  if (t.includes("skid steer") || t.includes("skid steers")) return "skid_steer";
+  if (/\bexcavators?\b/.test(t)) return "excavator";
   if (/\bforklifts?\b/.test(t) || t.includes("fork lift") || t.includes("lift king")) return "forklift";
   if (t.includes("telehandler") || t.includes("lull")) return "telehandler";
-  if (t.includes("pressure washer") || t.includes("power washer")) return "pressure_washer";
+  if (t.includes("pressure washer")) return "pressure_washer";
   if (/\bcompactors?\b/.test(t)) return "compactor";
   if (/\bmowers?\b/.test(t) || t.includes("zero turn")) return "mower";
-  if (/\bmulchers?\b/.test(t) || t.includes("forestry mulcher") || t.includes("hm316") || t.includes("mh60d")) return "mulcher";
-  if (t.includes("brush cutter") || t.includes("bush hog") || t.includes("rotary cutter")) return "brush_cutter";
-  if (t.includes("trencher") || t.includes("ditch witch")) return "trencher";
-  if (t.includes("drain snake") || t.includes("drain cleaner") || t.includes("electric eel")) return "drain_cleaner";
-  if (/\btrailers?\b/.test(t)) return "trailer";
-  if (/\bpumps?\b/.test(t)) return "pump";
-  if (/\bcompressors?\b/.test(t)) return "compressor";
-  if (t.includes("concrete") || t.includes("tile saw") || t.includes("core drill")) return "concrete";
+  if (/\btrenchers?\b/.test(t) || t.includes("ditch witch")) return "trencher";
+
   return normalizeCategory(findCategory(message));
 }
 
@@ -177,6 +176,58 @@ function wantsOurTrailerIncluded(message) {
 
 function trailerOptionText() {
   return "If you need to use our trailer to haul the machine, it is a $49.99 surcharge. You can also use your own trailer if it meets the weight requirements.";
+}
+
+
+
+function isMachineHaulingTrailerRequest(message) {
+  const t = normalize(message);
+
+  return (
+    t.includes("come with a trailer") ||
+    t.includes("comes with a trailer") ||
+    t.includes("trailer come with it") ||
+    t.includes("trailer comes with it") ||
+    t.includes("have a trailer to haul") ||
+    t.includes("trailer to haul") ||
+    t.includes("trailer we can use") ||
+    (t.includes("we can use") && t.includes("trailer")) ||
+    t.includes("use your trailer") ||
+    t.includes("use the trailer") ||
+    t.includes("borrow your trailer") ||
+    t.includes("borrow the trailer") ||
+    t.includes("need your trailer") ||
+    t.includes("need the trailer") ||
+    t.includes("include your trailer") ||
+    t.includes("include the trailer") ||
+    t.includes("add your trailer") ||
+    t.includes("add the trailer") ||
+    t.includes("with your trailer") ||
+    t.includes("with the trailer") ||
+    (t.includes("haul the") && t.includes("trailer")) ||
+    (t.includes("haul it") && t.includes("trailer")) ||
+    (t.includes("haul") && t.includes("jd") && t.includes("trailer")) ||
+    (t.includes("haul") && t.includes("333") && t.includes("trailer")) ||
+    (t.includes("haul") && t.includes("skid") && t.includes("trailer")) ||
+    (t.includes("haul") && t.includes("machine") && t.includes("trailer"))
+  );
+}
+
+function isTrailerRentalCategoryRequest(message) {
+  const t = normalize(message);
+
+  if (isMachineHaulingTrailerRequest(message)) return false;
+
+  return (
+    t.includes("do you have trailers") ||
+    t.includes("do you rent trailers") ||
+    t.includes("rent trailers") ||
+    t.includes("trailer rental") ||
+    t.includes("dump trailer") ||
+    t.includes("dump trailers") ||
+    t === "trailer" ||
+    t === "trailers"
+  );
 }
 
 
@@ -400,6 +451,17 @@ Which one are you interested in?`;
 export function handleMessage(message, senderId = "local-test") {
   const state = getState(senderId);
   const category = categoryFromText(message);
+
+  if (isMachineHaulingTrailerRequest(message)) {
+    const priorItem = state.lastSelectedItemId ? EQUIPMENT[state.lastSelectedItemId] : state.lastItemId ? EQUIPMENT[state.lastItemId] : null;
+
+    if (priorItem && isDumpTrailerItem(priorItem)) {
+      return `${priorItem.name} is rented as its own trailer item, so the $49.99 machine-hauling trailer surcharge does not apply.`;
+    }
+
+    return trailerOptionText();
+  }
+
 
   if (state.awaitingMulcherChoice) {
     const pendingMulchers = (state.pendingMulcherIds || []).filter((id) => isMulcherId(id) && EQUIPMENT[id]);
@@ -627,27 +689,16 @@ export function handleMessage(message, senderId = "local-test") {
     return quoteText(selectedItem, days, { trailerFee: trailerSurcharge(days) });
   }
 
-if (isTrailerQuestion(message)) {
-  // If user is asking about using OUR trailer for hauling equipment
-  if (
-    message.toLowerCase().includes("use") ||
-    message.toLowerCase().includes("haul") ||
-    message.toLowerCase().includes("borrow") ||
-    message.toLowerCase().includes("your trailer") ||
-    message.toLowerCase().includes("rent your trailer") ||
-    message.toLowerCase().includes("rent a trailer") ||
-    message.toLowerCase().includes("come with a trailer") ||
-    message.toLowerCase().includes("do you have trailers") ||
-    message.toLowerCase().includes("do you have a trailer") ||
-    message.toLowerCase().includes("we can use")
-  ) {
-    return "If you need to use our trailer to haul the machine, there is a $49.99 surcharge. You can also use your own trailer if it meets the weight requirements.";
-  }
+  if (isTrailerQuestion(message)) {
+    if (isMachineHaulingTrailerRequest(message)) {
+      return trailerOptionText();
+    }
 
-  // Otherwise they are asking about renting a trailer itself
-  const ids = categoryIds("trailer");
-  return `We have these options:\n\n${formatOptions(ids)}\n\nWhich one are you interested in?`;
-}
+    const response = categoryResponse("trailer", state);
+    if (response) return response;
+
+    return trailerOptionText();
+  }
 
   if (bookingIntent(message)) {
     if (selectedItem) rememberSelected(state, selectedId);
