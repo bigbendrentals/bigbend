@@ -1,13 +1,14 @@
-// FIXED FILE: context selection + more-info website keyword + detail follow-ups before broad matching
+// FIXED FILE: context selection + more-info website keyword + lets conversation change categories
 
 import express from "express";
-import { EQUIPMENT } from "./inventory.js";
+import { EQUIPMENT, CATEGORY_ITEMS } from "./inventory.js";
 import { money } from "./pricing.js";
 import {
   normalize,
   containsAny,
   findEquipment,
-  findAllEquipment
+  findAllEquipment,
+  findCategory
 } from "./intent.js";
 
 const app = express();
@@ -30,6 +31,74 @@ function getState(senderId) {
     };
   }
   return stateStore[senderId];
+}
+
+function normalizeCategory(category) {
+  if (!category) return null;
+  const c = String(category).toLowerCase();
+
+  if (c.includes("scissor")) return "scissor_lift";
+  if (c.includes("boom")) return "boom_lift";
+  if (c.includes("skid")) return "skid_steer";
+  if (c.includes("mini")) return "mini_skid";
+  if (c.includes("auger")) return "auger";
+  if (c.includes("excavator")) return "excavator";
+  if (c.includes("forklift")) return "forklift";
+  if (c.includes("pressure")) return "pressure_washer";
+
+  return c;
+}
+
+function categoryFromText(message) {
+  const t = normalize(message);
+
+  if (t.includes("auger") || t.includes("augers")) return "auger";
+  if (t.includes("scissor")) return "scissor_lift";
+  if (t.includes("boom lift") || t.includes("boom lifts")) return "boom_lift";
+  if (t.includes("skid steer") || t.includes("skid steers")) return "skid_steer";
+  if (t.includes("mini skid")) return "mini_skid";
+  if (t.includes("excavator") || t.includes("excavators")) return "excavator";
+  if (t.includes("forklift") || t.includes("forklifts")) return "forklift";
+  if (t.includes("pressure washer")) return "pressure_washer";
+
+  return normalizeCategory(findCategory(message));
+}
+
+function isBroadCategoryRequest(message) {
+  const t = normalize(message);
+
+  return (
+    t.includes("do you have") ||
+    t.includes("do u have") ||
+    t.includes("what do you have") ||
+    t.includes("what all do you have") ||
+    t.includes("options") ||
+    t.includes("available") ||
+    /\b(augers|boom lifts|scissor lifts|excavators|skid steers|trailers|forklifts|compactors|mowers)\b/.test(t)
+  );
+}
+
+function categoryIds(category) {
+  const key = normalizeCategory(category);
+  if (!key) return [];
+
+  if (CATEGORY_ITEMS?.[key]?.length) return CATEGORY_ITEMS[key];
+
+  return Object.keys(EQUIPMENT).filter((id) => {
+    const item = EQUIPMENT[id];
+    const haystack = `${item?.name || ""} ${(item?.aliases || []).join(" ")} ${item?.category || ""} ${item?.details || ""}`.toLowerCase();
+
+    if (key === "scissor_lift") return haystack.includes("scissor") || haystack.includes("gs1930") || haystack.includes("gs3246");
+    if (key === "boom_lift") return haystack.includes("boom") || haystack.includes("z45") || haystack.includes("et500");
+    if (key === "skid_steer") return haystack.includes("skid steer") || haystack.includes("skidsteer");
+    if (key === "mini_skid") return haystack.includes("mini skid") || haystack.includes("boxer");
+    if (key === "auger") return haystack.includes("auger");
+    if (key === "excavator") return haystack.includes("excavator");
+    if (key === "forklift") return haystack.includes("forklift") || haystack.includes("telehandler");
+    if (key === "pressure_washer") return haystack.includes("pressure washer");
+
+    return haystack.includes(key);
+  });
 }
 
 function formatOptions(ids) {
@@ -132,12 +201,27 @@ function resolveFromLastOptions(message, state) {
 function handleMessage(message, senderId) {
   const state = getState(senderId);
 
+  const category = categoryFromText(message);
+
+  // IMPORTANT: broad category requests must run BEFORE old item context.
+  // Example: after talking about Stihl, "do you have skid steers" should switch categories.
+  if (category && isBroadCategoryRequest(message)) {
+    const ids = categoryIds(category);
+
+    if (ids.length) {
+      state.lastCategoryItems = ids;
+      state.lastItemId = null;
+
+      return `We have these options:\n\n${formatOptions(ids)}\n\nWhich one are you interested in?`;
+    }
+  }
+
   const explicit = findEquipment(message);
   const contextualId = resolveFromLastOptions(message, state);
   const selectedId = contextualId || explicit?.id || state.lastItemId || null;
   const selectedItem = selectedId ? EQUIPMENT[selectedId] : null;
 
-  // IMPORTANT: detail/more-info follow-ups must run BEFORE broad matching.
+  // Detail/more-info follow-ups must run BEFORE broad matching.
   // Otherwise "is this a handheld auger" sees "auger" and re-lists all augers.
   if (selectedItem && isMoreInfoQuestion(message)) {
     state.lastItemId = selectedId;
