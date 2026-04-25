@@ -34,14 +34,17 @@ function getState(senderId) {
       lastCategory: null,
       lastCategoryItems: [],
       lastDeliveryFee: 0,
-      lastDeliveryPlace: null
+      lastDeliveryPlace: null,
+      awaitingDeliveryLocation: false
     };
   }
+
   return stateStore[senderId];
 }
 
 function normalizeCategory(category) {
   if (!category) return null;
+
   const c = String(category).toLowerCase();
 
   if (c.includes("scissor")) return "scissor_lift";
@@ -54,6 +57,21 @@ function normalizeCategory(category) {
   if (c.includes("pressure")) return "pressure_washer";
 
   return c;
+}
+
+function categoryFromText(message) {
+  const t = normalize(message);
+
+  if (t.includes("auger") || t.includes("augers")) return "auger";
+  if (t.includes("scissor")) return "scissor_lift";
+  if (t.includes("boom lift") || t.includes("boom lifts")) return "boom_lift";
+  if (t.includes("skid steer") || t.includes("skid steers")) return "skid_steer";
+  if (t.includes("mini skid")) return "mini_skid";
+  if (t.includes("excavator") || t.includes("excavators")) return "excavator";
+  if (t.includes("forklift") || t.includes("forklifts")) return "forklift";
+  if (t.includes("pressure washer")) return "pressure_washer";
+
+  return normalizeCategory(findCategory(message));
 }
 
 function categoryIds(category) {
@@ -247,17 +265,44 @@ function quoteText(item, days, extras = {}) {
   return lines.join("\n");
 }
 
+function handleDeliveryOnly(message, state) {
+  const delivery = deliveryInfo(message);
+
+  if (delivery) {
+    state.lastDeliveryFee = delivery.fee;
+    state.lastDeliveryPlace = delivery.placeLabel;
+    state.awaitingDeliveryLocation = false;
+    return `Yes, we can deliver there. Delivery for ${delivery.placeLabel} is ${money(delivery.fee)}.`;
+  }
+
+  state.awaitingDeliveryLocation = true;
+  return "We deliver within about a 75-mile radius. What city or area are you in?";
+}
+
 function handleMessage(message, senderId) {
   const state = getState(senderId);
 
   const explicit = findEquipment(message);
   const matches = findAllEquipment(message);
-  const category = findCategory(message);
+  const category = categoryFromText(message);
   const delivery = deliveryInfo(message);
   const wantsDelivery = isDeliveryQuestion(message);
   const contextualId = resolveFromLastOptions(message, state);
 
+  // If bot just asked "What city or area are you in?", treat next short message as delivery location.
+  if (state.awaitingDeliveryLocation && !isPriceQuestion(message) && !isTrailerQuestion(message)) {
+    const response = handleDeliveryOnly(message, state);
+
+    // If deliveryInfo does not know that city, do not fall through to item context.
+    if (response.includes("What city or area")) {
+      return "I may need Dave to confirm delivery for that area. Please call 850-295-5373 during business hours or book online at www.bigbendrentals.net.";
+    }
+
+    return response;
+  }
+
   // Category/list requests run before exact item matching.
+  // This prevents "do you have augers" from selecting only the first auger.
   if (category && isBroadCategoryRequest(message)) {
     const ids = categoryIds(category);
 
@@ -293,6 +338,7 @@ function handleMessage(message, senderId) {
     if (delivery) {
       state.lastDeliveryFee = delivery.fee;
       state.lastDeliveryPlace = delivery.placeLabel;
+      state.awaitingDeliveryLocation = false;
     }
 
     const deliveryFee = delivery
@@ -311,17 +357,7 @@ function handleMessage(message, senderId) {
 
   // Delivery only
   if (wantsDelivery) {
-    if (delivery) {
-      state.lastDeliveryFee = delivery.fee;
-      state.lastDeliveryPlace = delivery.placeLabel;
-      return `Yes, we can deliver there. Delivery for ${delivery.placeLabel} is ${money(delivery.fee)}.`;
-    }
-
-    if (state.lastDeliveryFee) {
-      return `Yes, we can deliver. The last delivery area quoted was ${state.lastDeliveryPlace || "that area"} at ${money(state.lastDeliveryFee)}.`;
-    }
-
-    return "We deliver within about a 75-mile radius. What city or area are you in?";
+    return handleDeliveryOnly(message, state);
   }
 
   // Trailer total
