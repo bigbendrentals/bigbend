@@ -1,7 +1,12 @@
 {
-  "name": "bot",
+  "name": "bigbend-messenger-bot",
   "version": "1.0.0",
   "type": "module",
+  "main": "src/messenger_webhook_server.js",
+  "scripts": {
+    "start": "node src/messenger_webhook_server.js",
+    "test:logic": "node src/test_logic.js"
+  },
   "dependencies": {
     "express": "^4.18.2"
   }
