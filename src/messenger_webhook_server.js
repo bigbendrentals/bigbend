@@ -1,5 +1,3 @@
-// FIXED FILE: context selection + more-info website keyword + lets conversation change categories
-
 import express from "express";
 import { EQUIPMENT, CATEGORY_ITEMS } from "./inventory.js";
 import { money } from "./pricing.js";
@@ -8,7 +6,13 @@ import {
   containsAny,
   findEquipment,
   findAllEquipment,
-  findCategory
+  findCategory,
+  isTrailerQuestion,
+  wantsTrailerAddedToTotal,
+  isPriceQuestion,
+  parseDays,
+  isDeliveryQuestion,
+  deliveryInfo
 } from "./intent.js";
 
 const app = express();
@@ -20,6 +24,7 @@ const GRAPH_VERSION = process.env.META_GRAPH_VERSION || "v22.0";
 const PORT = process.env.PORT || 10000;
 
 const WEBSITE = "www.bigbendrentals.net";
+const RESERVE_TEXT = "To reserve, call 850-295-5373 during business hours or book online at www.bigbendrentals.net.";
 
 const stateStore = {};
 
@@ -27,7 +32,11 @@ function getState(senderId) {
   if (!stateStore[senderId]) {
     stateStore[senderId] = {
       lastItemId: null,
-      lastCategoryItems: []
+      lastDays: 1,
+      lastCategoryItems: [],
+      lastDeliveryFee: 0,
+      lastDeliveryPlace: null,
+      awaitingDeliveryLocation: false
     };
   }
   return stateStore[senderId];
@@ -129,9 +138,7 @@ function hasUsefulDetails(item) {
   const itemName = String(item.name || "").trim().toLowerCase();
   const normalizedDetails = details.toLowerCase();
 
-  // Treat details that only repeat the name as not useful.
   if (normalizedDetails === itemName) return false;
-
   return true;
 }
 
@@ -143,13 +150,8 @@ function itemBasicText(item) {
 
   let text = `${item.name}${parts.length ? ` is ${parts.join(", ")}.` : "."}`;
 
-  if (item.protection) {
-    text += " Rental Protection Plan is required on that machine.";
-  }
-
-  if (hasUsefulDetails(item)) {
-    text += ` ${item.details}`;
-  }
+  if (item.protection) text += " Rental Protection Plan is required on that machine.";
+  if (hasUsefulDetails(item)) text += ` ${item.details}`;
 
   return text;
 }
@@ -182,6 +184,40 @@ function isMoreInfoQuestion(message) {
   ]);
 }
 
+function getHaystack(id) {
+  const item = EQUIPMENT[id];
+  if (!item) return "";
+  return `${item.name || ""} ${(item.aliases || []).join(" ")} ${item.details || ""}`.toLowerCase();
+}
+
+function resolveDirectNamedItem(message) {
+  const t = normalize(message);
+
+  const strongTerms = [
+    "stihl",
+    "bt131",
+    "blue diamond",
+    "gs1930",
+    "gs3246",
+    "jlg",
+    "et500",
+    "z45",
+    "z 45",
+    "genie z45",
+    "cat 265",
+    "cat 239",
+    "307",
+    "307.5",
+    "301.7",
+    "boxer"
+  ];
+
+  const term = strongTerms.find((x) => t.includes(x));
+  if (!term) return null;
+
+  return Object.keys(EQUIPMENT).find((id) => getHaystack(id).includes(term.replace(" ", "")) || getHaystack(id).includes(term)) || null;
+}
+
 function resolveFromLastOptions(message, state) {
   const ids = state.lastCategoryItems || [];
   if (!ids.length) return null;
@@ -190,12 +226,85 @@ function resolveFromLastOptions(message, state) {
   if (!text) return null;
 
   return ids.find((id) => {
-    const item = EQUIPMENT[id];
-    if (!item) return false;
-
-    const haystack = `${item.name || ""} ${(item.aliases || []).join(" ")} ${item.details || ""}`.toLowerCase();
+    const haystack = getHaystack(id);
     return haystack.includes(text);
   }) || null;
+}
+
+function getDays(message, state) {
+  const t = normalize(message);
+  if (t.includes("month") || t.includes("monthly")) return 30;
+  if (t.includes("week") || t.includes("weekly")) return 7;
+  return parseDays(message) || state.lastDays || 1;
+}
+
+function durationLabel(days) {
+  if (days === 30) return "a month";
+  if (days === 7) return "a week";
+  return `${days} day(s)`;
+}
+
+function getRentalAmount(item, days) {
+  if (days >= 30 && item.month) return item.month;
+
+  if (days >= 7 && item.week) {
+    const weeks = Math.floor(days / 7);
+    const extraDays = days % 7;
+    return weeks * item.week + extraDays * (item.day || 0);
+  }
+
+  return (item.day || 0) * days;
+}
+
+function getTrailerCost(days) {
+  if (days <= 1) return 49.99;
+  return 49.99 + (days - 1) * 15;
+}
+
+function quoteText(item, days, extras = {}) {
+  const rental = getRentalAmount(item, days);
+  const deliveryFee = extras.deliveryFee || 0;
+  const trailerFee = extras.trailerFee || 0;
+
+  const subtotal = rental + deliveryFee + trailerFee;
+  const tax = subtotal * 0.07;
+  const total = subtotal + tax;
+
+  const locationText = deliveryFee ? ` delivered to ${extras.deliveryPlace || "that area"}` : "";
+  const trailerText = trailerFee ? " with trailer" : "";
+
+  const lines = [
+    `${item.name} total for ${durationLabel(days)}${locationText}${trailerText}:`,
+    "",
+    `Rental: ${money(rental)}`
+  ];
+
+  if (deliveryFee) lines.push(`Delivery: ${money(deliveryFee)}`);
+  if (trailerFee) lines.push(`Trailer: ${money(trailerFee)}`);
+
+  lines.push(
+    `Subtotal: ${money(subtotal)}`,
+    `Sales Tax (7%): ${money(tax)}`,
+    `Total: ${money(total)}`,
+    "",
+    RESERVE_TEXT
+  );
+
+  return lines.join("\n");
+}
+
+function handleDeliveryOnly(message, state) {
+  const delivery = deliveryInfo(message);
+
+  if (delivery) {
+    state.lastDeliveryFee = delivery.fee;
+    state.lastDeliveryPlace = delivery.placeLabel;
+    state.awaitingDeliveryLocation = false;
+    return `Yes, we can deliver there. Delivery for ${delivery.placeLabel} is ${money(delivery.fee)}.`;
+  }
+
+  state.awaitingDeliveryLocation = true;
+  return "We deliver within about a 75-mile radius. What city or area are you in?";
 }
 
 function handleMessage(message, senderId) {
@@ -203,26 +312,30 @@ function handleMessage(message, senderId) {
 
   const category = categoryFromText(message);
 
-  // IMPORTANT: broad category requests must run BEFORE old item context.
-  // Example: after talking about Stihl, "do you have skid steers" should switch categories.
+  if (state.awaitingDeliveryLocation && !isPriceQuestion(message) && !isTrailerQuestion(message)) {
+    const response = handleDeliveryOnly(message, state);
+    if (response.includes("What city or area")) {
+      return "I may need Dave to confirm delivery for that area. Please call 850-295-5373 during business hours or book online at www.bigbendrentals.net.";
+    }
+    return response;
+  }
+
+  // Broad category requests must run before old item context.
   if (category && isBroadCategoryRequest(message)) {
     const ids = categoryIds(category);
-
     if (ids.length) {
       state.lastCategoryItems = ids;
       state.lastItemId = null;
-
       return `We have these options:\n\n${formatOptions(ids)}\n\nWhich one are you interested in?`;
     }
   }
 
   const explicit = findEquipment(message);
+  const directNamedId = resolveDirectNamedItem(message);
   const contextualId = resolveFromLastOptions(message, state);
-  const selectedId = contextualId || explicit?.id || state.lastItemId || null;
+  const selectedId = directNamedId || contextualId || explicit?.id || state.lastItemId || null;
   const selectedItem = selectedId ? EQUIPMENT[selectedId] : null;
 
-  // Detail/more-info follow-ups must run BEFORE broad matching.
-  // Otherwise "is this a handheld auger" sees "auger" and re-lists all augers.
   if (selectedItem && isMoreInfoQuestion(message)) {
     state.lastItemId = selectedId;
     return itemMoreInfoText(selectedItem);
@@ -233,8 +346,54 @@ function handleMessage(message, senderId) {
   if (matches.length > 1) {
     state.lastCategoryItems = matches;
     state.lastItemId = null;
-
     return `We have these options:\n\n${formatOptions(matches)}\n\nWhich one are you interested in?`;
+  }
+
+  const delivery = deliveryInfo(message);
+  const wantsDelivery = isDeliveryQuestion(message);
+
+  if (isPriceQuestion(message)) {
+    const item = selectedItem;
+    if (!item) return "Which machine are you referring to?";
+
+    const days = getDays(message, state);
+    state.lastDays = days;
+
+    if (delivery) {
+      state.lastDeliveryFee = delivery.fee;
+      state.lastDeliveryPlace = delivery.placeLabel;
+      state.awaitingDeliveryLocation = false;
+    }
+
+    const deliveryFee = delivery ? delivery.fee : wantsDelivery ? state.lastDeliveryFee || 0 : 0;
+    const deliveryPlace = delivery?.placeLabel || state.lastDeliveryPlace;
+
+    return quoteText(item, days, { deliveryFee, deliveryPlace });
+  }
+
+  if (wantsDelivery) return handleDeliveryOnly(message, state);
+
+  if (wantsTrailerAddedToTotal(message)) {
+    const item = selectedItem;
+    if (!item) return "Which machine are you referring to?";
+
+    const days = getDays(message, state);
+    state.lastDays = days;
+
+    return quoteText(item, days, { trailerFee: getTrailerCost(days) });
+  }
+
+  if (isTrailerQuestion(message)) {
+    return "We can supply a trailer for a $49.99 surcharge for the first day and $15.00 for each additional day. Clients can supply their own trailer if it meets the weight requirements for hauling the equipment.";
+  }
+
+  if (category && !selectedId) {
+    const ids = categoryIds(category);
+    if (ids.length) {
+      state.lastCategoryItems = ids;
+      state.lastItemId = null;
+      return `We have these options:\n\n${formatOptions(ids)}\n\nWhich one are you interested in?`;
+    }
   }
 
   if (selectedItem) {
@@ -260,9 +419,7 @@ async function sendMessage(senderId, text) {
   });
 
   const bodyText = await response.text();
-  if (!response.ok) {
-    console.error("Facebook send failed:", response.status, bodyText);
-  }
+  if (!response.ok) console.error("Facebook send failed:", response.status, bodyText);
 }
 
 app.post("/webhook", async (req, res) => {
@@ -295,7 +452,6 @@ app.get("/webhook", (req, res) => {
   ) {
     return res.send(req.query["hub.challenge"]);
   }
-
   res.sendStatus(403);
 });
 
@@ -303,6 +459,4 @@ app.get("/", (_req, res) => {
   res.status(200).send("Messenger webhook is running.");
 });
 
-app.listen(PORT, () => {
-  console.log(`Messenger webhook listening on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Messenger webhook listening on port ${PORT}`));
