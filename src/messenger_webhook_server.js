@@ -33,6 +33,7 @@ function getState(senderId) {
     stateStore[senderId] = {
       lastItemId: null,
       lastDays: 1,
+      lastCategory: null,
       lastCategoryItems: [],
       lastDeliveryFee: 0,
       lastDeliveryPlace: null,
@@ -42,59 +43,79 @@ function getState(senderId) {
   return stateStore[senderId];
 }
 
-function compactText(value) {
-  return normalize(value).replace(/[\s.-]/g, "");
+function safeNormalize(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[’']/g, "")
+    .replace(/[^a-z0-9\s.-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
-function haystackFor(id) {
+function compact(value) {
+  return safeNormalize(value).replace(/[\s.-]/g, "");
+}
+
+function itemHaystack(id) {
   const item = EQUIPMENT[id];
   if (!item) return "";
-  return `${item.name || ""} ${(item.aliases || []).join(" ")} ${item.keyword || ""} ${item.searchKeyword || ""} ${item.category || ""}`.toLowerCase();
+  return safeNormalize(`${item.name || ""} ${(item.aliases || []).join(" ")} ${item.keyword || ""} ${item.searchKeyword || ""} ${item.category || ""} ${item.details || ""}`);
+}
+
+function itemCompactHaystack(id) {
+  return compact(itemHaystack(id));
 }
 
 function normalizeCategory(category) {
   if (!category) return null;
-  const c = String(category).toLowerCase();
+  const c = safeNormalize(category);
 
   if (c.includes("scissor")) return "scissor_lift";
   if (c.includes("boom")) return "boom_lift";
+  if (c.includes("mini skid")) return "mini_skid";
   if (c.includes("skid")) return "skid_steer";
-  if (c.includes("mini")) return "mini_skid";
   if (c.includes("auger")) return "auger";
   if (c.includes("excavator")) return "excavator";
   if (c.includes("forklift")) return "forklift";
+  if (c.includes("telehandler")) return "telehandler";
   if (c.includes("pressure")) return "pressure_washer";
   if (c.includes("compactor")) return "compactor";
+  if (c.includes("mower")) return "mower";
+  if (c.includes("trailer")) return "trailer";
 
   return c;
 }
 
 function categoryFromText(message) {
-  const t = normalize(message);
+  const t = safeNormalize(message);
 
-  if (t.includes("auger") || t.includes("augers")) return "auger";
+  if (/\baugers?\b/.test(t)) return "auger";
   if (t.includes("scissor")) return "scissor_lift";
   if (t.includes("boom lift") || t.includes("boom lifts")) return "boom_lift";
-  if (t.includes("skid steer") || t.includes("skid steers")) return "skid_steer";
   if (t.includes("mini skid")) return "mini_skid";
-  if (t.includes("excavator") || t.includes("excavators")) return "excavator";
-  if (t.includes("forklift") || t.includes("forklifts")) return "forklift";
+  if (t.includes("skid steer") || t.includes("skid steers")) return "skid_steer";
+  if (/\bexcavators?\b/.test(t)) return "excavator";
+  if (/\bforklifts?\b/.test(t)) return "forklift";
+  if (t.includes("telehandler") || t.includes("lull")) return "telehandler";
   if (t.includes("pressure washer")) return "pressure_washer";
-  if (t.includes("compactor") || t.includes("compactors")) return "compactor";
+  if (/\bcompactors?\b/.test(t)) return "compactor";
+  if (/\bmowers?\b/.test(t) || t.includes("zero turn")) return "mower";
+  if (/\btrailers?\b/.test(t)) return "trailer";
 
   return normalizeCategory(findCategory(message));
 }
 
 function isBroadCategoryRequest(message) {
-  const t = normalize(message);
-
+  const t = safeNormalize(message);
   return (
     t.includes("do you have") ||
     t.includes("do u have") ||
+    t.includes("do you rent") ||
+    t.includes("do u rent") ||
     t.includes("what do you have") ||
     t.includes("what all do you have") ||
-    t.includes("options") ||
     t.includes("available") ||
+    t.includes("options") ||
     /\b(augers|boom lifts|scissor lifts|excavators|skid steers|trailers|forklifts|compactors|mowers)\b/.test(t)
   );
 }
@@ -106,20 +127,22 @@ function categoryIds(category) {
   if (CATEGORY_ITEMS?.[key]?.length) return CATEGORY_ITEMS[key];
 
   return Object.keys(EQUIPMENT).filter((id) => {
-    const item = EQUIPMENT[id];
-    const haystack = `${item?.name || ""} ${(item?.aliases || []).join(" ")} ${item?.category || ""} ${item?.details || ""}`.toLowerCase();
+    const h = itemHaystack(id);
 
-    if (key === "scissor_lift") return haystack.includes("scissor") || haystack.includes("gs1930") || haystack.includes("gs3246");
-    if (key === "boom_lift") return haystack.includes("boom") || haystack.includes("z45") || haystack.includes("et500");
-    if (key === "skid_steer") return haystack.includes("skid steer") || haystack.includes("skidsteer");
-    if (key === "mini_skid") return haystack.includes("mini skid") || haystack.includes("boxer");
-    if (key === "auger") return haystack.includes("auger");
-    if (key === "excavator") return haystack.includes("excavator");
-    if (key === "forklift") return haystack.includes("forklift") || haystack.includes("telehandler");
-    if (key === "pressure_washer") return haystack.includes("pressure washer");
-    if (key === "compactor") return haystack.includes("compactor");
+    if (key === "auger") return h.includes("auger");
+    if (key === "scissor_lift") return h.includes("scissor") || h.includes("gs1930") || h.includes("gs3246");
+    if (key === "boom_lift") return h.includes("boom") || h.includes("z45") || h.includes("et500");
+    if (key === "mini_skid") return h.includes("mini skid") || h.includes("boxer");
+    if (key === "skid_steer") return h.includes("skid steer") || h.includes("skidsteer");
+    if (key === "excavator") return h.includes("excavator");
+    if (key === "forklift") return h.includes("forklift");
+    if (key === "telehandler") return h.includes("telehandler") || h.includes("lull");
+    if (key === "pressure_washer") return h.includes("pressure washer");
+    if (key === "compactor") return h.includes("compactor");
+    if (key === "mower") return h.includes("mower") || h.includes("zero turn");
+    if (key === "trailer") return h.includes("trailer");
 
-    return haystack.includes(key);
+    return h.includes(key);
   });
 }
 
@@ -152,6 +175,8 @@ function hasUsefulDetails(item) {
   const normalizedDetails = details.toLowerCase();
 
   if (normalizedDetails === itemName) return false;
+  if (normalizedDetails.replace(/[^a-z0-9]/g, "") === itemName.replace(/[^a-z0-9]/g, "")) return false;
+
   return true;
 }
 
@@ -177,7 +202,7 @@ function itemMoreInfoText(item) {
 }
 
 function isMoreInfoQuestion(message) {
-  const t = normalize(message);
+  const t = safeNormalize(message);
   return containsAny(t, [
     "more about",
     "more info",
@@ -196,42 +221,47 @@ function isMoreInfoQuestion(message) {
   ]);
 }
 
-function scoreAgainstMessage(id, message) {
+function resolveStihlBt131() {
+  return Object.keys(EQUIPMENT).find((id) => {
+    const h = itemHaystack(id);
+    const c = itemCompactHaystack(id);
+    return (h.includes("stihl") && c.includes("bt131")) || c.includes("stihlbt131");
+  }) || null;
+}
+
+function scoreItemAgainstMessage(id, message) {
   const item = EQUIPMENT[id];
   if (!item) return 0;
 
-  const t = normalize(message);
-  const compact = compactText(message);
-  const haystack = haystackFor(id);
-  const compactHaystack = compactText(haystack);
-  const itemName = normalize(item.name || "");
+  const t = safeNormalize(message);
+  const c = compact(message);
+  const h = itemHaystack(id);
+  const hc = itemCompactHaystack(id);
+  const name = safeNormalize(item.name || "");
 
   let score = 0;
 
-  // High confidence exact terms. These intentionally outrank general aliases.
-  if (t.includes("stihl") && itemName.includes("stihl")) score += 100;
-  if (t.includes("bt131") && compactHaystack.includes("bt131")) score += 100;
-  if (t.includes("blue diamond") && itemName.includes("blue diamond")) score += 100;
-  if (t.includes("gs1930") && compactHaystack.includes("gs1930")) score += 100;
-  if (t.includes("gs3246") && compactHaystack.includes("gs3246")) score += 100;
-  if (t.includes("jlg") && itemName.includes("jlg")) score += 100;
-  if (t.includes("et500") && compactHaystack.includes("et500")) score += 100;
-  if (t.includes("z45") && compactHaystack.includes("z45")) score += 100;
-  if (t.includes("boxer") && itemName.includes("boxer")) score += 100;
+  if (t.includes("stihl") && name.includes("stihl") && hc.includes("bt131")) score += 1000;
+  if (t.includes("bt131") && hc.includes("bt131")) score += 1000;
+  if (t.includes("blue diamond") && name.includes("blue diamond")) score += 500;
+  if (t.includes("gs1930") && hc.includes("gs1930")) score += 500;
+  if (t.includes("gs3246") && hc.includes("gs3246")) score += 500;
+  if (t.includes("jlg") && name.includes("jlg")) score += 500;
+  if (t.includes("et500") && hc.includes("et500")) score += 500;
+  if (t.includes("z45") && hc.includes("z45")) score += 500;
+  if (t.includes("boxer") && name.includes("boxer")) score += 500;
 
-  // Generic word matches.
   const words = t
     .split(/\s+/)
     .filter((w) => w.length > 2)
-    .filter((w) => !["the", "and", "for", "how", "much", "what", "about", "with", "you", "have", "rent", "rental", "more", "info", "details"].includes(w));
+    .filter((w) => !["the", "and", "for", "how", "much", "what", "about", "with", "you", "have", "rent", "rental", "more", "info", "details", "this", "that"].includes(w));
 
   for (const word of words) {
-    if (haystack.includes(word)) score += 5;
+    if (h.includes(word)) score += 10;
   }
 
-  // If the full short phrase is in the haystack, help it a bit.
-  if (t.length >= 3 && haystack.includes(t)) score += 20;
-  if (compact.length >= 3 && compactHaystack.includes(compact)) score += 20;
+  if (t.length >= 3 && h.includes(t)) score += 25;
+  if (c.length >= 3 && hc.includes(c)) score += 25;
 
   return score;
 }
@@ -241,7 +271,7 @@ function resolveFromLastOptions(message, state) {
   if (!ids.length) return null;
 
   const scored = ids
-    .map((id) => ({ id, score: scoreAgainstMessage(id, message) }))
+    .map((id) => ({ id, score: scoreItemAgainstMessage(id, message) }))
     .filter((x) => x.score > 0)
     .sort((a, b) => b.score - a.score);
 
@@ -250,33 +280,35 @@ function resolveFromLastOptions(message, state) {
 }
 
 function resolveGlobalDirect(message) {
-  const t = normalize(message);
+  const t = safeNormalize(message);
+  const c = compact(message);
 
-  // Only global-direct when the customer uses a specific, high-confidence term.
-  const hasStrongTerm =
-    t.includes("stihl") ||
-    t.includes("bt131") ||
-    t.includes("blue diamond") ||
-    t.includes("gs1930") ||
-    t.includes("gs3246") ||
-    t.includes("jlg") ||
-    t.includes("et500") ||
-    t.includes("z45") ||
-    t.includes("boxer");
+  if (t === "stihl" || c === "stihl" || t.includes("stihl bt131") || c.includes("stihlbt131") || c.includes("bt131")) {
+    return resolveStihlBt131();
+  }
 
-  if (!hasStrongTerm) return null;
+  const strongTerm = [
+    "blue diamond",
+    "gs1930",
+    "gs3246",
+    "jlg",
+    "et500",
+    "z45",
+    "boxer"
+  ].find((term) => t.includes(term));
+
+  if (!strongTerm) return null;
 
   const scored = Object.keys(EQUIPMENT)
-    .map((id) => ({ id, score: scoreAgainstMessage(id, message) }))
-    .filter((x) => x.score >= 100)
+    .map((id) => ({ id, score: scoreItemAgainstMessage(id, message) }))
+    .filter((x) => x.score >= 500)
     .sort((a, b) => b.score - a.score);
 
-  if (!scored.length) return null;
-  return scored[0].id;
+  return scored[0]?.id || null;
 }
 
 function getDays(message, state) {
-  const t = normalize(message);
+  const t = safeNormalize(message);
   if (t.includes("month") || t.includes("monthly")) return 30;
   if (t.includes("week") || t.includes("weekly")) return 7;
   return parseDays(message) || state.lastDays || 1;
@@ -364,38 +396,31 @@ function handleMessage(message, senderId) {
     return response;
   }
 
-  // Broad category requests must run before old item context.
+  // Broad category requests are always new searches and must run before old context.
   if (category && isBroadCategoryRequest(message)) {
     const ids = categoryIds(category);
     if (ids.length) {
+      state.lastCategory = normalizeCategory(category);
       state.lastCategoryItems = ids;
       state.lastItemId = null;
       return `We have these options:\n\n${formatOptions(ids)}\n\nWhich one are you interested in?`;
     }
   }
 
-  // IMPORTANT ORDER:
-  // 1. Match inside last listed options first
-  // 2. Then strong global direct terms
-  // 3. Then normal findEquipment
+  // Selection order:
+  // 1. Previous options list
+  // 2. Strong direct terms like Stihl BT131
+  // 3. Normal inventory matcher
+  // 4. Previous item context
   const contextualId = resolveFromLastOptions(message, state);
-  const directId = contextualId || resolveGlobalDirect(message);
-  const explicit = directId ? null : findEquipment(message);
-  const selectedId = directId || explicit?.id || state.lastItemId || null;
+  const globalDirectId = contextualId ? null : resolveGlobalDirect(message);
+  const explicit = contextualId || globalDirectId ? null : findEquipment(message);
+  const selectedId = contextualId || globalDirectId || explicit?.id || state.lastItemId || null;
   const selectedItem = selectedId ? EQUIPMENT[selectedId] : null;
 
   if (selectedItem && isMoreInfoQuestion(message)) {
     state.lastItemId = selectedId;
     return itemMoreInfoText(selectedItem);
-  }
-
-  const matches = findAllEquipment(message);
-
-  // Avoid relisting if the phrase is simply selecting from the previous list.
-  if (!selectedId && matches.length > 1) {
-    state.lastCategoryItems = matches;
-    state.lastItemId = null;
-    return `We have these options:\n\n${formatOptions(matches)}\n\nWhich one are you interested in?`;
   }
 
   const delivery = deliveryInfo(message);
@@ -436,9 +461,19 @@ function handleMessage(message, senderId) {
     return "We can supply a trailer for a $49.99 surcharge for the first day and $15.00 for each additional day. Clients can supply their own trailer if it meets the weight requirements for hauling the equipment.";
   }
 
+  // Multi-match only after specific/context/direct matching fails.
+  const matches = findAllEquipment(message);
+  if (!selectedId && matches.length > 1) {
+    state.lastCategory = "multi_match";
+    state.lastCategoryItems = matches;
+    state.lastItemId = null;
+    return `We have these options:\n\n${formatOptions(matches)}\n\nWhich one are you interested in?`;
+  }
+
   if (category && !selectedId) {
     const ids = categoryIds(category);
     if (ids.length) {
+      state.lastCategory = normalizeCategory(category);
       state.lastCategoryItems = ids;
       state.lastItemId = null;
       return `We have these options:\n\n${formatOptions(ids)}\n\nWhich one are you interested in?`;
@@ -468,7 +503,9 @@ async function sendMessage(senderId, text) {
   });
 
   const bodyText = await response.text();
-  if (!response.ok) console.error("Facebook send failed:", response.status, bodyText);
+  if (!response.ok) {
+    console.error("Facebook send failed:", response.status, bodyText);
+  }
 }
 
 app.post("/webhook", async (req, res) => {
@@ -508,4 +545,6 @@ app.get("/", (_req, res) => {
   res.status(200).send("Messenger webhook is running.");
 });
 
-app.listen(PORT, () => console.log(`Messenger webhook listening on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Messenger webhook listening on port ${PORT}`);
+});
