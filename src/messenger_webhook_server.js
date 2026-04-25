@@ -42,6 +42,7 @@ function getState(senderId) {
     stateStore[senderId] = {
       lastItemId: null,
       lastSelectedItemId: null,
+      lastMachineItemId: null,
       lastDays: 1,
       lastCategory: null,
       lastCategoryItems: [],
@@ -155,16 +156,22 @@ function wantsOurTrailerIncluded(message) {
   return (
     t.includes("include your trailer") ||
     t.includes("include the trailer") ||
+    t.includes("include a trailer") ||
+    t.includes("including your trailer") ||
+    t.includes("including the trailer") ||
+    t.includes("including a trailer") ||
     t.includes("add your trailer") ||
     t.includes("add the trailer") ||
     t.includes("with your trailer") ||
     t.includes("with the trailer") ||
+    t.includes("with a trailer") ||
     t.includes("need your trailer") ||
     t.includes("need the trailer") ||
     t.includes("use your trailer") ||
     t.includes("use the trailer") ||
     t.includes("using your trailer") ||
     t.includes("using the trailer") ||
+    t.includes("using a trailer") ||
     t.includes("rent your trailer") ||
     t.includes("rent the trailer") ||
     t.includes("borrow your trailer") ||
@@ -198,16 +205,22 @@ function isMachineHaulingTrailerRequest(message) {
     t.includes("use the trailer") ||
     t.includes("using your trailer") ||
     t.includes("using the trailer") ||
+    t.includes("using a trailer") ||
     t.includes("borrow your trailer") ||
     t.includes("borrow the trailer") ||
     t.includes("need your trailer") ||
     t.includes("need the trailer") ||
     t.includes("include your trailer") ||
     t.includes("include the trailer") ||
+    t.includes("include a trailer") ||
+    t.includes("including your trailer") ||
+    t.includes("including the trailer") ||
+    t.includes("including a trailer") ||
     t.includes("add your trailer") ||
     t.includes("add the trailer") ||
     t.includes("with your trailer") ||
     t.includes("with the trailer") ||
+    t.includes("with a trailer") ||
     (t.includes("haul the") && t.includes("trailer")) ||
     (t.includes("haul it") && t.includes("trailer")) ||
     (t.includes("haul") && t.includes("jd") && t.includes("trailer")) ||
@@ -268,6 +281,11 @@ function itemMoreInfoText(item) {
 function rememberSelected(state, selectedId) {
   state.lastItemId = selectedId;
   state.lastSelectedItemId = selectedId;
+
+  const item = EQUIPMENT[selectedId];
+  if (item && !isDumpTrailerItem(item)) {
+    state.lastMachineItemId = selectedId;
+  }
 }
 
 function resolveFromLastOptions(message, state) {
@@ -457,14 +475,14 @@ export function handleMessage(message, senderId = "local-test") {
   const category = categoryFromText(message);
 
   if (isMachineHaulingTrailerRequest(message)) {
-    const priorId = state.lastSelectedItemId || state.lastItemId || null;
+    const priorId = state.lastMachineItemId || state.lastSelectedItemId || state.lastItemId || null;
     const priorItem = priorId ? EQUIPMENT[priorId] : null;
 
     if (priorItem && isDumpTrailerItem(priorItem)) {
       return `${priorItem.name} is rented as its own trailer item, so the $49.99 machine-hauling trailer surcharge does not apply.`;
     }
 
-    if (priorItem && isPriceQuestion(message)) {
+    if (priorItem && (isPriceQuestion(message) || wantsTrailerAddedToTotal(message) || wantsOurTrailerIncluded(message))) {
       const days = getDays(message, state);
       state.lastDays = days;
       rememberSelected(state, priorId);
@@ -703,10 +721,10 @@ export function handleMessage(message, senderId = "local-test") {
 
   if (isTrailerQuestion(message)) {
     if (isMachineHaulingTrailerRequest(message)) {
-      const priorId = state.lastSelectedItemId || state.lastItemId || null;
+      const priorId = state.lastMachineItemId || state.lastSelectedItemId || state.lastItemId || null;
       const priorItem = priorId ? EQUIPMENT[priorId] : null;
 
-      if (priorItem && !isDumpTrailerItem(priorItem) && isPriceQuestion(message)) {
+      if (priorItem && !isDumpTrailerItem(priorItem) && (isPriceQuestion(message) || wantsTrailerAddedToTotal(message) || wantsOurTrailerIncluded(message))) {
         const days = getDays(message, state);
         state.lastDays = days;
         rememberSelected(state, priorId);
