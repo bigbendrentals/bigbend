@@ -1,4 +1,4 @@
-// FULL CLEAN FILE WITH FIXED "MORE INFO" LOGIC
+// FIXED FILE WITH CONTEXT RESOLUTION (STIHL ISSUE FIXED)
 
 import express from "express";
 import { EQUIPMENT, CATEGORY_ITEMS } from "./inventory.js";
@@ -33,14 +33,27 @@ function getState(senderId) {
   if (!stateStore[senderId]) {
     stateStore[senderId] = {
       lastItemId: null,
-      lastDays: 1,
-      lastCategoryItems: [],
-      lastDeliveryFee: 0,
-      lastDeliveryPlace: null,
-      awaitingDeliveryLocation: false
+      lastCategoryItems: []
     };
   }
   return stateStore[senderId];
+}
+
+// 🔧 CONTEXT RESOLVER (THIS FIXES YOUR ISSUE)
+function resolveFromLastOptions(message, state) {
+  const ids = state.lastCategoryItems || [];
+  if (!ids.length) return null;
+
+  const text = normalize(message);
+
+  return ids.find(id => {
+    const item = EQUIPMENT[id];
+    if (!item) return false;
+
+    const haystack = `${item.name} ${(item.aliases || []).join(" ")}`.toLowerCase();
+
+    return haystack.includes(text);
+  }) || null;
 }
 
 function formatOptions(ids) {
@@ -51,41 +64,19 @@ function formatOptions(ids) {
     const parts = [];
     if (item.day) parts.push(`${money(item.day)}/day`);
     if (item.week) parts.push(`${money(item.week)}/week`);
-    if (item.month) parts.push(`${money(item.month)}/month`);
 
-    return `• ${item.name}${parts.length ? ` — ${parts.join(", ")}` : ""}`;
+    return `• ${item.name} — ${parts.join(", ")}`;
   }).filter(Boolean).join("\n");
 }
 
 function itemBasicText(item) {
-  const parts = [];
+  let text = `${item.name} is ${money(item.day)}/day.`;
 
-  if (item.day) parts.push(`${money(item.day)}/day`);
-  if (item.week) parts.push(`${money(item.week)}/week`);
-  if (item.month) parts.push(`${money(item.month)}/month`);
-
-  let text = `${item.name}${parts.length ? ` is ${parts.join(", ")}.` : "."}`;
-
-  if (item.protection) {
-    text += " Rental Protection Plan is required on that machine.";
-  }
-
-  if (item.details && item.details.trim() && item.details !== item.name) {
+  if (item.details) {
     text += ` ${item.details}`;
   }
 
   return text;
-}
-
-function itemMoreInfoText(item) {
-  const keyword = item.keyword || item.name;
-  const details = item.details || "";
-
-  if (!details.trim() || details.trim() === item.name.trim()) {
-    return `For more information, check the website at www.bigbendrentals.net and search "${keyword}".`;
-  }
-
-  return `${item.name}: ${details}`;
 }
 
 function handleMessage(message, senderId) {
@@ -93,25 +84,20 @@ function handleMessage(message, senderId) {
 
   const explicit = findEquipment(message);
   const matches = findAllEquipment(message);
+  const contextualId = resolveFromLastOptions(message, state);
 
   if (matches.length > 1) {
     state.lastCategoryItems = matches;
+    state.lastItemId = null;
+
     return `We have these options:\n\n${formatOptions(matches)}\n\nWhich one are you interested in?`;
   }
 
-  const selectedId = explicit?.id || state.lastItemId;
+  const selectedId = contextualId || explicit?.id || state.lastItemId;
   const selectedItem = selectedId ? EQUIPMENT[selectedId] : null;
 
-  if (selectedItem) state.lastItemId = selectedId;
-
-  if (
-    selectedItem &&
-    containsAny(normalize(message), ["more about", "more info", "tell me more", "details", "info about"])
-  ) {
-    return itemMoreInfoText(selectedItem);
-  }
-
   if (selectedItem) {
+    state.lastItemId = selectedId;
     return itemBasicText(selectedItem);
   }
 
