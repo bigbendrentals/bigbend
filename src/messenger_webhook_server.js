@@ -1,94 +1,86 @@
-// messenger_webhook_server.js (FIXED with mulcher logic)
 
 import express from "express";
 import { EQUIPMENT, CATEGORY_ITEMS } from "./inventory.js";
-import { money } from "./pricing.js";
-import {
-  normalize,
-  findEquipment,
-  findAllEquipment,
-  findCategory,
-  isTrailerQuestion,
-  wantsTrailerAddedToTotal,
-  isPriceQuestion,
-  parseDays,
-  isDeliveryQuestion,
-  deliveryInfo
-} from "./intent.js";
+import { money, total } from "./pricing.js";
+import { isPriceQuestion } from "./intent.js";
 
 const app = express();
 app.use(express.json());
 
-const CONTACT_TEXT = "Call 850-295-5373 or book online at www.bigbendrentals.net.";
+const CONTACT = "Call 850-295-5373 or book online at www.bigbendrentals.net";
 
-const stateStore = {};
+const state = {};
 
-function getState(senderId) {
-  if (!stateStore[senderId]) {
-    stateStore[senderId] = {
-      lastItemId: null,
-      lastCategory: null,
-      lastCategoryItems: []
-    };
-  }
-  return stateStore[senderId];
+function getState(id){
+  if(!state[id]) state[id]={};
+  return state[id];
 }
 
-function categoryFromText(message) {
-  const t = message.toLowerCase();
-  if (t.includes("mulcher")) return "mulcher";
-  if (t.includes("auger")) return "auger";
-  if (t.includes("forklift")) return "forklift";
-  return null;
-}
-
-function formatOptions(ids) {
-  return ids.map(id => {
-    const item = EQUIPMENT[id];
-    return `• ${item.name} — ${money(item.day)}/day`;
+function formatOptions(ids){
+  return ids.map(id=>{
+    const i=EQUIPMENT[id];
+    return `• ${i.name} — $${i.day}/day`;
   }).join("\n");
 }
 
-function handleMessage(message, senderId) {
-  const state = getState(senderId);
-  const category = categoryFromText(message);
+function handleMessage(msg, sender){
+  const s = getState(sender);
+  const t = msg.toLowerCase();
 
-  // MULCHER CATEGORY
-  if (category === "mulcher") {
-    const ids = ["cat-hm316-mulcher", "jd-mh60d-mulcher"];
-    state.lastCategory = "mulcher";
-    state.lastCategoryItems = ids;
-
+  if(t.includes("mulcher")){
+    s.mulcher=true;
     return `We have these mulcher options:
 
-${formatOptions(ids)}
+${formatOptions(CATEGORY_ITEMS.mulcher)}
 
-Do you want just the mulcher attachment, or the skid steer + mulcher combo?
-
-• CAT HM316 pairs with CAT 265 only
-• John Deere MH60D pairs with John Deere 333P only
-
-Reply "attachment only" or "combo".`;
+Do you want attachment only or combo?`;
   }
 
-  // MULCHER COMBO STEP
-  if (state.lastCategory === "mulcher" && message.toLowerCase().includes("combo")) {
-    return `Which combo do you want?
+  if(s.mulcher && t.includes("combo")){
+    s.combo=true;
+    return `Which combo?
 
-• CAT HM316 + CAT 265
-• John Deere MH60D + John Deere 333P`;
+• CAT
+• John Deere`;
   }
 
-  // FINAL COMBO PRICING
-  if (message.toLowerCase().includes("cat") && message.toLowerCase().includes("combo")) {
-    return "CAT combo pricing logic here";
+  if(s.combo && t.includes("cat")){
+    const m = EQUIPMENT["cat-hm316-mulcher"];
+    const skid = EQUIPMENT["cat-265"];
+    const res = total({day:m.day+skid.day, protection:true},1);
+    return `CAT Combo:
+
+Rental: ${money(res.rental)}
+Protection: ${money(res.protection)}
+Tax: ${money(res.tax)}
+Total: ${money(res.total)}
+
+${CONTACT}`;
   }
 
-  if (message.toLowerCase().includes("john") && message.toLowerCase().includes("combo")) {
-    return "John Deere combo pricing logic here";
+  if(s.combo && t.includes("john")){
+    const m = EQUIPMENT["jd-mh60d-mulcher"];
+    const skid = EQUIPMENT["jd-333p"];
+    const res = total({day:m.day+skid.day, protection:true},1);
+    return `John Deere Combo:
+
+Rental: ${money(res.rental)}
+Protection: ${money(res.protection)}
+Tax: ${money(res.tax)}
+Total: ${money(res.total)}
+
+${CONTACT}`;
   }
 
-  return "Can you clarify what you're looking to rent?";
+  return "Ask about mulchers.";
 }
 
-export default handleMessage;
+app.post("/webhook",(req,res)=>{
+  const msg = req.body.message||"";
+  const sender="test";
+  const reply = handleMessage(msg,sender);
+  console.log(reply);
+  res.json({reply});
+});
+
+app.listen(10000,()=>console.log("running"));
