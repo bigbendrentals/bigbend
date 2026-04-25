@@ -32,6 +32,7 @@ function getState(senderId) {
   if (!stateStore[senderId]) {
     stateStore[senderId] = {
       lastItemId: null,
+      lastSelectedItemId: null,
       lastDays: 1,
       lastCategory: null,
       lastCategoryItems: [],
@@ -177,6 +178,10 @@ function hasUsefulDetails(item) {
   if (normalizedDetails === itemName) return false;
   if (normalizedDetails.replace(/[^a-z0-9]/g, "") === itemName.replace(/[^a-z0-9]/g, "")) return false;
 
+  // Short duplicate labels are not useful specs.
+  if (normalizedDetails.length < 20 && itemName.includes(normalizedDetails)) return false;
+  if (normalizedDetails.length < 20 && normalizedDetails.includes(itemName.split(" ")[0])) return false;
+
   return true;
 }
 
@@ -195,6 +200,7 @@ function itemBasicText(item) {
 }
 
 function itemMoreInfoText(item) {
+  // For now, if the stored detail is not a real helpful description, send them to the website.
   if (!hasUsefulDetails(item)) {
     return `For more information, check the website at ${WEBSITE} and search "${itemKeyword(item)}".`;
   }
@@ -219,6 +225,21 @@ function isMoreInfoQuestion(message) {
     "do it",
     "can it"
   ]);
+}
+
+function isPronounFollowup(message) {
+  const t = safeNormalize(message);
+  return (
+    t.includes("about it") ||
+    t.includes("more about it") ||
+    t.includes("tell me more about it") ||
+    t.includes("is this") ||
+    t.includes("is it") ||
+    t.includes("does it") ||
+    t.includes("can it") ||
+    t === "more info" ||
+    t === "details"
+  );
 }
 
 function resolveStihlBt131() {
@@ -383,6 +404,11 @@ function handleDeliveryOnly(message, state) {
   return "We deliver within about a 75-mile radius. What city or area are you in?";
 }
 
+function rememberSelected(state, selectedId) {
+  state.lastItemId = selectedId;
+  state.lastSelectedItemId = selectedId;
+}
+
 function handleMessage(message, senderId) {
   const state = getState(senderId);
 
@@ -407,6 +433,12 @@ function handleMessage(message, senderId) {
     }
   }
 
+  // Pronoun/detail follow-up: use the last selected item ONLY.
+  // This prevents "tell me more about it" from re-matching the wrong auger.
+  if (isMoreInfoQuestion(message) && isPronounFollowup(message) && state.lastSelectedItemId && EQUIPMENT[state.lastSelectedItemId]) {
+    return itemMoreInfoText(EQUIPMENT[state.lastSelectedItemId]);
+  }
+
   // Selection order:
   // 1. Previous options list
   // 2. Strong direct terms like Stihl BT131
@@ -419,7 +451,7 @@ function handleMessage(message, senderId) {
   const selectedItem = selectedId ? EQUIPMENT[selectedId] : null;
 
   if (selectedItem && isMoreInfoQuestion(message)) {
-    state.lastItemId = selectedId;
+    rememberSelected(state, selectedId);
     return itemMoreInfoText(selectedItem);
   }
 
@@ -481,7 +513,7 @@ function handleMessage(message, senderId) {
   }
 
   if (selectedItem) {
-    state.lastItemId = selectedId;
+    rememberSelected(state, selectedId);
     return itemBasicText(selectedItem);
   }
 
