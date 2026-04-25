@@ -77,7 +77,7 @@ function normalizeCategory(category) {
   if (c.includes("skid")) return "skid_steer";
   if (c.includes("auger")) return "auger";
   if (c.includes("excavator")) return "excavator";
-  if (c.includes("forklift")) return "forklift";
+  if (c.includes("forklift") || c.includes("fork lift") || c.includes("lift king")) return "forklift";
   if (c.includes("telehandler")) return "telehandler";
   if (c.includes("pressure")) return "pressure_washer";
   if (c.includes("compactor")) return "compactor";
@@ -96,7 +96,7 @@ function categoryFromText(message) {
   if (t.includes("mini skid")) return "mini_skid";
   if (t.includes("skid steer") || t.includes("skid steers")) return "skid_steer";
   if (/\bexcavators?\b/.test(t)) return "excavator";
-  if (/\bforklifts?\b/.test(t)) return "forklift";
+  if (/\bforklifts?\b/.test(t) || t.includes("fork lift") || t.includes("lift king")) return "forklift";
   if (t.includes("telehandler") || t.includes("lull")) return "telehandler";
   if (t.includes("pressure washer")) return "pressure_washer";
   if (/\bcompactors?\b/.test(t)) return "compactor";
@@ -117,7 +117,7 @@ function isBroadCategoryRequest(message) {
     t.includes("what all do you have") ||
     t.includes("available") ||
     t.includes("options") ||
-    /\b(augers|boom lifts|scissor lifts|excavators|skid steers|trailers|forklifts|compactors|mowers)\b/.test(t)
+    /\b(augers|boom lifts|scissor lifts|excavators|skid steers|trailers|forklifts|fork lifts|compactors|mowers)\b/.test(t)
   );
 }
 
@@ -125,10 +125,10 @@ function categoryIds(category) {
   const key = normalizeCategory(category);
   if (!key) return [];
 
-  if (CATEGORY_ITEMS?.[key]?.length) return CATEGORY_ITEMS[key];
-
-  return Object.keys(EQUIPMENT).filter((id) => {
+  const mapped = CATEGORY_ITEMS?.[key] || [];
+  const fallback = Object.keys(EQUIPMENT).filter((id) => {
     const h = itemHaystack(id);
+    const hc = itemCompactHaystack(id);
 
     if (key === "auger") return h.includes("auger");
     if (key === "scissor_lift") return h.includes("scissor") || h.includes("gs1930") || h.includes("gs3246");
@@ -136,7 +136,7 @@ function categoryIds(category) {
     if (key === "mini_skid") return h.includes("mini skid") || h.includes("boxer");
     if (key === "skid_steer") return h.includes("skid steer") || h.includes("skidsteer");
     if (key === "excavator") return h.includes("excavator");
-    if (key === "forklift") return h.includes("forklift");
+    if (key === "forklift") return h.includes("forklift") || h.includes("fork lift") || h.includes("lift king") || hc.includes("liftking") || h.includes("8k") || h.includes("8000");
     if (key === "telehandler") return h.includes("telehandler") || h.includes("lull");
     if (key === "pressure_washer") return h.includes("pressure washer");
     if (key === "compactor") return h.includes("compactor");
@@ -145,6 +145,24 @@ function categoryIds(category) {
 
     return h.includes(key);
   });
+
+  return [...new Set([...mapped, ...fallback])].filter((id) => EQUIPMENT[id]);
+}
+
+// IMPORTANT PRICING RULE:
+// Unless the inventory explicitly provides a weekly/monthly price, weekly rental is 4x daily.
+// Monthly uses explicit month when present; otherwise 4x weekly.
+function weeklyRate(item) {
+  if (item.week) return item.week;
+  if (item.day) return item.day * 4;
+  return 0;
+}
+
+function monthlyRate(item) {
+  if (item.month) return item.month;
+  const week = weeklyRate(item);
+  if (week) return week * 4;
+  return 0;
 }
 
 function formatOptions(ids) {
@@ -155,7 +173,10 @@ function formatOptions(ids) {
 
       const parts = [];
       if (item.day) parts.push(`${money(item.day)}/day`);
-      if (item.week) parts.push(`${money(item.week)}/week`);
+
+      const week = weeklyRate(item);
+      if (week) parts.push(`${money(week)}/week`);
+
       if (item.month) parts.push(`${money(item.month)}/month`);
 
       return `• ${item.name}${parts.length ? ` — ${parts.join(", ")}` : ""}`;
@@ -177,8 +198,6 @@ function hasUsefulDetails(item) {
 
   if (normalizedDetails === itemName) return false;
   if (normalizedDetails.replace(/[^a-z0-9]/g, "") === itemName.replace(/[^a-z0-9]/g, "")) return false;
-
-  // Short duplicate labels are not useful specs.
   if (normalizedDetails.length < 20 && itemName.includes(normalizedDetails)) return false;
   if (normalizedDetails.length < 20 && normalizedDetails.includes(itemName.split(" ")[0])) return false;
 
@@ -188,7 +207,10 @@ function hasUsefulDetails(item) {
 function itemBasicText(item) {
   const parts = [];
   if (item.day) parts.push(`${money(item.day)}/day`);
-  if (item.week) parts.push(`${money(item.week)}/week`);
+
+  const week = weeklyRate(item);
+  if (week) parts.push(`${money(week)}/week`);
+
   if (item.month) parts.push(`${money(item.month)}/month`);
 
   let text = `${item.name}${parts.length ? ` is ${parts.join(", ")}.` : "."}`;
@@ -200,7 +222,6 @@ function itemBasicText(item) {
 }
 
 function itemMoreInfoText(item) {
-  // For now, if the stored detail is not a real helpful description, send them to the website.
   if (!hasUsefulDetails(item)) {
     return `For more information, check the website at ${WEBSITE} and search "${itemKeyword(item)}".`;
   }
@@ -265,6 +286,8 @@ function scoreItemAgainstMessage(id, message) {
   if (t.includes("stihl") && name.includes("stihl") && hc.includes("bt131")) score += 1000;
   if (t.includes("bt131") && hc.includes("bt131")) score += 1000;
   if (t.includes("blue diamond") && name.includes("blue diamond")) score += 500;
+  if (t.includes("lift king") && name.includes("lift king")) score += 500;
+  if ((t.includes("8k") || t.includes("8000")) && name.includes("lift king")) score += 250;
   if (t.includes("gs1930") && hc.includes("gs1930")) score += 500;
   if (t.includes("gs3246") && hc.includes("gs3246")) score += 500;
   if (t.includes("jlg") && name.includes("jlg")) score += 500;
@@ -310,6 +333,7 @@ function resolveGlobalDirect(message) {
 
   const strongTerm = [
     "blue diamond",
+    "lift king",
     "gs1930",
     "gs3246",
     "jlg",
@@ -322,7 +346,7 @@ function resolveGlobalDirect(message) {
 
   const scored = Object.keys(EQUIPMENT)
     .map((id) => ({ id, score: scoreItemAgainstMessage(id, message) }))
-    .filter((x) => x.score >= 500)
+    .filter((x) => x.score >= 250)
     .sort((a, b) => b.score - a.score);
 
   return scored[0]?.id || null;
@@ -342,12 +366,12 @@ function durationLabel(days) {
 }
 
 function getRentalAmount(item, days) {
-  if (days >= 30 && item.month) return item.month;
+  if (days >= 30) return monthlyRate(item);
 
-  if (days >= 7 && item.week) {
+  if (days >= 7) {
     const weeks = Math.floor(days / 7);
     const extraDays = days % 7;
-    return weeks * item.week + extraDays * (item.day || 0);
+    return weeks * weeklyRate(item) + extraDays * (item.day || 0);
   }
 
   return (item.day || 0) * days;
@@ -422,7 +446,6 @@ function handleMessage(message, senderId) {
     return response;
   }
 
-  // Broad category requests are always new searches and must run before old context.
   if (category && isBroadCategoryRequest(message)) {
     const ids = categoryIds(category);
     if (ids.length) {
@@ -433,17 +456,10 @@ function handleMessage(message, senderId) {
     }
   }
 
-  // Pronoun/detail follow-up: use the last selected item ONLY.
-  // This prevents "tell me more about it" from re-matching the wrong auger.
   if (isMoreInfoQuestion(message) && isPronounFollowup(message) && state.lastSelectedItemId && EQUIPMENT[state.lastSelectedItemId]) {
     return itemMoreInfoText(EQUIPMENT[state.lastSelectedItemId]);
   }
 
-  // Selection order:
-  // 1. Previous options list
-  // 2. Strong direct terms like Stihl BT131
-  // 3. Normal inventory matcher
-  // 4. Previous item context
   const contextualId = resolveFromLastOptions(message, state);
   const globalDirectId = contextualId ? null : resolveGlobalDirect(message);
   const explicit = contextualId || globalDirectId ? null : findEquipment(message);
@@ -493,7 +509,6 @@ function handleMessage(message, senderId) {
     return "We can supply a trailer for a $49.99 surcharge for the first day and $15.00 for each additional day. Clients can supply their own trailer if it meets the weight requirements for hauling the equipment.";
   }
 
-  // Multi-match only after specific/context/direct matching fails.
   const matches = findAllEquipment(message);
   if (!selectedId && matches.length > 1) {
     state.lastCategory = "multi_match";
