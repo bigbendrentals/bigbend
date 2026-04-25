@@ -117,7 +117,7 @@ export function findCategory(text) {
 
 export function isBroadCategoryRequest(text) {
   const t = normalize(text);
-  return containsAny(t, ["do you have", "do u have", "do you rent", "do u rent", "what do you have", "what all do you have", "available", "options", "show me", "list"]) || /\b(augers|boom lifts|scissor lifts|excavators|skid steers|trailers|forklifts|fork lifts|compactors|mowers|trenchers|brush cutters|bush hogs|drain snakes|drain cleaners|pressure washers|compressors|pumps)\b/.test(t);
+  return containsAny(t, ["do you have", "do u have", "do you rent", "do u rent", "what do you have", "what all do you have", "available", "options", "show me", "list"]) || /\b(augers|boom lifts|scissor lifts|excavators|skid steers|trailers|forklifts|fork lifts|compactors|mowers|trenchers|brush cutters|bush hogs|drain snakes|drain cleaners|pressure washers|compressors|pumps|mulchers|forestry mulchers)\b/.test(t);
 }
 
 export function isMoreInfoQuestion(text) {
