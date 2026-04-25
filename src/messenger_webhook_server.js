@@ -163,6 +163,8 @@ function wantsOurTrailerIncluded(message) {
     t.includes("need the trailer") ||
     t.includes("use your trailer") ||
     t.includes("use the trailer") ||
+    t.includes("using your trailer") ||
+    t.includes("using the trailer") ||
     t.includes("rent your trailer") ||
     t.includes("rent the trailer") ||
     t.includes("borrow your trailer") ||
@@ -194,6 +196,8 @@ function isMachineHaulingTrailerRequest(message) {
     (t.includes("we can use") && t.includes("trailer")) ||
     t.includes("use your trailer") ||
     t.includes("use the trailer") ||
+    t.includes("using your trailer") ||
+    t.includes("using the trailer") ||
     t.includes("borrow your trailer") ||
     t.includes("borrow the trailer") ||
     t.includes("need your trailer") ||
@@ -453,10 +457,18 @@ export function handleMessage(message, senderId = "local-test") {
   const category = categoryFromText(message);
 
   if (isMachineHaulingTrailerRequest(message)) {
-    const priorItem = state.lastSelectedItemId ? EQUIPMENT[state.lastSelectedItemId] : state.lastItemId ? EQUIPMENT[state.lastItemId] : null;
+    const priorId = state.lastSelectedItemId || state.lastItemId || null;
+    const priorItem = priorId ? EQUIPMENT[priorId] : null;
 
     if (priorItem && isDumpTrailerItem(priorItem)) {
       return `${priorItem.name} is rented as its own trailer item, so the $49.99 machine-hauling trailer surcharge does not apply.`;
+    }
+
+    if (priorItem && isPriceQuestion(message)) {
+      const days = getDays(message, state);
+      state.lastDays = days;
+      rememberSelected(state, priorId);
+      return quoteText(priorItem, days, { trailerFee: trailerSurcharge(days) });
     }
 
     return trailerOptionText();
@@ -691,6 +703,16 @@ export function handleMessage(message, senderId = "local-test") {
 
   if (isTrailerQuestion(message)) {
     if (isMachineHaulingTrailerRequest(message)) {
+      const priorId = state.lastSelectedItemId || state.lastItemId || null;
+      const priorItem = priorId ? EQUIPMENT[priorId] : null;
+
+      if (priorItem && !isDumpTrailerItem(priorItem) && isPriceQuestion(message)) {
+        const days = getDays(message, state);
+        state.lastDays = days;
+        rememberSelected(state, priorId);
+        return quoteText(priorItem, days, { trailerFee: trailerSurcharge(days) });
+      }
+
       return trailerOptionText();
     }
 
