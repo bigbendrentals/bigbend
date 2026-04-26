@@ -297,7 +297,7 @@ Pricing includes delivery and pickup unless otherwise stated. Coastal areas are 
 
 Weight limits and prohibited items may apply.
 
-What rental length do you need, and what city is delivery to?`;
+What rental length do you need, and what address is delivery to?`;
 }
 
 function shouldForceCategoryChoice(message, category) {
@@ -356,7 +356,7 @@ function wantsOurTrailerIncluded(message) {
 }
 
 function trailerOptionText() {
-  return "If you need to use our trailer to haul the machine, it is a $49.99 surcharge. You can also use your own trailer if it meets the weight requirements.";
+  return "If you need to use our trailer to haul the machine, there is a $49.99 surcharge. You can also use your own trailer if it meets the weight requirements.";
 }
 
 
