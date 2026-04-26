@@ -508,7 +508,7 @@ function resolveFromLastOptions(message, state) {
 function resolveGlobalDirect(message) {
   const t = safeNormalize(message);
   const c = compact(message);
-  const strong = ["stihl", "bt131", "blue diamond", "lift king", "8k", "8000", "mitsubishi", "gs1930", "gs3246", "jlg", "et500", "z45", "boxer", "3017", "301.7", "50p", "3075", "307.5", "239", "265", "333p", "rayco", "rg37", "spartan", "c30x", "ditch witch", "electric eel", "k400", "brushcat", "land pride", "billy goat", "telehandler", "lull", "hm316", "mh60d", "mulcher", "forestry"];
+  const strong = ["stihl", "bt131", "blue diamond", "lift king", "8k", "8000", "mitsubishi", "gs1930", "gs3246", "jlg", "et500", "z45", "boxer", "3017", "301.7", "50p", "3075", "307.5", "239", "265", "333p", "rayco", "rg37", "spartan", "c30x", "ditch witch", "electric eel", "k400", "brushcat", "land pride", "billy goat", "telehandler", "lull", "hm316", "mh60d", "mulcher", "forestry", "tr-89305", "tr89305", "89305", "jackhammer", "jack hammer", "post driver", "post pounder", "2-cycle post driver"];
   if (!strong.some((term) => t.includes(term) || c.includes(term.replace(/\s/g, "")))) return null;
   const scored = Object.keys(EQUIPMENT).map((id) => ({ id, score: scoreItem(id, message) })).filter((x) => x.score >= 80).sort((a, b) => b.score - a.score);
   return scored[0]?.id || null;
@@ -958,6 +958,140 @@ Call 850-295-5373 or book online at www.bigbendrentals.net so we can confirm dum
 }
 
 
+
+
+
+
+function directBreakerSelectionId(message, state) {
+  const t = normalize(message);
+  const c = compact(message);
+
+  if (state.lastCategory !== "breaker") return null;
+
+  if (
+    c.includes("tr89305") ||
+    t.includes("tr-89305") ||
+    t.includes("tr 89305") ||
+    c === "89305" ||
+    t.includes("handheld") ||
+    t.includes("hand held") ||
+    t.includes("electric jack")
+  ) {
+    return ITEM_IDS.TR_89305_JACKHAMMER;
+  }
+
+  if (
+    t.includes("skid steer") ||
+    t.includes("excavator") ||
+    t.includes("attachment") ||
+    t.includes("hydraulic") ||
+    t.includes("demolition hammer") ||
+    t.includes("breaker attachment")
+  ) {
+    return ITEM_IDS.BREAKER;
+  }
+
+  return null;
+}
+
+function postDriverRequestIds(message) {
+  const t = normalize(message);
+
+  const hasPostDriverTerm =
+    t.includes("post pounder") ||
+    t.includes("post driver") ||
+    t.includes("fence post pounder") ||
+    t.includes("fence post driver") ||
+    t.includes("t post pounder") ||
+    t.includes("t-post pounder") ||
+    t.includes("t post driver") ||
+    t.includes("t-post driver");
+
+  if (!hasPostDriverTerm) return [];
+
+  const wantsHandheld =
+    t.includes("handheld") ||
+    t.includes("hand held") ||
+    t.includes("2 cycle") ||
+    t.includes("2-cycle") ||
+    t.includes("t post") ||
+    t.includes("t-post");
+
+  const wantsAttachment =
+    t.includes("skid steer") ||
+    t.includes("excavator") ||
+    t.includes("attachment") ||
+    t.includes("hydraulic");
+
+  if (wantsHandheld && EQUIPMENT[ITEM_IDS.POST_DRIVER_2_CYCLE]) {
+    return [ITEM_IDS.POST_DRIVER_2_CYCLE];
+  }
+
+  if (wantsAttachment && EQUIPMENT[ITEM_IDS.FENCE_POST_POUNDER]) {
+    return [ITEM_IDS.FENCE_POST_POUNDER];
+  }
+
+  return [ITEM_IDS.FENCE_POST_POUNDER, ITEM_IDS.POST_DRIVER_2_CYCLE].filter((id) => EQUIPMENT[id]);
+}
+
+function postDriverRequestResponse(message, state) {
+  const ids = postDriverRequestIds(message);
+  if (!ids.length) return null;
+
+  state.lastCategory = "post_driver";
+  state.lastCategoryItems = ids;
+
+  if (ids.length === 1) {
+    const id = ids[0];
+    rememberSelectedWithType(state, id);
+
+    if (isPriceQuestion(message) || hasDurationText(message)) {
+      const days = getDays(message, state);
+      state.lastDays = days;
+      return quoteText(EQUIPMENT[id], days);
+    }
+
+    return itemBasicText(EQUIPMENT[id]);
+  }
+
+  return `We have these fence post pounder / post driver options:
+
+${formatOptions(ids)}
+
+For skid steer or excavator use, choose the Fence Post Pounder attachment. For handheld work, choose the 2-Cycle Post Driver.
+
+Which one do you need pricing or info for?`;
+}
+
+function directPostDriverSelectionId(message, state) {
+  const t = normalize(message);
+
+  if (state.lastCategory !== "post_driver") return null;
+
+  if (
+    t.includes("handheld") ||
+    t.includes("hand held") ||
+    t.includes("2 cycle") ||
+    t.includes("2-cycle") ||
+    t.includes("t post") ||
+    t.includes("t-post") ||
+    t.includes("2-cycle post") ||
+    t.includes("2 cycle post")
+  ) {
+    return ITEM_IDS.POST_DRIVER_2_CYCLE;
+  }
+
+  if (
+    t.includes("skid steer") ||
+    t.includes("excavator") ||
+    t.includes("attachment") ||
+    t.includes("hydraulic")
+  ) {
+    return ITEM_IDS.FENCE_POST_POUNDER;
+  }
+
+  return null;
+}
 
 
 
@@ -1463,6 +1597,25 @@ We'll take care of you.`;
     return `We can broker the ${itemText} for you.
 
 Please call 850-295-5373 during normal business hours to arrange it, or visit www.bigbendrentals.net to submit a request.`;
+  }
+
+  // DIRECT SELECTION HANDLERS FOR PRIOR OPTION LISTS
+  const directBreakerId = directBreakerSelectionId(message, state);
+  if (directBreakerId && EQUIPMENT[directBreakerId]) {
+    rememberSelectedWithType(state, directBreakerId);
+    return itemBasicText(EQUIPMENT[directBreakerId]);
+  }
+
+  const directPostDriverId = directPostDriverSelectionId(message, state);
+  if (directPostDriverId && EQUIPMENT[directPostDriverId]) {
+    rememberSelectedWithType(state, directPostDriverId);
+    return itemBasicText(EQUIPMENT[directPostDriverId]);
+  }
+
+  // POST DRIVER / POST POUNDER HANDLER
+  const postDriverResponse = postDriverRequestResponse(message, state);
+  if (postDriverResponse) {
+    return postDriverResponse;
   }
 
   // BREAKER / JACKHAMMER HANDLER

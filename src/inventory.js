@@ -135,17 +135,9 @@ export const EQUIPMENT = {
   [ITEM_IDS.PLATE_COMPACTOR]: { name: "6.5 HP Honda Reverse Hydraulic Plate Compactor", category: "small_tool", day: 100, week: 400, keyword: "Honda Reverse Hydraulic Plate Compactor", aliases: ["compactor", "walk behind compactor", "asphalt compactor", "plate compactor"], details: "Reverse hydraulic plate compactor for asphalt, aggregate, and cohesive soil compaction." },
   [ITEM_IDS.TILE_SAW]: { name: "Ridgid 10 Wet Tile Saw with Stand", category: "small_tool", day: 75, week: 300, keyword: "Ridgid 10 Wet Tile Saw", aliases: ["tile saw", "wet saw", "ridgid tile saw"], details: "10-inch wet tile saw with stand. Diamond blade sold separately." },
   [ITEM_IDS.DIAMOND_CORE_DRILL]: { name: "Diamond Core Drilling Machine (1-10 bits)", category: "small_tool", day: 125, week: 500, keyword: "Diamond Core Drilling Machine", aliases: ["core drill", "hole drill", "diamond core drill", "core drilling machine"], details: "Diamond core drilling machine. 1-10 inch bits." },
-  
-  [ITEM_IDS.POST_DRIVER_2_CYCLE]: { 
-    name: "2-Cycle Post Driver", 
-    category: "small_tool", 
-    day: 55, 
-    week: 220, 
-    keyword: "2-Cycle Post Driver", 
-    aliases: ["post driver", "post pounder", "fence post driver", "fence post pounder", "t post driver", "t post pounder"], 
-    details: "Handheld 2-cycle fence post driver/pounder." 
-  },
-[ITEM_IDS.TR_89305_JACKHAMMER]: { name: "TR-89305 Jackhammer", category: "small_tool", day: 55, week: 220, keyword: "TR-89305 Jackhammer", aliases: ["jack hammer", "jackhammer", "handheld jackhammer", "handheld jack hammer", "hand held jackhammer", "hand held jack hammer", "electric jackhammer", "electric jack hammer", "demo hammer", "handheld demo hammer", "demolition hammer", "handheld demolition hammer", "concrete breaker"], details: "Handheld jackhammer." },
+  [ITEM_IDS.POST_DRIVER_2_CYCLE]: { name: "2-Cycle Post Driver", category: "small_tool", day: 55, week: 220, keyword: "2-Cycle Post Driver", aliases: ["2 cycle post driver", "2-cycle post driver", "2 cycle post pounder", "2-cycle post pounder", "handheld post driver", "handheld post pounder", "hand held post driver", "hand held post pounder", "manual post driver", "t post driver", "t-post driver", "t post pounder", "t-post pounder", "fence post driver handheld", "fence post pounder handheld"], details: "Handheld 2-cycle fence post driver/pounder." },
+
+  [ITEM_IDS.TR_89305_JACKHAMMER]: { name: "TR-89305 Jackhammer", category: "small_tool", day: 55, week: 220, keyword: "TR-89305 Jackhammer", aliases: ["tr-89305", "tr89305", "89305", "tr 89305", "jack hammer", "jackhammer", "handheld jackhammer", "handheld jack hammer", "hand held jackhammer", "hand held jack hammer", "electric jackhammer", "electric jack hammer", "demo hammer", "handheld demo hammer", "demolition hammer", "handheld demolition hammer", "concrete breaker"], details: "Handheld jackhammer." },
 
   [ITEM_IDS.DUMP_TRAILER_25K]: { name: "Dump Trailer 25' 25K GVWR", category: "trailer", day: 440, week: 1760, month: 4000, keyword: "Dump Trailer 25 25K GVWR", aliases: ["dump trailer", "gooseneck dump trailer", "25k dump trailer", "25 foot dump trailer", "trailer"], details: "25-foot dump trailer, 25K GVWR." }
 };
@@ -161,7 +153,7 @@ export const CATEGORY_ALIASES = {
   material_handling: ["material handling", "material lift", "contractor lift", "scaffolding", "scaffold"],
   scaffolding: ["scaffolding", "scaffold", "scaffolds", "baker scaffolding", "baker scaffold", "mobile scaffolding", "mobile scaffold", "outdoor scaffolding", "outdoor scaffold", "frame scaffolding", "aluminum platform scaffolding"],
   auger: ["auger", "augers", "post hole digger", "post hole auger", "hole auger"],
-  post_driver: ["post driver", "post drivers", "post pounder", "post pounders", "fence post pounder", "skid steer post driver"],
+  post_driver: ["post driver", "post drivers", "post pounder", "post pounders", "fence post pounder", "fence post driver", "handheld post pounder", "handheld post driver", "hand held post pounder", "hand held post driver", "t post driver", "t-post driver", "t post pounder", "t-post pounder", "skid steer post driver"],
   dumpster: ["dumpster", "dumpsters", "roll off", "roll off dumpster", "20 yard dumpster"],
   mower: ["mower", "mowers", "lawn mower", "zero turn", "zero turn mower", "grass cutter"],
   brush_cutter: ["brush cutter", "brush cutters", "bush hog", "bush hogs", "rotary cutter", "walk behind brush cutter"],
@@ -189,7 +181,7 @@ export const CATEGORY_ITEMS = {
   material_handling: [ITEM_IDS.TELEHANDLER, ITEM_IDS.FORKLIFT, ITEM_IDS.LIFT_KING_8K, ITEM_IDS.MATERIAL_LIFT, ITEM_IDS.SCAFFOLDING_TOWER, ITEM_IDS.SCAFFOLDING],
   scaffolding: [ITEM_IDS.SCAFFOLDING_TOWER, ITEM_IDS.SCAFFOLDING],
   auger: [ITEM_IDS.AUGER, ITEM_IDS.BLUE_DIAMOND_AUGER, ITEM_IDS.STIHL_BT131_AUGER],
-  post_driver: [ITEM_IDS.FENCE_POST_POUNDER],
+  post_driver: [ITEM_IDS.FENCE_POST_POUNDER, ITEM_IDS.POST_DRIVER_2_CYCLE],
   dumpster: [ITEM_IDS.DUMPSTER],
   mower: [ITEM_IDS.ZERO_TURN],
   brush_cutter: [ITEM_IDS.BRUSHCAT, ITEM_IDS.LAND_PRIDE_BUSH_HOG, ITEM_IDS.BILLY_GOAT],
