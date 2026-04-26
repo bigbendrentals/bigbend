@@ -1802,6 +1802,21 @@ Pickup / self-haul selected: no delivery charge included. Please confirm trailer
   const delivery = deliveryInfo(message);
   const wantsDelivery = isDeliveryQuestion(message);
 
+  if (
+    (isPriceQuestion(message) || hasDurationText(message)) &&
+    state.lastMachineItemId &&
+    state.lastAttachmentItemId &&
+    EQUIPMENT[state.lastMachineItemId] &&
+    EQUIPMENT[state.lastAttachmentItemId] &&
+    !isDeliveryQuestion(message)
+  ) {
+    const days = getDays(message, state);
+    state.lastDays = days;
+
+    const bundleText = quoteMachineAttachmentBundle(state.lastMachineItemId, state.lastAttachmentItemId, days);
+    if (bundleText) return bundleText;
+  }
+
   if (isPriceQuestion(message)) {
     if (category && shouldForceCategoryChoice(message, category)) {
       const response = categorySelectionPrompt(category, state, "I need to know which option you want priced.");
