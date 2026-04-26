@@ -52,7 +52,9 @@ function getState(senderId) {
       awaitingMulcherChoice: false,
       pendingMulcherIds: [],
       awaitingMulcherComboSelection: false,
-      lastBundleItemIds: []
+      lastBundleItemIds: [],
+      disclaimerShown: false,
+      guidedMode: false
     };
   }
   return stateStore[senderId];
@@ -75,6 +77,9 @@ function normalizeCategory(category) {
   if (c.includes("boom")) return "boom_lift";
   if (c.includes("mini skid") || c === "boxer") return "mini_skid";
   if (c.includes("skid")) return "skid_steer";
+  if (c.includes("post driver") || c.includes("post pounder") || c.includes("fence post")) return "post_driver";
+  if (c.includes("dumpster") || c.includes("roll off")) return "dumpster";
+  if (c.includes("genie")) return "genie";
   if (c.includes("auger")) return "auger";
   if (c.includes("excavator") || c.includes("trackhoe")) return "excavator";
   if (c.includes("forklift") || c.includes("fork lift") || c.includes("lift king")) return "forklift";
@@ -99,8 +104,11 @@ function categoryFromText(message) {
 
   const t = normalize(message);
 
+  if (t.includes("post driver") || t.includes("post pounder") || t.includes("fence post pounder")) return "post_driver";
+  if (t.includes("dumpster") || t.includes("roll off")) return "dumpster";
+  if (t.includes("genie")) return "genie";
   if (/\baugers?\b/.test(t)) return "auger";
-  if (/\bmulchers?\b/.test(t) || t.includes("forestry mulcher")) return "mulcher";
+  if (/\bmulchers?\b/.test(t) || t.includes("mulcher") || t.includes("mulched") || t.includes("forestry mulcher")) return "mulcher";
   if (t.includes("scissor")) return "scissor_lift";
   if (t.includes("boom lift") || t.includes("boom lifts")) return "boom_lift";
   if (t.includes("mini skid")) return "mini_skid";
@@ -119,6 +127,7 @@ function categoryFromText(message) {
 function categoryIds(category) {
   const key = normalizeCategory(category);
   if (!key) return [];
+  if (key === "genie") return [ITEM_IDS.GENIE_Z45, ITEM_IDS.GS1930, ITEM_IDS.GS3246].filter((id) => EQUIPMENT[id]);
   const mapped = CATEGORY_ITEMS?.[key] || [];
   return [...new Set(mapped)].filter((id) => EQUIPMENT[id]);
 }
@@ -137,6 +146,76 @@ function formatOptions(ids) {
     })
     .filter(Boolean)
     .join("\n");
+}
+
+
+const AI_DISCLOSURE = `Hi — I’m the Big Bend Rentals AI assistant. I can help with equipment options, basic pricing, delivery info, trailer questions, and general rental details. I do not have live availability.`;
+
+function guidedPrompt(extra = "") {
+  return `${extra ? `${extra}\n\n` : ""}${AI_DISCLOSURE}\n\nFor accurate help, please send:\n• Equipment or attachment needed\n• Rental length\n• Pickup, delivery city, or using our trailer\n\nExamples:\n“CAT 239 for 1 week using your trailer”\n“Stump grinder for 1 day delivered to Perry”\n“Mulcher combo for Friday to Monday”\n\nFor booking or availability, call 850-295-5373 or book online at www.bigbendrentals.net.`;
+}
+
+function shortGuidedClarification(reason = "I need a little more detail before I price that.") {
+  return `${reason}\n\nPlease tell me:\n1. Equipment or attachment\n2. Rental length\n3. Pickup, delivery city, or using our trailer\n\nExample: “CAT 239 for 1 week delivered to Perry.”`;
+}
+
+function hasDurationText(message) {
+  const t = normalize(message);
+  return parseDays(t) !== null || t.includes("day") || t.includes("week") || t.includes("month") || t.includes("weekend") || t.includes("friday") || t.includes("monday") || /\b\d+\s*(hr|hour|hours|day|days|week|weeks|month|months)\b/.test(t);
+}
+
+function isSpecificItemMention(message) {
+  const t = normalize(message);
+  const c = compact(message);
+  const terms = ["cat 239", "cat239", "239", "cat 265", "cat265", "265", "333p", "john deere 333", "jd 333", "boxer", "3017", "301.7", "50p", "3075", "307.5", "z45", "et500", "gs1930", "gs3246", "stihl", "bt131", "blue diamond", "hm316", "mh60d", "rayco", "rg37", "spartan", "c30x", "lift king", "mitsubishi"];
+  return terms.some((term) => t.includes(term) || c.includes(term.replace(/[^a-z0-9]/g, "")));
+}
+
+function isLikelyContextFollowup(message) {
+  const t = normalize(message);
+  return (
+    isPriceQuestion(message) ||
+    isMoreInfoQuestion(message) ||
+    isTrailerQuestion(message) ||
+    isDeliveryQuestion(message) ||
+    isWeightQuestion(message) ||
+    isThumbQuestion(message) ||
+    isBucketOrCabQuestion(message) ||
+    t.includes("that") ||
+    t.includes("it") ||
+    t.includes("this") ||
+    t.includes("same") ||
+    t.includes("week") ||
+    t.includes("day") ||
+    t.includes("month")
+  );
+}
+
+function categorySelectionPrompt(category, state, reason = null) {
+  const ids = categoryIds(category);
+  if (!ids.length) return null;
+  state.lastCategory = normalizeCategory(category);
+  state.lastCategoryItems = ids;
+  state.lastItemId = null;
+  const header = reason || `I found more than one option for that.`;
+  return `${header}\n\n${formatOptions(ids)}\n\nWhich one do you want pricing or info for?`;
+}
+
+function dumpsterInfoPrompt(state) {
+  const ids = categoryIds("dumpster");
+  state.lastCategory = "dumpster";
+  state.lastCategoryItems = ids;
+  return `We have this dumpster option:\n\n${formatOptions(ids)}\n\nWhat rental length do you need, and what city is delivery to?`;
+}
+
+function shouldForceCategoryChoice(message, category) {
+  const key = normalizeCategory(category);
+  if (!key) return false;
+  const multi = categoryIds(key).length > 1;
+  if (!multi) return false;
+  if (isSpecificItemMention(message)) return false;
+  if (key === "mulcher") return false;
+  return isPriceQuestion(message) || hasDurationText(message) || normalize(message).includes("looking for") || normalize(message).includes("need") || normalize(message).includes("interested in");
 }
 
 function itemKeyword(item) {
@@ -248,6 +327,28 @@ function isTrailerRentalCategoryRequest(message) {
 }
 
 
+
+function isDumpsterItem(item) {
+  const name = normalize(item?.name || "");
+  const keyword = normalize(item?.keyword || "");
+  const category = normalize(item?.category || "");
+  return category === "dumpster" || name.includes("dumpster") || keyword.includes("dumpster");
+}
+
+function isSteinhatcheeText(text) {
+  const t = normalize(text);
+  return t.includes("steinhatchee") || t.includes("keaton") || t.includes("dekle");
+}
+
+function dumpsterInfoText(message = "") {
+  if (isSteinhatcheeText(message)) {
+    return "Dumpster pricing for Steinhatchee is $600 due to fuel costs. Dumpster pricing includes delivery and pickup.";
+  }
+
+  return "Dumpster pricing includes delivery and pickup. Steinhatchee dumpster service is $600 due to fuel costs.";
+}
+
+
 function hasUsefulDetails(item) {
   const details = String(item.details || "").trim();
   if (!details) return false;
@@ -320,15 +421,41 @@ function durationLabel(days) {
   return `${days} days`;
 }
 
+
+function dumpsterQuoteText(item, message, days = 1) {
+  const steinhatchee = isSteinhatcheeText(message);
+  const rate = steinhatchee ? 600 : (item.day || 500);
+  const rental = days >= 30 && item.month ? item.month : days >= 7 ? (item.week || rate) : rate;
+  const subtotal = rental;
+  const tax = subtotal * 0.07;
+  const total = subtotal + tax;
+
+  const lines = [
+    `${item.name} total${steinhatchee ? " for Steinhatchee" : ""}:`,
+    "",
+    `Rental: ${money(rental)}`,
+    dumpsterInfoText(message),
+    `Subtotal: ${money(subtotal)}`,
+    `Sales Tax (7%): ${money(tax)}`,
+    `Total: ${money(total)}`,
+    "",
+    CONTACT_TEXT
+  ];
+
+  return lines.join("\n");
+}
+
 function quoteText(item, days, extras = {}) {
   const adjustedExtras = { ...extras };
   if (isDumpTrailerItem(item) || adjustedExtras.deliveryFee) adjustedExtras.trailerFee = 0;
+  if (isDumpsterItem(item)) adjustedExtras.deliveryFee = 0;
   const totals = quoteTotals(item, days, adjustedExtras);
   const locationText = totals.deliveryFee ? ` delivered to ${extras.deliveryPlace || "that area"}` : "";
   const trailerText = totals.trailerFee ? " with trailer" : "";
   const lines = [`${item.name} total for ${durationLabel(days)}${locationText}${trailerText}:`, "", `Rental: ${money(totals.rental)}`];
   if (totals.protection) lines.push(`Rental Protection Plan: ${money(totals.protection)}`);
-  if (totals.deliveryFee) lines.push(`Delivery: ${money(totals.deliveryFee)}`);
+  if (totals.deliveryFee && !isDumpsterItem(item)) lines.push(`Delivery: ${money(totals.deliveryFee)}`);
+  if (isDumpsterItem(item)) lines.push(dumpsterInfoText(extras.deliveryPlace || ""));
   if (totals.trailerFee) lines.push(`Trailer: ${money(totals.trailerFee)}`);
   lines.push(`Subtotal: ${money(totals.subtotal)}`, `Sales Tax (7%): ${money(totals.tax)}`, `Total: ${money(totals.total)}`, "", CONTACT_TEXT);
   return lines.join("\n");
@@ -358,6 +485,8 @@ function isMulcherComboRequest(message) {
     t.includes("both") ||
     t.includes("combo") ||
     t.includes("combination") ||
+    t.includes("mulched combo") ||
+    t.includes("mulcher combo") ||
     t.includes("with skid steer") ||
     t.includes("with a skid steer") ||
     t.includes("mulcher and skid steer") ||
@@ -410,9 +539,10 @@ function mulcherChoicePrompt(ids) {
 function quoteBundleText(itemIds, days, extras = {}) {
   const ids = [...new Set(itemIds || [])].filter((id) => EQUIPMENT[id]);
   const items = ids.map((id) => EQUIPMENT[id]);
-  const deliveryFee = extras.deliveryFee || 0;
+  let deliveryFee = extras.deliveryFee || 0;
   let trailerFee = extras.trailerFee || 0;
   if (items.some((item) => isDumpTrailerItem(item)) || deliveryFee) trailerFee = 0;
+  if (items.some((item) => isDumpsterItem(item))) deliveryFee = 0;
 
   let rental = 0;
   let protection = 0;
@@ -473,6 +603,46 @@ Which one are you interested in?`;
 export function handleMessage(message, senderId = "local-test") {
   const state = getState(senderId);
   const category = categoryFromText(message);
+
+  if (!state.disclaimerShown) {
+    state.disclaimerShown = true;
+    return guidedPrompt("Thanks for messaging Big Bend Rentals.");
+  }
+
+  const t = normalize(message);
+
+  if ((t.includes("mulcher") || t.includes("mulched")) && t.includes("skid steer") && t.includes("combo")) {
+    state.lastCategory = "mulcher";
+    state.lastCategoryItems = categoryIds("mulcher");
+    state.awaitingMulcherChoice = true;
+    state.awaitingMulcherComboSelection = true;
+    state.pendingMulcherIds = categoryIds("mulcher");
+    return askWhichMulcherCombo();
+  }
+
+  if (category === "dumpster" && !hasDurationText(message)) {
+    return dumpsterInfoPrompt(state);
+  }
+
+  if (category === "genie" && !isSpecificItemMention(message)) {
+    return categorySelectionPrompt("genie", state, "I need to know which Genie lift you mean. We have these Genie options:");
+  }
+
+  if (category === "post_driver") {
+    const id = ITEM_IDS.FENCE_POST_POUNDER;
+    rememberSelected(state, id);
+    if (isPriceQuestion(message) || hasDurationText(message)) {
+      const days = getDays(message, state);
+      state.lastDays = days;
+      return quoteText(EQUIPMENT[id], days);
+    }
+    return itemBasicText(EQUIPMENT[id]);
+  }
+
+  if (shouldForceCategoryChoice(message, category)) {
+    const response = categorySelectionPrompt(category, state, `I can help, but I need to know which ${String(category).replace(/_/g, " ")} you want.`);
+    if (response) return response;
+  }
 
   if (isMachineHaulingTrailerRequest(message)) {
     const priorId = state.lastMachineItemId || state.lastSelectedItemId || state.lastItemId || null;
@@ -612,7 +782,8 @@ export function handleMessage(message, senderId = "local-test") {
   const contextualId = resolveFromLastOptions(message, state);
   const globalDirectId = resolveGlobalDirect(message);
   const explicit = globalDirectId || contextualId ? null : findEquipment(message);
-  const selectedId = globalDirectId || contextualId || explicit?.id || state.lastItemId || null;
+  const fallbackId = isLikelyContextFollowup(message) ? state.lastItemId : null;
+  const selectedId = globalDirectId || contextualId || explicit?.id || fallbackId || null;
   const selectedItem = selectedId ? EQUIPMENT[selectedId] : null;
 
   if (selectedItem && isMulcherId(selectedId) && isMulcherComboRequest(message)) {
@@ -672,7 +843,11 @@ export function handleMessage(message, senderId = "local-test") {
   const wantsDelivery = isDeliveryQuestion(message);
 
   if (isPriceQuestion(message)) {
-    if (!selectedItem) return "Which machine are you referring to?";
+    if (category && shouldForceCategoryChoice(message, category)) {
+      const response = categorySelectionPrompt(category, state, "I need to know which option you want priced.");
+      if (response) return response;
+    }
+    if (!selectedItem) return shortGuidedClarification("I need to know which machine or attachment you want priced.");
     rememberSelected(state, selectedId);
     const days = getDays(message, state);
     state.lastDays = days;
@@ -772,7 +947,7 @@ ${mulcherChoicePrompt([selectedId])}`;
     return itemBasicText(selectedItem);
   }
 
-  return `Can you clarify what you're looking to rent? You can also check ${WEBSITE} and search for the equipment name.`;
+  return shortGuidedClarification("I’m not confident enough to answer that accurately yet.");
 }
 
 async function sendMessage(senderId, text) {
