@@ -1039,7 +1039,7 @@ function quoteMachineAttachmentBundle(machineId, attachmentId, days = 1) {
     (attachment.protection ? protectionTotal(days) : 0);
 
   const subtotal = rental + protection;
-  const tax = subtotal * SALES_TAX;
+  const tax = subtotal * 0.07;
   const total = subtotal + tax;
 
   const lines = [
@@ -1745,7 +1745,7 @@ Which one do you want pricing for with the attachment?`;
   }
 
   if (bookingIntent(message)) {
-    if (selectedItem) rememberSelected(state, selectedId);
+    if (selectedItem) rememberSelectedWithType(state, selectedId);
     return CONTACT_TEXT;
   }
 
@@ -1763,7 +1763,7 @@ Which one do you want pricing for with the attachment?`;
   }
 
   if (selectedItem) {
-    rememberSelected(state, selectedId);
+    rememberSelectedWithType(state, selectedId);
 
     if (
       isMachineItemId(selectedId) &&
