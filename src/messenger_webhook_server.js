@@ -114,44 +114,47 @@ function normalizeCategory(category) {
 function isHoursQuestion(message) {
   const t = normalize(message);
 
-  // Only answer office hours when the customer is actually asking about hours/open/closed.
-  // Do not let rental timing like "next weekend" hijack pricing/category requests.
-  const rentalContext =
-    isPriceQuestion(message) ||
-    isDeliveryQuestion(message) ||
-    categoryFromText(message) ||
-    findEquipment(message) ||
-    t.includes("looking for") ||
-    t.includes("need") ||
-    t.includes("rent") ||
-    t.includes("rental") ||
-    t.includes("dropped off") ||
-    t.includes("picked up") ||
-    t.includes("returning");
-
-  const explicitHoursQuestion =
+  const strongSignals =
     t.includes("hours") ||
-    t.includes("business hours") ||
+    t.includes("open") ||
+    t.includes("close") ||
+    t.includes("closed") ||
     t.includes("what time") ||
     t.includes("when are you open") ||
-    t.includes("when do you open") ||
-    t.includes("when do you close") ||
+    t.includes("business hours") ||
     t.includes("are you open") ||
-    t.includes("open on") ||
-    t.includes("closed on") ||
-    t.includes("open saturday") ||
-    t.includes("open sunday") ||
-    t.includes("closed saturday") ||
-    t.includes("closed sunday") ||
-    t.includes("after hours");
+    t.includes("open on");
 
-  if (!explicitHoursQuestion) return false;
+  const rentalContext =
+    t.includes("rent") ||
+    t.includes("rental") ||
+    t.includes("price") ||
+    t.includes("pricing") ||
+    t.includes("quote") ||
+    t.includes("how much") ||
+    t.includes("skid steer") ||
+    t.includes("excavator") ||
+    t.includes("trencher") ||
+    t.includes("ditch witch") ||
+    t.includes("mulcher") ||
+    t.includes("brush cutter") ||
+    t.includes("delivery") ||
+    t.includes("deliver") ||
+    t.includes("dropped off") ||
+    t.includes("picked up");
 
-  if (rentalContext && !t.includes("are you open") && !t.includes("hours") && !t.includes("closed")) {
+  if (
+    t.includes("weekend") &&
+    rentalContext &&
+    !t.includes("are you open") &&
+    !t.includes("open on") &&
+    !t.includes("hours") &&
+    !t.includes("closed")
+  ) {
     return false;
   }
 
-  return true;
+  return strongSignals;
 }
 
 function categoryFromText(message) {
@@ -682,23 +685,50 @@ export function handleMessage(message, senderId = "local-test") {
   const category = categoryFromText(message);
 
   if (!state.disclaimerShown) {
-  state.disclaimerShown = true;
+    state.disclaimerShown = true;
 
-  const hasClearIntent =
-    isPriceQuestion(message) ||
-    findEquipment(message) ||
-    findCategory(message) ||
-    isDeliveryQuestion(message) ||
-    hasDurationText(message);
+    const hasClearIntent =
+      isHoursQuestion(message) ||
+      isPriceQuestion(message) ||
+      category ||
+      findEquipment(message) ||
+      isDeliveryQuestion(message) ||
+      hasDurationText(message) ||
+      isTrailerQuestion(message) ||
+      bookingIntent(message);
 
-  if (hasClearIntent) {
-    // Let the normal logic handle it immediately
-  } else {
-    return guidedPrompt("Thanks for messaging Big Bend Rentals.");
+    if (!hasClearIntent) {
+      return guidedPrompt("Thanks for messaging Big Bend Rentals.");
+    }
   }
-}
 
   const t = normalize(message);
+
+  // HIGH FLOW BRUSH CUTTER LOGIC
+  // Only the CAT 265 and John Deere 333P are high-flow skid steers.
+  // This prevents high-flow brush-cutter requests from listing every skid steer.
+  if (
+    t.includes("high flow") &&
+    (
+      t.includes("brush cutter") ||
+      t.includes("brushcat") ||
+      t.includes("brush cat") ||
+      t.includes("skid steer brush cutter")
+    )
+  ) {
+    const ids = [ITEM_IDS.CAT_265, ITEM_IDS.JD_333P].filter((id) => EQUIPMENT[id]);
+
+    state.lastCategory = "skid_steer";
+    state.lastCategoryItems = ids;
+    state.lastItemId = null;
+
+    return `We do have high-flow skid steer options for that attachment:
+
+${formatOptions(ids)}
+
+Which one are you interested in?`;
+  }
+
 
   if (isHoursQuestion(message)) return OFFICE_INFO;
 
