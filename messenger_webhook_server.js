@@ -1011,25 +1011,40 @@ async function sendMessage(senderId, text) {
   if (!response.ok) console.error("Facebook send failed:", response.status, bodyText);
 }
 
-app.post("/webhook", async (req, res) => {
+async function processMessengerEvent(event) {
+  const senderId = event.sender?.id;
+  const message = event.message?.text;
+
+  if (!senderId || !message) return;
+
+  try {
+    console.log("Incoming:", message);
+    const reply = handleMessage(message, senderId);
+    console.log("Reply:", reply);
+    await sendMessage(senderId, reply);
+  } catch (err) {
+    console.error("Messenger event handling error:", err);
+    try {
+      await sendMessage(senderId, "Sorry, something went wrong on our end. Please call 850-295-5373 and we’ll help you directly.");
+    } catch (sendErr) {
+      console.error("Fallback send failed:", sendErr);
+    }
+  }
+}
+
+app.post("/webhook", (req, res) => {
   try {
     for (const entry of req.body.entry || []) {
       for (const event of entry.messaging || []) {
-        const senderId = event.sender?.id;
-        const message = event.message?.text;
-        if (senderId && message) {
-          console.log("Incoming:", message);
-          const reply = handleMessage(message, senderId);
-          console.log("Reply:", reply);
-          await sendMessage(senderId, reply);
-        }
+        void processMessengerEvent(event);
       }
     }
-    res.sendStatus(200);
   } catch (err) {
-    console.error("Webhook error:", err);
-    res.sendStatus(200);
+    console.error("Webhook parse error:", err);
   }
+
+  // Facebook expects a fast 200 response. Message processing continues above.
+  res.sendStatus(200);
 });
 
 app.get("/webhook", (req, res) => {
