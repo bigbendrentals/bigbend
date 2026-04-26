@@ -682,9 +682,21 @@ export function handleMessage(message, senderId = "local-test") {
   const category = categoryFromText(message);
 
   if (!state.disclaimerShown) {
-    state.disclaimerShown = true;
+  state.disclaimerShown = true;
+
+  const hasClearIntent =
+    isPriceQuestion(message) ||
+    findEquipment(message) ||
+    findCategory(message) ||
+    isDeliveryQuestion(message) ||
+    hasDurationText(message);
+
+  if (hasClearIntent) {
+    // Let the normal logic handle it immediately
+  } else {
     return guidedPrompt("Thanks for messaging Big Bend Rentals.");
   }
+}
 
   const t = normalize(message);
 
