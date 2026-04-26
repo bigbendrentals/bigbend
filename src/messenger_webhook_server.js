@@ -32,6 +32,15 @@ const VERIFY_TOKEN = process.env.META_VERIFY_TOKEN;
 const GRAPH_VERSION = process.env.META_GRAPH_VERSION || "v22.0";
 const PORT = process.env.PORT || 10000;
 
+const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY || "";
+const BUSINESS_ADDRESS = process.env.BUSINESS_ADDRESS || "Big Bend Tool & Equipment Rentals, Perry, FL";
+const DELIVERY_MIN_FEE = Number(process.env.DELIVERY_MIN_FEE || 200);
+const DELIVERY_BASE_FEE = Number(process.env.DELIVERY_BASE_FEE || 0);
+const DELIVERY_INCLUDED_ROUND_TRIP_MILES = Number(process.env.DELIVERY_INCLUDED_ROUND_TRIP_MILES || 0);
+const DELIVERY_RATE_PER_ROUND_TRIP_MILE = Number(process.env.DELIVERY_RATE_PER_ROUND_TRIP_MILE || 5);
+const DELIVERY_ROUNDING_INCREMENT = Number(process.env.DELIVERY_ROUNDING_INCREMENT || 1);
+
+
 const WEBSITE = "www.bigbendrentals.net";
 const OFFICE_INFO = `Office Hours:
 Monday - Friday: 8:30 AM – 5:00 PM
@@ -620,6 +629,92 @@ function needsExactAddress(message) {
 }
 
 
+
+function roundUpToIncrement(value, increment = 1) {
+  const inc = Number(increment || 1);
+  if (inc <= 1) return Math.ceil(value);
+  return Math.ceil(value / inc) * inc;
+}
+
+function calculateDeliveryFeeFromMiles(roundTripMiles) {
+  const billableMiles = Math.max(0, Number(roundTripMiles || 0) - DELIVERY_INCLUDED_ROUND_TRIP_MILES);
+  const rawFee = DELIVERY_BASE_FEE + billableMiles * DELIVERY_RATE_PER_ROUND_TRIP_MILE;
+  const fee = Math.max(DELIVERY_MIN_FEE, rawFee);
+  return roundUpToIncrement(fee, DELIVERY_ROUNDING_INCREMENT);
+}
+
+async function getDrivingMilesFromGoogle(destinationAddress) {
+  if (!GOOGLE_MAPS_API_KEY) {
+    throw new Error("GOOGLE_MAPS_API_KEY is not configured.");
+  }
+
+  const response = await fetch("https://routes.googleapis.com/directions/v2:computeRoutes", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Goog-Api-Key": GOOGLE_MAPS_API_KEY,
+      "X-Goog-FieldMask": "routes.distanceMeters"
+    },
+    body: JSON.stringify({
+      origin: { address: BUSINESS_ADDRESS },
+      destination: { address: destinationAddress },
+      travelMode: "DRIVE",
+      routingPreference: "TRAFFIC_UNAWARE",
+      units: "IMPERIAL"
+    })
+  });
+
+  const bodyText = await response.text();
+
+  if (!response.ok) {
+    throw new Error(`Google Routes failed: ${response.status} ${bodyText}`);
+  }
+
+  const data = JSON.parse(bodyText || "{}");
+  const distanceMeters = data?.routes?.[0]?.distanceMeters;
+
+  if (!distanceMeters) {
+    throw new Error("Google Routes did not return a driving distance.");
+  }
+
+  const oneWayMiles = Number(distanceMeters) / 1609.344;
+  const roundTripMiles = oneWayMiles * 2;
+
+  return {
+    oneWayMiles,
+    roundTripMiles
+  };
+}
+
+async function quoteTextWithMileageDelivery(item, days, address) {
+  try {
+    const miles = await getDrivingMilesFromGoogle(address);
+    const deliveryFee = calculateDeliveryFeeFromMiles(miles.roundTripMiles);
+
+    const quote = quoteText(item, days, {
+      deliveryFee,
+      deliveryPlace: address
+    });
+
+    return `${quote}
+
+Estimated driving distance:
+One way: ${miles.oneWayMiles.toFixed(1)} miles
+Round trip: ${miles.roundTripMiles.toFixed(1)} miles`;
+  } catch (err) {
+    console.error("Delivery mileage calculation failed:", err);
+
+    return `${item.name} estimate for ${durationLabel(days)} before final delivery charge:
+
+Rental: ${money(getRentalAmount(item, days))}
+${item.protection ? `Rental Protection Plan: ${money(protectionTotal(days))}
+` : ""}Delivery: Exact delivery charge needs manual confirmation for this address.
+
+Call 850-295-5373 or book online at www.bigbendrentals.net so we can confirm delivery availability and the exact delivery price.`;
+  }
+}
+
+
 function isMulcherId(id) {
   return id === ITEM_IDS.CAT_MULCHER || id === ITEM_IDS.JD_MULCHER;
 }
@@ -746,7 +841,7 @@ Which one are you interested in?`;
 }
 
 
-export function handleMessage(message, senderId = "local-test") {
+export async function handleMessage(message, senderId = "local-test") {
   const state = getState(senderId);
   const category = categoryFromText(message);
 
@@ -810,35 +905,14 @@ Which one are you interested in?`;
     if (itemId && EQUIPMENT[itemId]) {
       const item = EQUIPMENT[itemId];
 
-      const addressDelivery = deliveryInfo(message);
-      const pendingPlaceDelivery = state.pendingDeliveryQuotePlace
-        ? deliveryInfo(state.pendingDeliveryQuotePlace)
-        : null;
-
-      const deliveryFee =
-        addressDelivery?.fee ||
-        pendingPlaceDelivery?.fee ||
-        state.lastDeliveryFee ||
-        0;
-
-      const deliveryPlace =
-        addressDelivery?.placeLabel ||
-        pendingPlaceDelivery?.placeLabel ||
-        state.pendingDeliveryQuotePlace ||
-        message;
-
       state.lastSelectedItemId = itemId;
       state.lastDays = days;
-      state.lastDeliveryFee = deliveryFee;
-      state.lastDeliveryPlace = deliveryPlace;
+      state.lastDeliveryPlace = message;
       state.pendingDeliveryQuoteItemId = null;
       state.pendingDeliveryQuoteDays = null;
       state.pendingDeliveryQuotePlace = null;
 
-      return quoteText(item, days, {
-        deliveryFee,
-        deliveryPlace
-      });
+      return await quoteTextWithMileageDelivery(item, days, message);
     }
 
     return "Got it. What equipment are you needing delivered?";
@@ -1240,7 +1314,7 @@ app.post("/webhook", async (req, res) => {
         const message = event.message?.text;
         if (senderId && message) {
           console.log("Incoming:", message);
-          const reply = handleMessage(message, senderId);
+          const reply = await handleMessage(message, senderId);
           console.log("Reply:", reply);
           await sendMessage(senderId, reply);
         }
