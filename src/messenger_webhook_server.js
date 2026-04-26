@@ -526,7 +526,7 @@ function dumpsterQuoteText(item, message, days = 1) {
   const total = subtotal + tax;
 
   const lines = [
-    `${item.name} total${steinhatchee ? " for Steinhatchee" : ""}:`,
+    `${item.name} total${steinhatchee ? " for coastal area" : " for standard service area"}:`,
     "",
     `Rental: ${money(rental)}`,
     dumpsterInfoText(message),
@@ -759,6 +759,26 @@ Which one are you interested in?`;
   if (category === "dumpster" && !hasDurationText(message)) {
     return dumpsterInfoPrompt(state);
   }
+
+  if (
+    !category &&
+    state.lastCategory === "dumpster" &&
+    (hasDurationText(message) || isPriceQuestion(message) || isCoastalArea(message))
+  ) {
+    const id = ITEM_IDS.DUMPSTER;
+    const item = EQUIPMENT[id];
+
+    if (!item) {
+      return "I can help with the dumpster, but I need the delivery city to price it correctly.";
+    }
+
+    rememberSelected(state, id);
+    const days = getDays(message, state);
+    state.lastDays = days;
+
+    return dumpsterQuoteText(item, message, days);
+  }
+
 
   if (category === "genie" && !isSpecificItemMention(message)) {
     return categorySelectionPrompt("genie", state, "I need to know which Genie lift you mean. We have these Genie options:");
