@@ -113,15 +113,16 @@ function normalizeCategory(category) {
 
 function isHoursQuestion(message) {
   const t = normalize(message);
-
-  if (isHoursQuestion(message)) return OFFICE_INFO;
   return (
     t.includes("hours") ||
     t.includes("open") ||
     t.includes("close") ||
+    t.includes("closed") ||
     t.includes("weekend") ||
     t.includes("saturday") ||
-    t.includes("sunday")
+    t.includes("sunday") ||
+    t.includes("after hours") ||
+    t.includes("business hours")
   );
 }
 
@@ -131,7 +132,6 @@ function categoryFromText(message) {
 
   const t = normalize(message);
 
-  if (isHoursQuestion(message)) return OFFICE_INFO;
 
   if (t.includes("post driver") || t.includes("post pounder") || t.includes("fence post pounder")) return "post_driver";
   if (t.includes("dumpster") || t.includes("roll off")) return "dumpster";
@@ -191,14 +191,12 @@ function shortGuidedClarification(reason = "I need a little more detail before I
 function hasDurationText(message) {
   const t = normalize(message);
 
-  if (isHoursQuestion(message)) return OFFICE_INFO;
   return parseDays(t) !== null || t.includes("day") || t.includes("week") || t.includes("month") || t.includes("weekend") || t.includes("friday") || t.includes("monday") || /\b\d+\s*(hr|hour|hours|day|days|week|weeks|month|months)\b/.test(t);
 }
 
 function isSpecificItemMention(message) {
   const t = normalize(message);
 
-  if (isHoursQuestion(message)) return OFFICE_INFO;
   const c = compact(message);
   const terms = ["cat 239", "cat239", "239", "cat 265", "cat265", "265", "333p", "john deere 333", "jd 333", "boxer", "3017", "301.7", "50p", "3075", "307.5", "z45", "et500", "gs1930", "gs3246", "stihl", "bt131", "blue diamond", "hm316", "mh60d", "rayco", "rg37", "spartan", "c30x", "lift king", "mitsubishi"];
   return terms.some((term) => t.includes(term) || c.includes(term.replace(/[^a-z0-9]/g, "")));
@@ -207,7 +205,6 @@ function isSpecificItemMention(message) {
 function isLikelyContextFollowup(message) {
   const t = normalize(message);
 
-  if (isHoursQuestion(message)) return OFFICE_INFO;
   return (
     isPriceQuestion(message) ||
     isMoreInfoQuestion(message) ||
@@ -268,7 +265,6 @@ function isDumpTrailerItem(item) {
 function wantsOurTrailerIncluded(message) {
   const t = normalize(message);
 
-  if (isHoursQuestion(message)) return OFFICE_INFO;
   return (
     t.includes("include your trailer") ||
     t.includes("include the trailer") ||
@@ -308,7 +304,6 @@ function trailerOptionText() {
 function isMachineHaulingTrailerRequest(message) {
   const t = normalize(message);
 
-  if (isHoursQuestion(message)) return OFFICE_INFO;
 
   return (
     t.includes("come with a trailer") ||
@@ -351,7 +346,6 @@ function isMachineHaulingTrailerRequest(message) {
 function isTrailerRentalCategoryRequest(message) {
   const t = normalize(message);
 
-  if (isHoursQuestion(message)) return OFFICE_INFO;
 
   if (isMachineHaulingTrailerRequest(message)) return false;
 
@@ -1007,44 +1001,146 @@ ${mulcherChoicePrompt([selectedId])}`;
   return shortGuidedClarification("I’m not confident enough to answer that accurately yet.");
 }
 
-async function sendMessage(senderId, text) {
-  const response = await fetch(`https://graph.facebook.com/${GRAPH_VERSION}/me/messages`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${PAGE_ACCESS_TOKEN}` },
-    body: JSON.stringify({ recipient: { id: senderId }, messaging_type: "RESPONSE", message: { text: String(text || "Can you clarify what you're looking to rent?") } })
-  });
-  const bodyText = await response.text();
-  if (!response.ok) console.error("Facebook send failed:", response.status, bodyText);
+function splitMessengerText(text) {
+  const raw = String(text || "Can you clarify what you're looking to rent?");
+  const max = 1900;
+  if (raw.length <= max) return [raw];
+
+  const chunks = [];
+  let remaining = raw;
+  while (remaining.length > max) {
+    let cut = remaining.lastIndexOf("\n", max);
+    if (cut < 500) cut = remaining.lastIndexOf(" ", max);
+    if (cut < 500) cut = max;
+    chunks.push(remaining.slice(0, cut).trim());
+    remaining = remaining.slice(cut).trim();
+  }
+  if (remaining) chunks.push(remaining);
+  return chunks;
 }
 
-app.post("/webhook", async (req, res) => {
+async function sendMessage(senderId, text) {
+  if (!PAGE_ACCESS_TOKEN) {
+    console.error("Facebook send skipped: META_PAGE_ACCESS_TOKEN is missing in Render environment variables.");
+    return false;
+  }
+
+  for (const part of splitMessengerText(text)) {
+    const response = await fetch(`https://graph.facebook.com/${GRAPH_VERSION}/me/messages`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${PAGE_ACCESS_TOKEN}`
+      },
+      body: JSON.stringify({
+        recipient: { id: senderId },
+        messaging_type: "RESPONSE",
+        message: { text: part }
+      })
+    });
+
+    const bodyText = await response.text();
+    if (!response.ok) {
+      console.error("Facebook send failed:", response.status, bodyText);
+      return false;
+    }
+    console.log("Facebook send ok:", response.status, bodyText);
+  }
+
+  return true;
+}
+
+async function processMessengerEvent(event) {
+  const senderId = event.sender?.id;
+  const message = event.message?.text;
+
+  if (!senderId) {
+    console.log("Messenger event ignored: missing sender id", JSON.stringify(event));
+    return;
+  }
+
+  if (!message) {
+    console.log("Messenger event ignored: no text message", JSON.stringify(event));
+    return;
+  }
+
   try {
-    for (const entry of req.body.entry || []) {
-      for (const event of entry.messaging || []) {
-        const senderId = event.sender?.id;
-        const message = event.message?.text;
-        if (senderId && message) {
-          console.log("Incoming:", message);
-          const reply = handleMessage(message, senderId);
-          console.log("Reply:", reply);
-          await sendMessage(senderId, reply);
+    console.log("Incoming from", senderId, ":", message);
+    const reply = handleMessage(message, senderId);
+    console.log("Reply to", senderId, ":", reply);
+    await sendMessage(senderId, reply);
+  } catch (err) {
+    console.error("processMessengerEvent error:", err);
+    await sendMessage(senderId, "Something went wrong on our end. Please call 850-295-5373 and we’ll help you directly.");
+  }
+}
+
+app.post("/webhook", (req, res) => {
+  // Facebook/Meta requires a fast 200 response. We acknowledge first, then send the reply.
+  res.status(200).send("EVENT_RECEIVED");
+
+  const body = req.body || {};
+  if (body.object !== "page") {
+    console.log("Webhook POST ignored: object was not page", JSON.stringify(body));
+    return;
+  }
+
+  setImmediate(async () => {
+    try {
+      for (const entry of body.entry || []) {
+        for (const event of entry.messaging || []) {
+          await processMessengerEvent(event);
         }
       }
+    } catch (err) {
+      console.error("Webhook async processing error:", err);
     }
-    res.sendStatus(200);
-  } catch (err) {
-    console.error("Webhook error:", err);
-    res.sendStatus(200);
-  }
+  });
 });
 
 app.get("/webhook", (req, res) => {
-  if (req.query["hub.mode"] === "subscribe" && req.query["hub.verify_token"] === VERIFY_TOKEN) return res.send(req.query["hub.challenge"]);
-  res.sendStatus(403);
+  const mode = req.query["hub.mode"];
+  const token = req.query["hub.verify_token"];
+  const challenge = req.query["hub.challenge"];
+
+  if (mode === "subscribe" && token === VERIFY_TOKEN) {
+    console.log("Webhook verified successfully.");
+    return res.status(200).send(challenge);
+  }
+
+  console.error("Webhook verification failed. Check META_VERIFY_TOKEN in Render.");
+  return res.sendStatus(403);
 });
 
 app.get("/", (_req, res) => res.status(200).send("Messenger webhook is running."));
 
+app.get("/health", (_req, res) => {
+  res.status(200).json({
+    ok: true,
+    service: "bigbend-messenger-bot",
+    hasPageAccessToken: Boolean(PAGE_ACCESS_TOKEN),
+    hasVerifyToken: Boolean(VERIFY_TOKEN),
+    graphVersion: GRAPH_VERSION
+  });
+});
+
+app.get("/test-reply", (req, res) => {
+  const message = String(req.query.message || "Do you have augers?");
+  const sender = String(req.query.sender || "browser-test");
+  try {
+    const reply = handleMessage(message, sender);
+    res.status(200).type("text/plain").send(reply);
+  } catch (err) {
+    console.error("/test-reply error:", err);
+    res.status(500).type("text/plain").send(String(err?.stack || err));
+  }
+});
+
 if (process.env.NODE_ENV !== "test") {
-  app.listen(PORT, () => console.log(`Messenger webhook listening on port ${PORT}`));
+  app.listen(PORT, () => {
+    console.log(`Messenger webhook listening on port ${PORT}`);
+    console.log(`Graph version: ${GRAPH_VERSION}`);
+    console.log(`META_PAGE_ACCESS_TOKEN present: ${Boolean(PAGE_ACCESS_TOKEN)}`);
+    console.log(`META_VERIFY_TOKEN present: ${Boolean(VERIFY_TOKEN)}`);
+  });
 }
