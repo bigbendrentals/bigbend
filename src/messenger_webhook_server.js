@@ -589,7 +589,18 @@ function isSupportIssue(message) {
     t.includes("isnt working") ||
     t.includes("isn't working") ||
     t.includes("wont start") ||
+    t.includes("can't start") ||
+    t.includes("cannot start") ||
     t.includes("won't start") ||
+    t.includes("won't stop") ||
+    t.includes("will not stop") ||
+    t.includes("isn't turning") ||
+    t.includes("isn't moving") ||
+    t.includes("won't open") ||
+    t.includes("won't close") ||
+    t.includes("keeps closing") ||
+    t.includes("keeps shutting off") ||
+    t.includes("stopped running") ||
     t.includes("will not start") ||
     t.includes("wont run") ||
     t.includes("won't run") ||
@@ -599,6 +610,7 @@ function isSupportIssue(message) {
     t.includes("will not turn on") ||
     t.includes("broke") ||
     t.includes("broken") ||
+    t.includes("leaking") ||
     t.includes("stopped working") ||
     t.includes("quit working") ||
     t.includes("problem with") ||
