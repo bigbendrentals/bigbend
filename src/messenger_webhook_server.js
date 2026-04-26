@@ -654,9 +654,23 @@ export function handleMessage(message, senderId = "local-test") {
   const category = categoryFromText(message);
 
   if (!state.disclaimerShown) {
-    state.disclaimerShown = true;
-    return guidedPrompt("Thanks for messaging Big Bend Rentals.");
+  state.disclaimerShown = true;
+
+  if (isHoursQuestion(message)) {
+    return `${AI_DISCLOSURE}\n\n${OFFICE_INFO}`;
   }
+
+  if (isBroadCategoryRequest(message)) {
+    const response = categoryResponse(category, state);
+    if (response) return `${AI_DISCLOSURE}\n\n${response}`;
+  }
+
+  if (isPriceQuestion(message)) {
+    // let normal flow handle it (don’t block)
+  }
+
+  return guidedPrompt("Thanks for messaging Big Bend Rentals.");
+}
 
   const t = normalize(message);
 
