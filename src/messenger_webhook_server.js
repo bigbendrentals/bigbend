@@ -37,6 +37,7 @@ const DELIVERY_LOCAL_MAX_ROUND_TRIP_MILES = Number(process.env.DELIVERY_LOCAL_MA
 const DELIVERY_STANDARD_MAX_ROUND_TRIP_MILES = Number(process.env.DELIVERY_STANDARD_MAX_ROUND_TRIP_MILES || 75);
 const DELIVERY_LOCAL_FEE = Number(process.env.DELIVERY_LOCAL_FEE || 200);
 const DELIVERY_STANDARD_FEE = Number(process.env.DELIVERY_STANDARD_FEE || 300);
+const DUMPSTER_BASE_FEE = Number(process.env.DUMPSTER_BASE_FEE || 300);
 
 
 const WEBSITE = "www.bigbendrentals.net";
@@ -298,7 +299,7 @@ Pricing includes delivery and pickup unless otherwise stated. Coastal areas are 
 
 Weight limits and prohibited items may apply.
 
-What rental length do you need, and what city is delivery to?`;
+What rental length do you need, and what is the exact delivery address?`;
 }
 
 function shouldForceCategoryChoice(message, category) {
@@ -451,11 +452,7 @@ function isSteinhatcheeText(text) {
 }
 
 function dumpsterInfoText(message = "") {
-  if (isCoastalArea(message)) {
-    return "Dumpster pricing for coastal areas is $600 due to fuel costs. Dumpster pricing includes delivery and pickup.";
-  }
-
-  return "Dumpster pricing includes delivery and pickup. Standard service-area dumpster pricing is $500. Coastal areas are $600 due to fuel costs.";
+  return `Dumpster pricing includes delivery and pickup. Final dumpster pricing is based on the exact delivery address and driving distance.`;
 }
 
 
@@ -905,6 +902,62 @@ Call 850-295-5373 or book online at www.bigbendrentals.net so we can confirm del
 
 
 
+
+async function quoteDumpsterWithMileageDelivery(item, days, address) {
+  try {
+    const miles = await getDrivingMilesFromGoogle(address);
+    const deliveryFee = calculateDeliveryFeeFromMiles(miles.roundTripMiles);
+
+    if (deliveryFee === null) {
+      return `${item.name} estimate before final delivery charge:
+
+Dumpster base: ${money(DUMPSTER_BASE_FEE)}
+Delivery: This address is about ${miles.roundTripMiles.toFixed(1)} round-trip miles, which is outside the automatic 75-mile delivery quote range.
+
+Estimated driving distance:
+One way: ${miles.oneWayMiles.toFixed(1)} miles
+Round trip: ${miles.roundTripMiles.toFixed(1)} miles
+
+Call 850-295-5373 or book online at www.bigbendrentals.net so we can confirm dumpster delivery availability and the exact delivery price.`;
+    }
+
+    const subtotal = DUMPSTER_BASE_FEE + deliveryFee;
+    const tax = subtotal * 0.07;
+    const total = subtotal + tax;
+
+    const deliveryNote =
+      miles.roundTripMiles <= DELIVERY_LOCAL_MAX_ROUND_TRIP_MILES
+        ? `Delivery pricing: ${money(DELIVERY_LOCAL_FEE)} up to ${DELIVERY_LOCAL_MAX_ROUND_TRIP_MILES} round-trip miles.`
+        : `Delivery pricing: ${money(DELIVERY_STANDARD_FEE)} for more than ${DELIVERY_LOCAL_MAX_ROUND_TRIP_MILES} and up to ${DELIVERY_STANDARD_MAX_ROUND_TRIP_MILES} round-trip miles.`;
+
+    return `${item.name} total delivered to ${address}:
+
+Dumpster base: ${money(DUMPSTER_BASE_FEE)}
+Delivery / pickup: ${money(deliveryFee)}
+Subtotal: ${money(subtotal)}
+Sales Tax (7%): ${money(tax)}
+Total: ${money(total)}
+
+${deliveryNote}
+
+Estimated driving distance:
+One way: ${miles.oneWayMiles.toFixed(1)} miles
+Round trip: ${miles.roundTripMiles.toFixed(1)} miles
+
+${CONTACT_TEXT}`;
+  } catch (err) {
+    console.error("Dumpster mileage calculation failed:", err);
+
+    return `${item.name} estimate before final delivery charge:
+
+Dumpster base: ${money(DUMPSTER_BASE_FEE)}
+Delivery: Exact dumpster delivery charge needs manual confirmation for this address.
+
+Call 850-295-5373 or book online at www.bigbendrentals.net so we can confirm dumpster delivery availability and the exact delivery price.`;
+  }
+}
+
+
 function isMulcherId(id) {
   return id === ITEM_IDS.CAT_MULCHER || id === ITEM_IDS.JD_MULCHER;
 }
@@ -1079,36 +1132,23 @@ We'll take care of you.`;
   }
 
   if (
-  state.lastBrokerRequest &&
-  (
-    t.includes("broker") ||
-    t.includes("brokered") ||
-    t.includes("fine") ||
-    t.includes("that works") ||
-    t.includes("ok") ||
-    t.includes("okay") ||
-    t.includes("yes") ||
-    t.includes("yeah") ||
-    t.includes("yep") ||
-    t.includes("go ahead") ||
-    t.includes("lets order it") ||
-    t.includes("i will call you") ||
-    t.includes("i will check out the website") ||
-    t.includes("im good with brokering one")
-  )
-)
+    state.lastBrokerRequest &&
+    (
+      t.includes("broker") ||
+      t.includes("brokered") ||
+      t.includes("source it") ||
+      t.includes("source the") ||
+      t.includes("order it") ||
+      t.includes("get it") ||
+      t.includes("i will broker") ||
+      t.includes("go ahead") ||
+      t.includes("yes")
     )
   ) {
     const itemText = state.lastBrokerRequest?.label || "that equipment";
-    return `Got it — we can absolutely broker the ${itemText} for you.
+    return `Got it. For brokered equipment like ${itemText}, please call 850-295-5373 so we can confirm supplier availability, timing, delivery, and final pricing.
 
-To move forward, please call 850-295-5373 during business hours so we can confirm supplier availability, delivery timing, and exact pricing.
-
-You can check pricing on out website, but it is best to call us for brokered machines.  Brokered machines have (Brokered in the title)
-
-Visit www.bigbendrentals.net to submit a request, but remember, brokered equipment is typically arranged directly to make sure everything is lined up correctly.
-
-Brokered items are usually available in a day or two depending on supplier availability, but may take a few days longer than equipment already on our lot.`;
+You can also start the order online at www.bigbendrentals.net, but brokered items may take a day or two or a few days longer depending on supplier availability.`;
   }
 
   // HIGH FLOW BRUSH CUTTER LOGIC
@@ -1155,6 +1195,10 @@ Which one are you interested in?`;
       state.pendingDeliveryQuoteDays = null;
       state.pendingDeliveryQuotePlace = null;
 
+      if (isDumpsterItem(item)) {
+        return await quoteDumpsterWithMileageDelivery(item, days, message);
+      }
+
       return await quoteTextWithMileageDelivery(item, days, message);
     }
 
@@ -1162,7 +1206,10 @@ Which one are you interested in?`;
   }
 
   if (needsExactAddress(message)) {
-    const pendingId = resolveGlobalDirect(message) || resolveFromLastOptions(message, state) || findEquipment(message)?.id || state.lastSelectedItemId || state.lastItemId || null;
+    const pendingId =
+      category === "dumpster"
+        ? ITEM_IDS.DUMPSTER
+        : resolveGlobalDirect(message) || resolveFromLastOptions(message, state) || findEquipment(message)?.id || state.lastSelectedItemId || state.lastItemId || null;
     const pendingDays = getDays(message, state);
 
     state.awaitingExactDeliveryAddress = true;
@@ -1201,23 +1248,54 @@ Which one are you interested in?`;
     return dumpsterInfoPrompt(state);
   }
 
-  if (
-    !category &&
-    state.lastCategory === "dumpster" &&
-    (hasDurationText(message) || isPriceQuestion(message) || isCoastalArea(message))
-  ) {
+  if (category === "dumpster" && hasDurationText(message)) {
     const id = ITEM_IDS.DUMPSTER;
     const item = EQUIPMENT[id];
 
     if (!item) {
-      return "I can help with the dumpster, but I need the delivery city to price it correctly.";
+      return "I can help with the dumpster, but I need the exact delivery address to price it correctly.";
     }
 
     rememberSelected(state, id);
     const days = getDays(message, state);
     state.lastDays = days;
 
-    return dumpsterQuoteText(item, message, days);
+    if (!hasExactAddress(message)) {
+      state.awaitingExactDeliveryAddress = true;
+      state.pendingDeliveryQuoteItemId = id;
+      state.pendingDeliveryQuoteDays = days;
+      state.pendingDeliveryQuotePlace = deliveryInfo(message)?.placeLabel || null;
+      return exactAddressPrompt();
+    }
+
+    return await quoteDumpsterWithMileageDelivery(item, days, message);
+  }
+
+  if (
+    !category &&
+    state.lastCategory === "dumpster" &&
+    (hasDurationText(message) || isPriceQuestion(message) || isCoastalArea(message) || isDeliveryQuestion(message))
+  ) {
+    const id = ITEM_IDS.DUMPSTER;
+    const item = EQUIPMENT[id];
+
+    if (!item) {
+      return "I can help with the dumpster, but I need the exact delivery address to price it correctly.";
+    }
+
+    rememberSelected(state, id);
+    const days = getDays(message, state);
+    state.lastDays = days;
+
+    if (!hasExactAddress(message)) {
+      state.awaitingExactDeliveryAddress = true;
+      state.pendingDeliveryQuoteItemId = id;
+      state.pendingDeliveryQuoteDays = days;
+      state.pendingDeliveryQuotePlace = deliveryInfo(message)?.placeLabel || null;
+      return exactAddressPrompt();
+    }
+
+    return await quoteDumpsterWithMileageDelivery(item, days, message);
   }
 
 
