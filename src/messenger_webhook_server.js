@@ -1097,7 +1097,9 @@ We'll take care of you.`;
 
 To move forward, please call 850-295-5373 during business hours so we can confirm supplier availability, delivery timing, and exact pricing.
 
-You can also visit www.bigbendrentals.net to submit a request, but brokered equipment is typically arranged directly to make sure everything is lined up correctly.
+You can check pricing on out website, but it is best to call us for brokered machines.  Brokered machines have (Brokered in the title)
+
+Visit www.bigbendrentals.net to submit a request, but remember, brokered equipment is typically arranged directly to make sure everything is lined up correctly.
 
 Brokered items are usually available in a day or two depending on supplier availability, but may take a few days longer than equipment already on our lot.`;
   }
