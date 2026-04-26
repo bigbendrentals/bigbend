@@ -1093,9 +1093,13 @@ We'll take care of you.`;
     )
   ) {
     const itemText = state.lastBrokerRequest?.label || "that equipment";
-    return `Got it. For brokered equipment like ${itemText}, please call 850-295-5373 so we can confirm supplier availability, timing, delivery, and final pricing.
+    return `Got it — we can absolutely broker the ${itemText} for you.
 
-You can also start the order online at www.bigbendrentals.net, but brokered items may take a day or two or a few days longer depending on supplier availability.`;
+To move forward, please call 850-295-5373 during business hours so we can confirm supplier availability, delivery timing, and exact pricing.
+
+You can also visit www.bigbendrentals.net to submit a request, but brokered equipment is typically arranged directly to make sure everything is lined up correctly.
+
+Brokered items are usually available in a day or two depending on supplier availability, but may take a few days longer than equipment already on our lot.`;
   }
 
   // HIGH FLOW BRUSH CUTTER LOGIC
