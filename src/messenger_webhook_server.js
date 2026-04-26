@@ -698,15 +698,47 @@ function unavailableBrokerRequest(message) {
   return null;
 }
 
+function stockedAlternativesForBrokerRequest(request) {
+  const type = String(request?.type || "").toLowerCase();
+
+  if (type.includes("excavator") || type.includes("trackhoe")) {
+    return categoryIds("excavator");
+  }
+
+  if (type.includes("skid")) {
+    return categoryIds("skid_steer");
+  }
+
+  if (type.includes("lift")) {
+    return [ITEM_IDS.GENIE_Z45, ITEM_IDS.JLG_ET500J, ITEM_IDS.GS1930, ITEM_IDS.GS3246].filter((id) => EQUIPMENT[id]);
+  }
+
+  if (type.includes("forklift")) {
+    return categoryIds("forklift");
+  }
+
+  return [];
+}
+
 function brokeredEquipmentText(request) {
   const itemText = request?.label || "that item";
   const typeText = request?.type || "equipment";
+  const alternatives = stockedAlternativesForBrokerRequest(request);
+  const alternativesText = alternatives.length
+    ? `
+
+If you need something sooner, these are the closest options we do have on our lot:
+
+${formatOptions(alternatives)}
+
+Which direction would you like to go — broker the ${itemText}, or look at one of the on-lot options?`
+    : "";
 
   return `We do not have a ${itemText} ${typeText} on our lot right now.
 
 However, we do broker equipment and can often source items we do not keep on our lot. Depending on supplier availability, we can likely have brokered equipment in a day or two, but brokered items may take a few days longer than equipment already on our lot and may not be available same-day or next-day.
 
-You can check or start the order at www.bigbendrentals.net, or call 850-295-5373 and ask us to source ${itemText}.`;
+You can check or start the order at www.bigbendrentals.net, or call 850-295-5373 and ask us to source ${itemText}.${alternativesText}`;
 }
 
 function hasExactAddress(message) {
