@@ -1079,30 +1079,24 @@ We'll take care of you.`;
   }
 
   if (
-    state.lastBrokerRequest &&
-    (
-      t.includes("broker") ||
-      t.includes("brokered") ||
-      t.includes("source it") ||
-      t.includes("source the") ||
-      t.includes("order it") ||
-      t.includes("get it") ||
-      t.includes("i will broker") ||
-      t.includes("go ahead") ||
-      t.includes("yes")
-      t.includes("broker") ||
-      t.includes("fine") ||
-      t.includes("that works") ||
-      t.includes("ok") ||
-      t.includes("okay") ||
-      t.includes("yes") ||
-      t.includes("yeah") ||
-      t.includes("lets order it") ||
-      t.includes("i will call you") ||
-      t.includes("i will check out the website") ||
-      t.includes("yep") ||
-      t.includes("I'm good with brokering one") ||
-      t.includes("go ahead")
+  state.lastBrokerRequest &&
+  (
+    t.includes("broker") ||
+    t.includes("brokered") ||
+    t.includes("fine") ||
+    t.includes("that works") ||
+    t.includes("ok") ||
+    t.includes("okay") ||
+    t.includes("yes") ||
+    t.includes("yeah") ||
+    t.includes("yep") ||
+    t.includes("go ahead") ||
+    t.includes("lets order it") ||
+    t.includes("i will call you") ||
+    t.includes("i will check out the website") ||
+    t.includes("im good with brokering one")
+  )
+)
     )
   ) {
     const itemText = state.lastBrokerRequest?.label || "that equipment";
