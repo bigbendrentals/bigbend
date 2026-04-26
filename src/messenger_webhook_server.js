@@ -33,6 +33,19 @@ const GRAPH_VERSION = process.env.META_GRAPH_VERSION || "v22.0";
 const PORT = process.env.PORT || 10000;
 
 const WEBSITE = "www.bigbendrentals.net";
+const OFFICE_INFO = `Office Hours:
+Monday - Friday: 8:30 AM – 5:00 PM
+
+The office closes at noon each day, but we are still on site and working.
+
+For assistance, call 850-843-2248 and we will meet you at the office door.
+
+Weekend Rentals:
+We arrange weekend rentals during the week and regularly handle weekend pickups and drop-offs.
+
+Security:
+Our facility is monitored with AI-powered cameras for your safety and ours.`;
+
 const CONTACT_TEXT = "Call 850-295-5373 or book online at www.bigbendrentals.net.";
 
 const stateStore = {};
@@ -98,11 +111,27 @@ function normalizeCategory(category) {
   return c;
 }
 
+function isHoursQuestion(message) {
+  const t = normalize(message);
+
+  if (isHoursQuestion(message)) return OFFICE_INFO;
+  return (
+    t.includes("hours") ||
+    t.includes("open") ||
+    t.includes("close") ||
+    t.includes("weekend") ||
+    t.includes("saturday") ||
+    t.includes("sunday")
+  );
+}
+
 function categoryFromText(message) {
   if (isMachineHaulingTrailerRequest(message)) return null;
   if (isTrailerRentalCategoryRequest(message)) return "trailer";
 
   const t = normalize(message);
+
+  if (isHoursQuestion(message)) return OFFICE_INFO;
 
   if (t.includes("post driver") || t.includes("post pounder") || t.includes("fence post pounder")) return "post_driver";
   if (t.includes("dumpster") || t.includes("roll off")) return "dumpster";
@@ -161,11 +190,15 @@ function shortGuidedClarification(reason = "I need a little more detail before I
 
 function hasDurationText(message) {
   const t = normalize(message);
+
+  if (isHoursQuestion(message)) return OFFICE_INFO;
   return parseDays(t) !== null || t.includes("day") || t.includes("week") || t.includes("month") || t.includes("weekend") || t.includes("friday") || t.includes("monday") || /\b\d+\s*(hr|hour|hours|day|days|week|weeks|month|months)\b/.test(t);
 }
 
 function isSpecificItemMention(message) {
   const t = normalize(message);
+
+  if (isHoursQuestion(message)) return OFFICE_INFO;
   const c = compact(message);
   const terms = ["cat 239", "cat239", "239", "cat 265", "cat265", "265", "333p", "john deere 333", "jd 333", "boxer", "3017", "301.7", "50p", "3075", "307.5", "z45", "et500", "gs1930", "gs3246", "stihl", "bt131", "blue diamond", "hm316", "mh60d", "rayco", "rg37", "spartan", "c30x", "lift king", "mitsubishi"];
   return terms.some((term) => t.includes(term) || c.includes(term.replace(/[^a-z0-9]/g, "")));
@@ -173,6 +206,8 @@ function isSpecificItemMention(message) {
 
 function isLikelyContextFollowup(message) {
   const t = normalize(message);
+
+  if (isHoursQuestion(message)) return OFFICE_INFO;
   return (
     isPriceQuestion(message) ||
     isMoreInfoQuestion(message) ||
@@ -232,6 +267,8 @@ function isDumpTrailerItem(item) {
 
 function wantsOurTrailerIncluded(message) {
   const t = normalize(message);
+
+  if (isHoursQuestion(message)) return OFFICE_INFO;
   return (
     t.includes("include your trailer") ||
     t.includes("include the trailer") ||
@@ -270,6 +307,8 @@ function trailerOptionText() {
 
 function isMachineHaulingTrailerRequest(message) {
   const t = normalize(message);
+
+  if (isHoursQuestion(message)) return OFFICE_INFO;
 
   return (
     t.includes("come with a trailer") ||
@@ -312,6 +351,8 @@ function isMachineHaulingTrailerRequest(message) {
 function isTrailerRentalCategoryRequest(message) {
   const t = normalize(message);
 
+  if (isHoursQuestion(message)) return OFFICE_INFO;
+
   if (isMachineHaulingTrailerRequest(message)) return false;
 
   return (
@@ -335,13 +376,27 @@ function isDumpsterItem(item) {
   return category === "dumpster" || name.includes("dumpster") || keyword.includes("dumpster");
 }
 
+function isCoastalArea(text) {
+  const t = normalize(text);
+  return (
+    t.includes("steinhatchee") ||
+    t.includes("keaton") ||
+    t.includes("keaton beach") ||
+    t.includes("dekle") ||
+    t.includes("dekle beach") ||
+    t.includes("jena") ||
+    t.includes("coast") ||
+    t.includes("coastal")
+  );
+}
+
 function isSteinhatcheeText(text) {
   const t = normalize(text);
   return t.includes("steinhatchee") || t.includes("keaton") || t.includes("dekle");
 }
 
 function dumpsterInfoText(message = "") {
-  if (isSteinhatcheeText(message)) {
+  if (isCoastalArea(message)) {
     return "Dumpster pricing for Steinhatchee is $600 due to fuel costs. Dumpster pricing includes delivery and pickup.";
   }
 
@@ -423,7 +478,7 @@ function durationLabel(days) {
 
 
 function dumpsterQuoteText(item, message, days = 1) {
-  const steinhatchee = isSteinhatcheeText(message);
+  const steinhatchee = isCoastalArea(message);
   const rate = steinhatchee ? 600 : (item.day || 500);
   const rental = days >= 30 && item.month ? item.month : days >= 7 ? (item.week || rate) : rate;
   const subtotal = rental;
@@ -610,6 +665,8 @@ export function handleMessage(message, senderId = "local-test") {
   }
 
   const t = normalize(message);
+
+  if (isHoursQuestion(message)) return OFFICE_INFO;
 
   if ((t.includes("mulcher") || t.includes("mulched")) && t.includes("skid steer") && t.includes("combo")) {
     state.lastCategory = "mulcher";
