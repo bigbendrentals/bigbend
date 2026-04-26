@@ -62,6 +62,10 @@ function getState(senderId) {
       lastDeliveryFee: 0,
       lastDeliveryPlace: null,
       awaitingDeliveryLocation: false,
+      awaitingExactDeliveryAddress: false,
+      pendingDeliveryQuoteItemId: null,
+      pendingDeliveryQuoteDays: null,
+      pendingDeliveryQuotePlace: null,
       awaitingMulcherChoice: false,
       pendingMulcherIds: [],
       awaitingMulcherComboSelection: false,
@@ -568,6 +572,54 @@ function handleDeliveryOnly(message, state) {
 }
 
 
+function hasExactAddress(message) {
+  const t = normalize(message);
+
+  return (
+    /\b\d{2,6}\s+[a-z0-9]/.test(t) ||
+    t.includes("address is") ||
+    t.includes("my address") ||
+    t.includes("street") ||
+    t.includes("st ") ||
+    t.includes(" ave") ||
+    t.includes("avenue") ||
+    t.includes(" road") ||
+    t.includes(" rd") ||
+    t.includes(" drive") ||
+    t.includes(" dr") ||
+    t.includes(" lane") ||
+    t.includes(" ln") ||
+    t.includes(" boulevard") ||
+    t.includes(" blvd") ||
+    t.includes(" highway") ||
+    t.includes(" hwy")
+  );
+}
+
+function exactAddressPrompt() {
+  return "What is the exact delivery address?\n\nThat lets us confirm delivery availability and give you an accurate delivery price.";
+}
+
+function needsExactAddress(message) {
+  const t = normalize(message);
+
+  return (
+    isDeliveryQuestion(message) &&
+    !hasExactAddress(message) &&
+    (
+      t.includes("deliver") ||
+      t.includes("delivery") ||
+      t.includes("dropped off") ||
+      t.includes("drop off") ||
+      t.includes("picked up") ||
+      t.includes("pick up") ||
+      t.includes("bring it") ||
+      t.includes("bring")
+    )
+  );
+}
+
+
 function isMulcherId(id) {
   return id === ITEM_IDS.CAT_MULCHER || id === ITEM_IDS.JD_MULCHER;
 }
@@ -743,6 +795,38 @@ ${formatOptions(ids)}
 Which one are you interested in?`;
   }
 
+
+
+  if (state.awaitingExactDeliveryAddress) {
+    if (!hasExactAddress(message)) {
+      return exactAddressPrompt();
+    }
+
+    state.awaitingExactDeliveryAddress = false;
+    state.lastDeliveryPlace = message;
+    state.pendingDeliveryQuoteItemId = null;
+    state.pendingDeliveryQuoteDays = null;
+    state.pendingDeliveryQuotePlace = null;
+
+    return `Thanks. We have the delivery address. Call 850-295-5373 or book online at www.bigbendrentals.net so we can confirm delivery availability and the exact delivery price.`;
+  }
+
+  if (needsExactAddress(message)) {
+    const pendingId = resolveGlobalDirect(message) || resolveFromLastOptions(message, state) || findEquipment(message)?.id || state.lastSelectedItemId || state.lastItemId || null;
+    const pendingDays = getDays(message, state);
+
+    state.awaitingExactDeliveryAddress = true;
+    state.pendingDeliveryQuoteItemId = pendingId;
+    state.pendingDeliveryQuoteDays = pendingDays;
+    state.pendingDeliveryQuotePlace = deliveryInfo(message)?.placeLabel || null;
+
+    if (pendingId && EQUIPMENT[pendingId]) {
+      rememberSelected(state, pendingId);
+      state.lastDays = pendingDays;
+    }
+
+    return exactAddressPrompt();
+  }
 
   if (isHoursQuestion(message)) return OFFICE_INFO;
 
