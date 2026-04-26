@@ -959,6 +959,37 @@ Call 850-295-5373 or book online at www.bigbendrentals.net so we can confirm dum
 
 
 
+
+function attachmentIdFromMessage(message) {
+  const t = normalize(message);
+
+  if (t.includes("harley rake") || t.includes("power rake") || t.includes("soil conditioner")) {
+    return ITEM_IDS.POWER_RAKE;
+  }
+
+  if (t.includes("mulcher") || t.includes("forestry head")) {
+    return null; // mulcher pairing already has special logic
+  }
+
+  if (t.includes("brush cutter") || t.includes("brushcat") || t.includes("brush cat")) {
+    return ITEM_IDS.BRUSHCAT;
+  }
+
+  if (t.includes("auger")) {
+    return ITEM_IDS.AUGER;
+  }
+
+  if (t.includes("grapple")) {
+    return ITEM_IDS.GRAPPLE;
+  }
+
+  if (t.includes("box blade")) {
+    return ITEM_IDS.BOX_BLADE;
+  }
+
+  return null;
+}
+
 function isAttachmentItemId(id) {
   return Boolean(id && EQUIPMENT[id]?.category === "attachment");
 }
@@ -1257,6 +1288,36 @@ Please call 850-295-5373 during normal business hours to arrange it, or visit ww
 ${formatOptions(ids)}
 
 Which one are you interested in?`;
+  }
+
+
+  // MACHINE + ATTACHMENT REQUEST HANDLER
+  // Example: "I need a skid steer with a Harley rake"
+  const requestedAttachmentId = attachmentIdFromMessage(message);
+  if (
+    requestedAttachmentId &&
+    EQUIPMENT[requestedAttachmentId] &&
+    (
+      t.includes("skid steer") ||
+      t.includes("skidsteer") ||
+      t.includes("cat ") ||
+      t.includes("john deere") ||
+      t.includes("deere") ||
+      t.includes("machine")
+    )
+  ) {
+    state.lastAttachmentItemId = requestedAttachmentId;
+    state.lastItemId = requestedAttachmentId;
+
+    const ids = categoryIds("skid_steer");
+    state.lastCategory = "skid_steer";
+    state.lastCategoryItems = ids;
+
+    return `For ${EQUIPMENT[requestedAttachmentId].name}, choose which skid steer you want:
+
+${formatOptions(ids)}
+
+Which one do you want pricing for with the attachment?`;
   }
 
   if (state.awaitingExactDeliveryAddress) {
@@ -1703,6 +1764,29 @@ Which one are you interested in?`;
 
   if (selectedItem) {
     rememberSelected(state, selectedId);
+
+    if (
+      isMachineItemId(selectedId) &&
+      state.lastAttachmentItemId &&
+      EQUIPMENT[state.lastAttachmentItemId] &&
+      (
+        wantsBothCurrentItems(message) ||
+        isPriceQuestion(message) ||
+        hasDurationText(message) ||
+        isLikelyContextFollowup(message) ||
+        t.includes("cat") ||
+        t.includes("john deere") ||
+        t.includes("deere")
+      )
+    ) {
+      const days = getDays(message, state);
+      state.lastDays = days;
+      state.lastMachineItemId = selectedId;
+
+      const bundleText = quoteMachineAttachmentBundle(selectedId, state.lastAttachmentItemId, days);
+      if (bundleText) return bundleText;
+    }
+
 
     if (isMulcherId(selectedId)) {
       state.awaitingMulcherChoice = true;
