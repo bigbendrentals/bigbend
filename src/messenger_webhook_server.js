@@ -108,6 +108,7 @@ function normalizeCategory(category) {
   if (c.includes("excavator") || c.includes("trackhoe")) return "excavator";
   if (c.includes("forklift") || c.includes("fork lift") || c.includes("lift king")) return "forklift";
   if (c.includes("telehandler") || c.includes("lull")) return "telehandler";
+  if (c.includes("scaffold")) return "scaffolding";
   if (c.includes("pressure")) return "pressure_washer";
   if (c.includes("compactor")) return "compactor";
   if (c.includes("mower") || c.includes("zero turn")) return "mower";
@@ -178,6 +179,7 @@ function categoryFromText(message) {
   if (t.includes("post driver") || t.includes("post pounder") || t.includes("fence post pounder")) return "post_driver";
   if (t.includes("dumpster") || t.includes("roll off")) return "dumpster";
   if (t.includes("genie")) return "genie";
+  if (t.includes("scaffold") || t.includes("scaffolding")) return "scaffolding";
   if (/\baugers?\b/.test(t)) return "auger";
   if (/\bmulchers?\b/.test(t) || t.includes("mulcher") || t.includes("mulched") || t.includes("forestry mulcher")) return "mulcher";
   if (t.includes("scissor")) return "scissor_lift";
@@ -199,6 +201,7 @@ function categoryIds(category) {
   const key = normalizeCategory(category);
   if (!key) return [];
   if (key === "genie") return [ITEM_IDS.GENIE_Z45, ITEM_IDS.GS1930, ITEM_IDS.GS3246].filter((id) => EQUIPMENT[id]);
+  if (key === "scaffolding") return [ITEM_IDS.SCAFFOLDING_TOWER, ITEM_IDS.SCAFFOLDING].filter((id) => EQUIPMENT[id]);
   const mapped = CATEGORY_ITEMS?.[key] || [];
   return [...new Set(mapped)].filter((id) => EQUIPMENT[id]);
 }
@@ -1003,6 +1006,13 @@ Which one are you interested in?`;
 
 
   if (isHoursQuestion(message)) return OFFICE_INFO;
+
+
+  if (category === "scaffolding") {
+    const response = categoryResponse("scaffolding", state);
+    if (response) return response;
+  }
+
 
   if ((t.includes("mulcher") || t.includes("mulched")) && t.includes("skid steer") && t.includes("combo")) {
     state.lastCategory = "mulcher";
