@@ -288,6 +288,13 @@ function wantsOurTrailerIncluded(message) {
     t.includes("rent the trailer") ||
     t.includes("borrow your trailer") ||
     t.includes("borrow the trailer") ||
+    t.includes("does that include a trailer") ||
+    t.includes("does it include a trailer") ||
+    t.includes("does this include a trailer") ||
+    t.includes("trailer included") ||
+    t.includes("is it on a trailer") ||
+    t.includes("is that on a trailer") ||
+    t.includes("is this on a trailer") ||
     t === "with trailer" ||
     t === "with the trailer" ||
     t === "include trailer" ||
@@ -295,8 +302,12 @@ function wantsOurTrailerIncluded(message) {
   );
 }
 
-function trailerOptionText() {
-  return "If you need to use our trailer to haul the machine, it is a $49.99 surcharge. You can also use your own trailer if it meets the weight requirements.";
+function trailerOptionText(item = null) {
+  const itemName = normalize(item?.name || "");
+  const ditchWitchNote = itemName.includes("ditch witch")
+    ? " The Ditch Witch does not automatically include a trailer like some trenchers do."
+    : "";
+  return `Our machine-hauling trailer is optional. If you need to use our trailer, it is a $49.99 surcharge.${ditchWitchNote} You can also bring your own trailer if it meets the weight requirements.`;
 }
 
 
@@ -308,6 +319,26 @@ function isMachineHaulingTrailerRequest(message) {
   return (
     t.includes("come with a trailer") ||
     t.includes("comes with a trailer") ||
+    t.includes("come on a trailer") ||
+    t.includes("comes on a trailer") ||
+    t.includes("come with trailer") ||
+    t.includes("comes with trailer") ||
+    t.includes("will it come on trailer") ||
+    t.includes("will it come on a trailer") ||
+    t.includes("will it come with a trailer") ||
+    t.includes("does it come with a trailer") ||
+    t.includes("does that come with a trailer") ||
+    t.includes("does this come with a trailer") ||
+    t.includes("does it come on a trailer") ||
+    t.includes("does that come on a trailer") ||
+    t.includes("does this come on a trailer") ||
+    t.includes("is it on a trailer") ||
+    t.includes("is that on a trailer") ||
+    t.includes("is this on a trailer") ||
+    t.includes("trailer included") ||
+    t.includes("does that include a trailer") ||
+    t.includes("does it include a trailer") ||
+    t.includes("does this include a trailer") ||
     t.includes("trailer come with it") ||
     t.includes("trailer comes with it") ||
     t.includes("have a trailer to haul") ||
@@ -505,7 +536,10 @@ function quoteText(item, days, extras = {}) {
   if (totals.protection) lines.push(`Rental Protection Plan: ${money(totals.protection)}`);
   if (totals.deliveryFee && !isDumpsterItem(item)) lines.push(`Delivery: ${money(totals.deliveryFee)}`);
   if (isDumpsterItem(item)) lines.push(dumpsterInfoText(extras.deliveryPlace || ""));
-  if (totals.trailerFee) lines.push(`Trailer: ${money(totals.trailerFee)}`);
+  if (totals.trailerFee) {
+    lines.push(`Optional machine-hauling trailer: ${money(totals.trailerFee)}`);
+    lines.push(trailerOptionText(item));
+  }
   lines.push(`Subtotal: ${money(totals.subtotal)}`, `Sales Tax (7%): ${money(totals.tax)}`, `Total: ${money(totals.total)}`, "", CONTACT_TEXT);
   return lines.join("\n");
 }
@@ -609,7 +643,10 @@ function quoteBundleText(itemIds, days, extras = {}) {
 
   if (protection) lines.push(`Rental Protection Plan: ${money(protection)}`);
   if (deliveryFee) lines.push(`Delivery: ${money(deliveryFee)}`);
-  if (trailerFee) lines.push(`Trailer: ${money(trailerFee)}`);
+  if (trailerFee) {
+    lines.push(`Optional machine-hauling trailer: ${money(trailerFee)}`);
+    lines.push(trailerOptionText());
+  }
 
   const subtotal = rental + protection + deliveryFee + trailerFee;
   const tax = subtotal * 0.07;
@@ -653,26 +690,20 @@ export function handleMessage(message, senderId = "local-test") {
   const state = getState(senderId);
   const category = categoryFromText(message);
 
-  if (!state.disclaimerShown) {
-  state.disclaimerShown = true;
-
-  if (isHoursQuestion(message)) {
-    return `${AI_DISCLOSURE}\n\n${OFFICE_INFO}`;
-  }
-
-  if (isBroadCategoryRequest(message)) {
-    const response = categoryResponse(category, state);
-    if (response) return `${AI_DISCLOSURE}\n\n${response}`;
-  }
-
-  if (isPriceQuestion(message)) {
-    // let normal flow handle it (don’t block)
-  }
-
-  return guidedPrompt("Thanks for messaging Big Bend Rentals.");
-}
-
   const t = normalize(message);
+
+  if (!state.disclaimerShown) {
+    state.disclaimerShown = true;
+
+    // If the first customer message already has a clear intent, answer it immediately
+    // instead of forcing the generic intro first.
+    if (isHoursQuestion(message)) return `${AI_DISCLOSURE}\n\n${OFFICE_INFO}`;
+
+    const hasClearIntent = Boolean(category) || isPriceQuestion(message) || isTrailerQuestion(message) ||
+      isDeliveryQuestion(message) || bookingIntent(message) || findEquipment(message);
+
+    if (!hasClearIntent) return guidedPrompt("Thanks for messaging Big Bend Rentals.");
+  }
 
   if (isHoursQuestion(message)) return OFFICE_INFO;
 
@@ -724,7 +755,7 @@ export function handleMessage(message, senderId = "local-test") {
       return quoteText(priorItem, days, { trailerFee: trailerSurcharge(days) });
     }
 
-    return trailerOptionText();
+    return trailerOptionText(priorItem);
   }
 
 
@@ -971,7 +1002,7 @@ export function handleMessage(message, senderId = "local-test") {
         return quoteText(priorItem, days, { trailerFee: trailerSurcharge(days) });
       }
 
-      return trailerOptionText();
+      return trailerOptionText(priorItem);
     }
 
     const response = categoryResponse("trailer", state);
@@ -1015,146 +1046,44 @@ ${mulcherChoicePrompt([selectedId])}`;
   return shortGuidedClarification("I’m not confident enough to answer that accurately yet.");
 }
 
-function splitMessengerText(text) {
-  const raw = String(text || "Can you clarify what you're looking to rent?");
-  const max = 1900;
-  if (raw.length <= max) return [raw];
-
-  const chunks = [];
-  let remaining = raw;
-  while (remaining.length > max) {
-    let cut = remaining.lastIndexOf("\n", max);
-    if (cut < 500) cut = remaining.lastIndexOf(" ", max);
-    if (cut < 500) cut = max;
-    chunks.push(remaining.slice(0, cut).trim());
-    remaining = remaining.slice(cut).trim();
-  }
-  if (remaining) chunks.push(remaining);
-  return chunks;
-}
-
 async function sendMessage(senderId, text) {
-  if (!PAGE_ACCESS_TOKEN) {
-    console.error("Facebook send skipped: META_PAGE_ACCESS_TOKEN is missing in Render environment variables.");
-    return false;
-  }
-
-  for (const part of splitMessengerText(text)) {
-    const response = await fetch(`https://graph.facebook.com/${GRAPH_VERSION}/me/messages`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${PAGE_ACCESS_TOKEN}`
-      },
-      body: JSON.stringify({
-        recipient: { id: senderId },
-        messaging_type: "RESPONSE",
-        message: { text: part }
-      })
-    });
-
-    const bodyText = await response.text();
-    if (!response.ok) {
-      console.error("Facebook send failed:", response.status, bodyText);
-      return false;
-    }
-    console.log("Facebook send ok:", response.status, bodyText);
-  }
-
-  return true;
+  const response = await fetch(`https://graph.facebook.com/${GRAPH_VERSION}/me/messages`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${PAGE_ACCESS_TOKEN}` },
+    body: JSON.stringify({ recipient: { id: senderId }, messaging_type: "RESPONSE", message: { text: String(text || "Can you clarify what you're looking to rent?") } })
+  });
+  const bodyText = await response.text();
+  if (!response.ok) console.error("Facebook send failed:", response.status, bodyText);
 }
 
-async function processMessengerEvent(event) {
-  const senderId = event.sender?.id;
-  const message = event.message?.text;
-
-  if (!senderId) {
-    console.log("Messenger event ignored: missing sender id", JSON.stringify(event));
-    return;
-  }
-
-  if (!message) {
-    console.log("Messenger event ignored: no text message", JSON.stringify(event));
-    return;
-  }
-
+app.post("/webhook", async (req, res) => {
   try {
-    console.log("Incoming from", senderId, ":", message);
-    const reply = handleMessage(message, senderId);
-    console.log("Reply to", senderId, ":", reply);
-    await sendMessage(senderId, reply);
-  } catch (err) {
-    console.error("processMessengerEvent error:", err);
-    await sendMessage(senderId, "Something went wrong on our end. Please call 850-295-5373 and we’ll help you directly.");
-  }
-}
-
-app.post("/webhook", (req, res) => {
-  // Facebook/Meta requires a fast 200 response. We acknowledge first, then send the reply.
-  res.status(200).send("EVENT_RECEIVED");
-
-  const body = req.body || {};
-  if (body.object !== "page") {
-    console.log("Webhook POST ignored: object was not page", JSON.stringify(body));
-    return;
-  }
-
-  setImmediate(async () => {
-    try {
-      for (const entry of body.entry || []) {
-        for (const event of entry.messaging || []) {
-          await processMessengerEvent(event);
+    for (const entry of req.body.entry || []) {
+      for (const event of entry.messaging || []) {
+        const senderId = event.sender?.id;
+        const message = event.message?.text;
+        if (senderId && message) {
+          console.log("Incoming:", message);
+          const reply = handleMessage(message, senderId);
+          console.log("Reply:", reply);
+          await sendMessage(senderId, reply);
         }
       }
-    } catch (err) {
-      console.error("Webhook async processing error:", err);
     }
-  });
+    res.sendStatus(200);
+  } catch (err) {
+    console.error("Webhook error:", err);
+    res.sendStatus(200);
+  }
 });
 
 app.get("/webhook", (req, res) => {
-  const mode = req.query["hub.mode"];
-  const token = req.query["hub.verify_token"];
-  const challenge = req.query["hub.challenge"];
-
-  if (mode === "subscribe" && token === VERIFY_TOKEN) {
-    console.log("Webhook verified successfully.");
-    return res.status(200).send(challenge);
-  }
-
-  console.error("Webhook verification failed. Check META_VERIFY_TOKEN in Render.");
-  return res.sendStatus(403);
+  if (req.query["hub.mode"] === "subscribe" && req.query["hub.verify_token"] === VERIFY_TOKEN) return res.send(req.query["hub.challenge"]);
+  res.sendStatus(403);
 });
 
 app.get("/", (_req, res) => res.status(200).send("Messenger webhook is running."));
 
-app.get("/health", (_req, res) => {
-  res.status(200).json({
-    ok: true,
-    service: "bigbend-messenger-bot",
-    hasPageAccessToken: Boolean(PAGE_ACCESS_TOKEN),
-    hasVerifyToken: Boolean(VERIFY_TOKEN),
-    graphVersion: GRAPH_VERSION
-  });
-});
-
-app.get("/test-reply", (req, res) => {
-  const message = String(req.query.message || "Do you have augers?");
-  const sender = String(req.query.sender || "browser-test");
-  try {
-    const reply = handleMessage(message, sender);
-    res.status(200).type("text/plain").send(reply);
-  } catch (err) {
-    console.error("/test-reply error:", err);
-    res.status(500).type("text/plain").send(String(err?.stack || err));
-  }
-});
-
 if (process.env.NODE_ENV !== "test") {
-  app.listen(PORT, () => {
-    console.log(`Messenger webhook listening on port ${PORT}`);
-    console.log(`Graph version: ${GRAPH_VERSION}`);
-    console.log(`META_PAGE_ACCESS_TOKEN present: ${Boolean(PAGE_ACCESS_TOKEN)}`);
-    console.log(`META_VERIFY_TOKEN present: ${Boolean(VERIFY_TOKEN)}`);
-  });
+  app.listen(PORT, () => console.log(`Messenger webhook listening on port ${PORT}`));
 }
