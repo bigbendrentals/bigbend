@@ -654,9 +654,16 @@ export function handleMessage(message, senderId = "local-test") {
   const category = categoryFromText(message);
 
   if (!state.disclaimerShown) {
-    state.disclaimerShown = true;
-    return guidedPrompt("Thanks for messaging Big Bend Rentals.");
+  state.disclaimerShown = true;
+
+  // Try to answer the question FIRST
+  if (isHoursQuestion(message)) {
+    return `${AI_DISCLOSURE}\n\n${OFFICE_INFO}`;
   }
+
+  // fallback to normal intro if no clear intent
+  return guidedPrompt("Thanks for messaging Big Bend Rentals.");
+}
 
   const t = normalize(message);
 
