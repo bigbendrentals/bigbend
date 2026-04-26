@@ -803,12 +803,25 @@ Which one are you interested in?`;
     }
 
     state.awaitingExactDeliveryAddress = false;
-    state.lastDeliveryPlace = message;
-    state.pendingDeliveryQuoteItemId = null;
-    state.pendingDeliveryQuoteDays = null;
-    state.pendingDeliveryQuotePlace = null;
 
-    return `Thanks. We have the delivery address. Call 850-295-5373 or book online at www.bigbendrentals.net so we can confirm delivery availability and the exact delivery price.`;
+    const itemId = state.pendingDeliveryQuoteItemId;
+    const days = state.pendingDeliveryQuoteDays || 1;
+
+    if (itemId && EQUIPMENT[itemId]) {
+      const item = EQUIPMENT[itemId];
+
+      state.lastSelectedItemId = itemId;
+      state.lastDays = days;
+
+      return quoteText(item, days, {
+        delivery: {
+          fee: state.lastDeliveryFee || 0,
+          placeLabel: message
+        }
+      });
+    }
+
+    return "Got it. What equipment are you needing delivered?";
   }
 
   if (needsExactAddress(message)) {
