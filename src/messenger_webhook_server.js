@@ -267,8 +267,23 @@ function categorySelectionPrompt(category, state, reason = null) {
 function dumpsterInfoPrompt(state) {
   const ids = categoryIds("dumpster");
   state.lastCategory = "dumpster";
-  state.lastCategoryItems = ids;
-  return `We have this dumpster option:\n\n${formatOptions(ids)}\n\nWhat rental length do you need, and what city is delivery to?`;
+  state.lastCategoryItems = ids.length ? ids : [ITEM_IDS.DUMPSTER].filter((id) => EQUIPMENT[id]);
+
+  const optionLine = EQUIPMENT[ITEM_IDS.DUMPSTER]
+    ? `• ${EQUIPMENT[ITEM_IDS.DUMPSTER].name} — $500 standard service area, $600 coastal areas`
+    : "• Maxx-D 20 Yard Dumpster — $500 standard service area, $600 coastal areas";
+
+  return `We have this dumpster option:
+
+${optionLine}
+
+20-yard roll-off dumpster for residential cleanout, camper cleanout, remodel debris, storm cleanup, and similar non-hazardous material.
+
+Pricing includes delivery and pickup unless otherwise stated. Coastal areas are $600 due to fuel costs. Coastal areas include Steinhatchee, Keaton Beach, Dekle Beach, Jena, and other coast/coastal references.
+
+Weight limits and prohibited items may apply.
+
+What rental length do you need, and what city is delivery to?`;
 }
 
 function shouldForceCategoryChoice(message, category) {
@@ -422,10 +437,10 @@ function isSteinhatcheeText(text) {
 
 function dumpsterInfoText(message = "") {
   if (isCoastalArea(message)) {
-    return "Dumpster pricing for Steinhatchee is $600 due to fuel costs. Dumpster pricing includes delivery and pickup.";
+    return "Dumpster pricing for coastal areas is $600 due to fuel costs. Dumpster pricing includes delivery and pickup.";
   }
 
-  return "Dumpster pricing includes delivery and pickup. Steinhatchee dumpster service is $600 due to fuel costs.";
+  return "Dumpster pricing includes delivery and pickup. Standard service-area dumpster pricing is $500. Coastal areas are $600 due to fuel costs.";
 }
 
 
