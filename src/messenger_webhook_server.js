@@ -518,15 +518,14 @@ function durationLabel(days) {
 
 
 function dumpsterQuoteText(item, message, days = 1) {
-  const steinhatchee = isCoastalArea(message);
-  const rate = steinhatchee ? 600 : (item.day || 500);
-  const rental = days >= 30 && item.month ? item.month : days >= 7 ? (item.week || rate) : rate;
+  const coastal = isCoastalArea(message);
+  const rental = coastal ? 600 : 500;
   const subtotal = rental;
   const tax = subtotal * 0.07;
   const total = subtotal + tax;
 
   const lines = [
-    `${item.name} total${steinhatchee ? " for coastal area" : " for standard service area"}:`,
+    `${item.name} total${coastal ? " for coastal area" : " for standard service area"}:`,
     "",
     `Rental: ${money(rental)}`,
     dumpsterInfoText(message),
