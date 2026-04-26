@@ -1039,7 +1039,7 @@ function quoteMachineAttachmentBundle(machineId, attachmentId, days = 1) {
     (attachment.protection ? protectionTotal(days) : 0);
 
   const subtotal = rental + protection;
-  const tax = subtotal * SALES_TAX;
+  const tax = subtotal * 0.07;
   const total = subtotal + tax;
 
   const lines = [
@@ -1061,6 +1061,85 @@ function quoteMachineAttachmentBundle(machineId, attachmentId, days = 1) {
 
   return lines.join("\n");
 }
+
+
+async function quoteMachineAttachmentBundleWithMileageDelivery(machineId, attachmentId, days = 1, address = "") {
+  const machine = EQUIPMENT[machineId];
+  const attachment = EQUIPMENT[attachmentId];
+
+  if (!machine || !attachment) return null;
+
+  try {
+    const miles = await getDrivingMilesFromGoogle(address);
+    const deliveryFee = calculateDeliveryFeeFromMiles(miles.roundTripMiles);
+
+    if (deliveryFee === null) {
+      const bundleText = quoteMachineAttachmentBundle(machineId, attachmentId, days);
+
+      return `${bundleText}
+
+Delivery: This address is about ${miles.roundTripMiles.toFixed(1)} round-trip miles, which is outside the automatic 75-mile delivery quote range.
+
+Estimated driving distance:
+One way: ${miles.oneWayMiles.toFixed(1)} miles
+Round trip: ${miles.roundTripMiles.toFixed(1)} miles
+
+Call 850-295-5373 or book online at www.bigbendrentals.net so we can confirm delivery availability and the exact delivery price.`;
+    }
+
+    const machineRental = getRentalAmount(machine, days);
+    const attachmentRental = getRentalAmount(attachment, days);
+    const protection =
+      (machine.protection ? protectionTotal(days) : 0) +
+      (attachment.protection ? protectionTotal(days) : 0);
+
+    const subtotal = machineRental + attachmentRental + protection + deliveryFee;
+    const tax = subtotal * 0.07;
+    const total = subtotal + tax;
+
+    const deliveryNote =
+      miles.roundTripMiles <= DELIVERY_LOCAL_MAX_ROUND_TRIP_MILES
+        ? `Delivery pricing: ${money(DELIVERY_LOCAL_FEE)} up to ${DELIVERY_LOCAL_MAX_ROUND_TRIP_MILES} round-trip miles.`
+        : `Delivery pricing: ${money(DELIVERY_STANDARD_FEE)} for more than ${DELIVERY_LOCAL_MAX_ROUND_TRIP_MILES} and up to ${DELIVERY_STANDARD_MAX_ROUND_TRIP_MILES} round-trip miles.`;
+
+    const lines = [
+      `${machine.name} + ${attachment.name} total for ${durationLabel(days)} delivered to ${address}:`,
+      "",
+      `${machine.name}: ${money(machineRental)}`,
+      `${attachment.name}: ${money(attachmentRental)}`
+    ];
+
+    if (protection) lines.push(`Rental Protection Plan: ${money(protection)}`);
+
+    lines.push(
+      `Delivery: ${money(deliveryFee)}`,
+      `Subtotal: ${money(subtotal)}`,
+      `Sales Tax (7%): ${money(tax)}`,
+      `Total: ${money(total)}`,
+      "",
+      CONTACT_TEXT,
+      "",
+      deliveryNote,
+      "",
+      "Estimated driving distance:",
+      `One way: ${miles.oneWayMiles.toFixed(1)} miles`,
+      `Round trip: ${miles.roundTripMiles.toFixed(1)} miles`
+    );
+
+    return lines.join("\n");
+  } catch (err) {
+    console.error("Bundle delivery mileage calculation failed:", err);
+
+    const bundleText = quoteMachineAttachmentBundle(machineId, attachmentId, days);
+
+    return `${bundleText}
+
+Delivery: Exact delivery charge needs manual confirmation for this address.
+
+Call 850-295-5373 or book online at www.bigbendrentals.net so we can confirm delivery availability and the exact delivery price.`;
+  }
+}
+
 
 function rememberSelectedWithType(state, id) {
   rememberSelected(state, id);
@@ -1344,6 +1423,14 @@ Which one do you want pricing for with the attachment?`;
         return await quoteDumpsterWithMileageDelivery(item, days, message);
       }
 
+      if (
+        isMachineItemId(itemId) &&
+        state.lastAttachmentItemId &&
+        EQUIPMENT[state.lastAttachmentItemId]
+      ) {
+        return await quoteMachineAttachmentBundleWithMileageDelivery(itemId, state.lastAttachmentItemId, days, message);
+      }
+
       return await quoteTextWithMileageDelivery(item, days, message);
     }
 
@@ -1354,7 +1441,7 @@ Which one do you want pricing for with the attachment?`;
     const pendingId =
       category === "dumpster"
         ? ITEM_IDS.DUMPSTER
-        : resolveGlobalDirect(message) || resolveFromLastOptions(message, state) || findEquipment(message)?.id || state.lastSelectedItemId || state.lastItemId || null;
+        : state.lastMachineItemId || resolveGlobalDirect(message) || resolveFromLastOptions(message, state) || findEquipment(message)?.id || state.lastSelectedItemId || state.lastItemId || null;
     const pendingDays = getDays(message, state);
 
     state.awaitingExactDeliveryAddress = true;
@@ -1745,7 +1832,7 @@ Which one do you want pricing for with the attachment?`;
   }
 
   if (bookingIntent(message)) {
-    if (selectedItem) rememberSelected(state, selectedId);
+    if (selectedItem) rememberSelectedWithType(state, selectedId);
     return CONTACT_TEXT;
   }
 
@@ -1763,7 +1850,7 @@ Which one do you want pricing for with the attachment?`;
   }
 
   if (selectedItem) {
-    rememberSelected(state, selectedId);
+    rememberSelectedWithType(state, selectedId);
 
     if (
       isMachineItemId(selectedId) &&
