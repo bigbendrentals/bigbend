@@ -34,11 +34,10 @@ const PORT = process.env.PORT || 10000;
 
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY || "";
 const BUSINESS_ADDRESS = process.env.BUSINESS_ADDRESS || "Big Bend Tool & Equipment Rentals, Perry, FL";
-const DELIVERY_MIN_FEE = Number(process.env.DELIVERY_MIN_FEE || 200);
-const DELIVERY_BASE_FEE = Number(process.env.DELIVERY_BASE_FEE || 0);
-const DELIVERY_INCLUDED_ROUND_TRIP_MILES = Number(process.env.DELIVERY_INCLUDED_ROUND_TRIP_MILES || 0);
-const DELIVERY_RATE_PER_ROUND_TRIP_MILE = Number(process.env.DELIVERY_RATE_PER_ROUND_TRIP_MILE || 5);
-const DELIVERY_ROUNDING_INCREMENT = Number(process.env.DELIVERY_ROUNDING_INCREMENT || 1);
+const DELIVERY_LOCAL_MAX_ROUND_TRIP_MILES = Number(process.env.DELIVERY_LOCAL_MAX_ROUND_TRIP_MILES || 10);
+const DELIVERY_STANDARD_MAX_ROUND_TRIP_MILES = Number(process.env.DELIVERY_STANDARD_MAX_ROUND_TRIP_MILES || 75);
+const DELIVERY_LOCAL_FEE = Number(process.env.DELIVERY_LOCAL_FEE || 200);
+const DELIVERY_STANDARD_FEE = Number(process.env.DELIVERY_STANDARD_FEE || 300);
 
 
 const WEBSITE = "www.bigbendrentals.net";
@@ -637,10 +636,19 @@ function roundUpToIncrement(value, increment = 1) {
 }
 
 function calculateDeliveryFeeFromMiles(roundTripMiles) {
-  const billableMiles = Math.max(0, Number(roundTripMiles || 0) - DELIVERY_INCLUDED_ROUND_TRIP_MILES);
-  const rawFee = DELIVERY_BASE_FEE + billableMiles * DELIVERY_RATE_PER_ROUND_TRIP_MILE;
-  const fee = Math.max(DELIVERY_MIN_FEE, rawFee);
-  return roundUpToIncrement(fee, DELIVERY_ROUNDING_INCREMENT);
+  const miles = Number(roundTripMiles || 0);
+
+  if (miles <= DELIVERY_LOCAL_MAX_ROUND_TRIP_MILES) {
+    return DELIVERY_LOCAL_FEE;
+  }
+
+  if (miles <= DELIVERY_STANDARD_MAX_ROUND_TRIP_MILES) {
+    return DELIVERY_STANDARD_FEE;
+  }
+
+  // Do not auto-quote beyond the configured delivery range.
+  // The calling function will ask the customer to call for manual confirmation.
+  return null;
 }
 
 async function getDrivingMilesFromGoogle(destinationAddress) {
@@ -691,12 +699,29 @@ async function quoteTextWithMileageDelivery(item, days, address) {
     const miles = await getDrivingMilesFromGoogle(address);
     const deliveryFee = calculateDeliveryFeeFromMiles(miles.roundTripMiles);
 
+    if (deliveryFee === null) {
+      return `${item.name} estimate for ${durationLabel(days)} before final delivery charge:
+
+Rental: ${money(getRentalAmount(item, days))}
+${item.protection ? `Rental Protection Plan: ${money(protectionTotal(days))}
+` : ""}Delivery: This address is about ${miles.roundTripMiles.toFixed(1)} round-trip miles, which is outside the automatic 75-mile delivery quote range.
+
+Call 850-295-5373 or book online at www.bigbendrentals.net so we can confirm delivery availability and the exact delivery price.`;
+    }
+
     const quote = quoteText(item, days, {
       deliveryFee,
       deliveryPlace: address
     });
 
+    const deliveryNote =
+      miles.roundTripMiles <= DELIVERY_LOCAL_MAX_ROUND_TRIP_MILES
+        ? `Delivery pricing: ${money(DELIVERY_LOCAL_FEE)} up to ${DELIVERY_LOCAL_MAX_ROUND_TRIP_MILES} round-trip miles.`
+        : `Delivery pricing: ${money(DELIVERY_STANDARD_FEE)} for ${DELIVERY_LOCAL_MAX_ROUND_TRIP_MILES + 0.1}-${DELIVERY_STANDARD_MAX_ROUND_TRIP_MILES} round-trip miles.`;
+
     return `${quote}
+
+${deliveryNote}
 
 Estimated driving distance:
 One way: ${miles.oneWayMiles.toFixed(1)} miles
