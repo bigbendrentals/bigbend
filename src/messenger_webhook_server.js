@@ -810,14 +810,34 @@ Which one are you interested in?`;
     if (itemId && EQUIPMENT[itemId]) {
       const item = EQUIPMENT[itemId];
 
+      const addressDelivery = deliveryInfo(message);
+      const pendingPlaceDelivery = state.pendingDeliveryQuotePlace
+        ? deliveryInfo(state.pendingDeliveryQuotePlace)
+        : null;
+
+      const deliveryFee =
+        addressDelivery?.fee ||
+        pendingPlaceDelivery?.fee ||
+        state.lastDeliveryFee ||
+        0;
+
+      const deliveryPlace =
+        addressDelivery?.placeLabel ||
+        pendingPlaceDelivery?.placeLabel ||
+        state.pendingDeliveryQuotePlace ||
+        message;
+
       state.lastSelectedItemId = itemId;
       state.lastDays = days;
+      state.lastDeliveryFee = deliveryFee;
+      state.lastDeliveryPlace = deliveryPlace;
+      state.pendingDeliveryQuoteItemId = null;
+      state.pendingDeliveryQuoteDays = null;
+      state.pendingDeliveryQuotePlace = null;
 
       return quoteText(item, days, {
-        delivery: {
-          fee: state.lastDeliveryFee || 0,
-          placeLabel: message
-        }
+        deliveryFee,
+        deliveryPlace
       });
     }
 
