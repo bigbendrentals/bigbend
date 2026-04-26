@@ -958,6 +958,90 @@ Call 850-295-5373 or book online at www.bigbendrentals.net so we can confirm dum
 }
 
 
+
+function isAttachmentItemId(id) {
+  return Boolean(id && EQUIPMENT[id]?.category === "attachment");
+}
+
+function isMachineItemId(id) {
+  const item = id ? EQUIPMENT[id] : null;
+  if (!item) return false;
+
+  return [
+    "skid_steer",
+    "excavator",
+    "mini_skid",
+    "boom_lift",
+    "scissor_lift",
+    "forklift",
+    "telehandler",
+    "material_handling",
+    "small_tool"
+  ].includes(item.category) && !isAttachmentItemId(id);
+}
+
+function wantsBothCurrentItems(message) {
+  const t = normalize(message);
+
+  return (
+    t.includes("both") ||
+    t.includes("together") ||
+    t.includes("machine and attachment") ||
+    t.includes("attachment and machine") ||
+    t.includes("with attachment") ||
+    t.includes("with the attachment")
+  );
+}
+
+function quoteMachineAttachmentBundle(machineId, attachmentId, days = 1) {
+  const machine = EQUIPMENT[machineId];
+  const attachment = EQUIPMENT[attachmentId];
+
+  if (!machine || !attachment) return null;
+
+  const machineRental = getRentalAmount(machine, days);
+  const attachmentRental = getRentalAmount(attachment, days);
+  const rental = machineRental + attachmentRental;
+
+  const protection =
+    (machine.protection ? protectionTotal(days) : 0) +
+    (attachment.protection ? protectionTotal(days) : 0);
+
+  const subtotal = rental + protection;
+  const tax = subtotal * SALES_TAX;
+  const total = subtotal + tax;
+
+  const lines = [
+    `${machine.name} + ${attachment.name} total for ${durationLabel(days)}:`,
+    "",
+    `${machine.name}: ${money(machineRental)}`,
+    `${attachment.name}: ${money(attachmentRental)}`
+  ];
+
+  if (protection) lines.push(`Rental Protection Plan: ${money(protection)}`);
+
+  lines.push(
+    `Subtotal: ${money(subtotal)}`,
+    `Sales Tax (7%): ${money(tax)}`,
+    `Total: ${money(total)}`,
+    "",
+    CONTACT_TEXT
+  );
+
+  return lines.join("\n");
+}
+
+function rememberSelectedWithType(state, id) {
+  rememberSelected(state, id);
+
+  if (isAttachmentItemId(id)) {
+    state.lastAttachmentItemId = id;
+  } else if (isMachineItemId(id)) {
+    state.lastMachineItemId = id;
+  }
+}
+
+
 function isMulcherId(id) {
   return id === ITEM_IDS.CAT_MULCHER || id === ITEM_IDS.JD_MULCHER;
 }
@@ -1142,58 +1226,37 @@ We'll take care of you.`;
       t.includes("get it") ||
       t.includes("i will broker") ||
       t.includes("go ahead") ||
-      t.includes("fine") ||
-      t.includes("that works") ||
-      t.includes("ok") ||
-      t.includes("okay") ||
-      t.includes("yes") ||
-      t.includes("yeah") ||
-      t.includes("yep")
+      t.includes("yes")
     )
   ) {
     const itemText = state.lastBrokerRequest?.label || "that equipment";
-
     return `We can broker the ${itemText} for you.
 
 Please call 850-295-5373 during normal business hours to arrange it, or visit www.bigbendrentals.net to submit a request.`;
   }
 
-  // HIGH-FLOW / MULCHER COMPATIBILITY LOGIC
-  // Mulcher heads and high-flow brush cutters must only be paired with the CAT 265 or John Deere 333P.
-  // This prevents the bot from offering Boxer, CAT 239, or other non-compatible machines.
-  const asksForMulcherOrHighFlowAttachment =
-    t.includes("high flow") ||
-    t.includes("mulcher head") ||
-    t.includes("forestry head") ||
+  // HIGH FLOW BRUSH CUTTER LOGIC
+  // Only the CAT 265 and John Deere 333P are high-flow skid steers.
+  if (
+    t.includes("high flow") &&
     (
-      t.includes("mulcher") &&
-      (
-        t.includes("skid steer") ||
-        t.includes("skidsteer") ||
-        t.includes("machine") ||
-        t.includes("head") ||
-        t.includes("attachment") ||
-        t.includes("combo") ||
-        t.includes("with")
-      )
-    ) ||
-    t.includes("brush cutter") ||
-    t.includes("brushcat") ||
-    t.includes("brush cat") ||
-    t.includes("skid steer brush cutter");
-
-  if (asksForMulcherOrHighFlowAttachment) {
+      t.includes("brush cutter") ||
+      t.includes("brushcat") ||
+      t.includes("brush cat") ||
+      t.includes("skid steer brush cutter")
+    )
+  ) {
     const ids = [ITEM_IDS.CAT_265, ITEM_IDS.JD_333P].filter((id) => EQUIPMENT[id]);
 
     state.lastCategory = "skid_steer";
     state.lastCategoryItems = ids;
     state.lastItemId = null;
 
-    return `For a mulcher head / high-flow brush cutter, you need a high-flow skid steer. These are the correct machine options:
+    return `We do have high-flow skid steer options for that attachment:
 
 ${formatOptions(ids)}
 
-The Boxer Mini Skid Steer and CAT 239 are not compatible with the mulcher head.`;
+Which one are you interested in?`;
   }
 
   if (state.awaitingExactDeliveryAddress) {
@@ -1277,7 +1340,7 @@ The Boxer Mini Skid Steer and CAT 239 are not compatible with the mulcher head.`
       return "I can help with the dumpster, but I need the exact delivery address to price it correctly.";
     }
 
-    rememberSelected(state, id);
+    rememberSelectedWithType(state, id);
     const days = getDays(message, state);
     state.lastDays = days;
 
@@ -1304,7 +1367,7 @@ The Boxer Mini Skid Steer and CAT 239 are not compatible with the mulcher head.`
       return "I can help with the dumpster, but I need the exact delivery address to price it correctly.";
     }
 
-    rememberSelected(state, id);
+    rememberSelectedWithType(state, id);
     const days = getDays(message, state);
     state.lastDays = days;
 
@@ -1326,7 +1389,7 @@ The Boxer Mini Skid Steer and CAT 239 are not compatible with the mulcher head.`
 
   if (category === "post_driver") {
     const id = ITEM_IDS.FENCE_POST_POUNDER;
-    rememberSelected(state, id);
+    rememberSelectedWithType(state, id);
     if (isPriceQuestion(message) || hasDurationText(message)) {
       const days = getDays(message, state);
       state.lastDays = days;
@@ -1482,6 +1545,15 @@ The Boxer Mini Skid Steer and CAT 239 are not compatible with the mulcher head.`
   const selectedId = globalDirectId || contextualId || explicit?.id || fallbackId || null;
   const selectedItem = selectedId ? EQUIPMENT[selectedId] : null;
 
+
+  if (wantsBothCurrentItems(message) && state.lastMachineItemId && state.lastAttachmentItemId) {
+    const days = getDays(message, state);
+    state.lastDays = days;
+
+    const bundleText = quoteMachineAttachmentBundle(state.lastMachineItemId, state.lastAttachmentItemId, days);
+    if (bundleText) return bundleText;
+  }
+
   if (selectedItem && isMulcherId(selectedId) && isMulcherComboRequest(message)) {
     const days = getDays(message, state);
     const delivery = deliveryInfo(message);
@@ -1498,7 +1570,7 @@ The Boxer Mini Skid Steer and CAT 239 are not compatible with the mulcher head.`
     state.awaitingMulcherComboSelection = false;
     state.pendingMulcherIds = [];
     state.lastBundleItemIds = comboIds;
-    rememberSelected(state, selectedId);
+    rememberSelectedWithType(state, selectedId);
     return quoteBundleText(comboIds, days, { deliveryFee, deliveryPlace });
   }
 
