@@ -1011,6 +1011,31 @@ function isMachineItemId(id) {
   ].includes(item.category) && !isAttachmentItemId(id);
 }
 
+
+function isPickupSelfHaulQuestion(message) {
+  const t = normalize(message);
+
+  return (
+    t.includes("pick up myself") ||
+    t.includes("pickup myself") ||
+    t.includes("pick it up myself") ||
+    t.includes("pick them up myself") ||
+    t.includes("i pick up") ||
+    t.includes("i pickup") ||
+    t.includes("i pick it up") ||
+    t.includes("if i pick up") ||
+    t.includes("if i pickup") ||
+    t.includes("no delivery") ||
+    t.includes("without delivery") ||
+    t.includes("use my trailer") ||
+    t.includes("using my trailer") ||
+    t.includes("my own trailer") ||
+    t.includes("bring my trailer")
+  );
+}
+
+
+
 function wantsBothCurrentItems(message) {
   const t = normalize(message);
 
@@ -1700,6 +1725,25 @@ Which one do you want pricing for with the attachment?`;
 
     const bundleText = quoteMachineAttachmentBundle(state.lastMachineItemId, state.lastAttachmentItemId, days);
     if (bundleText) return bundleText;
+  }
+
+
+  if (
+    isPickupSelfHaulQuestion(message) &&
+    state.lastMachineItemId &&
+    state.lastAttachmentItemId &&
+    EQUIPMENT[state.lastMachineItemId] &&
+    EQUIPMENT[state.lastAttachmentItemId]
+  ) {
+    const days = getDays(message, state);
+    state.lastDays = days;
+
+    const bundleText = quoteMachineAttachmentBundle(state.lastMachineItemId, state.lastAttachmentItemId, days);
+    if (bundleText) {
+      return `${bundleText}
+
+Pickup / self-haul selected: no delivery charge included. Please confirm trailer requirements, tie-down requirements, and pickup timing with the store.`;
+    }
   }
 
   if (selectedItem && isMulcherId(selectedId) && isMulcherComboRequest(message)) {
