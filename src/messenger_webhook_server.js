@@ -297,7 +297,7 @@ Pricing includes delivery and pickup unless otherwise stated. Coastal areas are 
 
 Weight limits and prohibited items may apply.
 
-What rental length do you need, and what address is delivery to?`;
+What rental length do you need, and what city is delivery to?`;
 }
 
 function shouldForceCategoryChoice(message, category) {
@@ -356,7 +356,7 @@ function wantsOurTrailerIncluded(message) {
 }
 
 function trailerOptionText() {
-  return "If you need to use our trailer to haul the machine, there is a $49.99 surcharge. You can also use your own trailer if it meets the weight requirements.";
+  return "If you need to use our trailer to haul the machine, it is a $49.99 surcharge. You can also use your own trailer if it meets the weight requirements.";
 }
 
 
@@ -589,18 +589,7 @@ function isSupportIssue(message) {
     t.includes("isnt working") ||
     t.includes("isn't working") ||
     t.includes("wont start") ||
-    t.includes("can't start") ||
-    t.includes("cannot start") ||
     t.includes("won't start") ||
-    t.includes("won't stop") ||
-    t.includes("will not stop") ||
-    t.includes("isn't turning") ||
-    t.includes("isn't moving") ||
-    t.includes("won't open") ||
-    t.includes("won't close") ||
-    t.includes("keeps closing") ||
-    t.includes("keeps shutting off") ||
-    t.includes("stopped running") ||
     t.includes("will not start") ||
     t.includes("wont run") ||
     t.includes("won't run") ||
@@ -610,7 +599,6 @@ function isSupportIssue(message) {
     t.includes("will not turn on") ||
     t.includes("broke") ||
     t.includes("broken") ||
-    t.includes("leaking") ||
     t.includes("stopped working") ||
     t.includes("quit working") ||
     t.includes("problem with") ||
@@ -630,6 +618,95 @@ function isSupportIssue(message) {
       (t.includes("machine") || t.includes("equipment") || t.includes("mower") || t.includes("stump grinder") || t.includes("skid steer") || t.includes("excavator") || t.includes("trencher"))
     )
   );
+}
+
+function unavailableBrokerRequest(message) {
+  const t = normalize(message);
+  const c = compact(message);
+
+  const availableBrandModels = new Set([
+    "cat3017",
+    "cat3075",
+    "cat239",
+    "cat265",
+    "jd50p",
+    "johndeere50p",
+    "deere50p",
+    "jd333p",
+    "johndeere333p",
+    "deere333p",
+    "geniez45",
+    "geniegs1930",
+    "geniegs3246",
+    "jlget500j",
+    "et500j"
+  ]);
+
+  function isAvailableModel(compactModel) {
+    return availableBrandModels.has(String(compactModel || "").toLowerCase().replace(/[^a-z0-9]/g, ""));
+  }
+
+  const catMatch = t.match(/\b(?:cat|caterpillar)\s*([0-9]{3,4}(?:\.[0-9])?[a-z]?)\b/);
+  if (catMatch) {
+    const rawModel = catMatch[1];
+    const compactModel = `cat${rawModel}`;
+    if (!isAvailableModel(compactModel)) {
+      return {
+        label: `CAT ${rawModel}`,
+        type: t.includes("excavator") || t.includes("trackhoe") ? "excavator" : t.includes("skid") ? "skid steer" : "machine"
+      };
+    }
+  }
+
+  const jdMatch = t.match(/\b(?:john deere|deere|jd)\s*([0-9]{2,4}[a-z]?)\b/);
+  if (jdMatch) {
+    const rawModel = jdMatch[1].toUpperCase();
+    const compactModel = `jd${rawModel}`;
+    const compactModel2 = `johndeere${rawModel}`;
+    if (!isAvailableModel(compactModel) && !isAvailableModel(compactModel2)) {
+      return {
+        label: `John Deere ${rawModel}`,
+        type: t.includes("excavator") || t.includes("trackhoe") ? "excavator" : t.includes("skid") ? "skid steer" : "machine"
+      };
+    }
+  }
+
+  const genieMatch = t.match(/\bgenie\s*([a-z]{0,3}\s*[0-9]{2,4}[a-z]?)\b/);
+  if (genieMatch) {
+    const rawModel = genieMatch[1].toUpperCase().replace(/\s+/g, "");
+    const compactModel = `genie${rawModel}`;
+    if (!isAvailableModel(compactModel)) {
+      return {
+        label: `Genie ${rawModel}`,
+        type: "lift"
+      };
+    }
+  }
+
+  const compactCatMatch = c.match(/(?:cat|caterpillar)([0-9]{3,4}[a-z]?)/);
+  if (compactCatMatch) {
+    const rawModel = compactCatMatch[1].toUpperCase();
+    const compactModel = `cat${rawModel}`;
+    if (!isAvailableModel(compactModel)) {
+      return {
+        label: `CAT ${rawModel}`,
+        type: t.includes("excavator") || t.includes("trackhoe") ? "excavator" : t.includes("skid") ? "skid steer" : "machine"
+      };
+    }
+  }
+
+  return null;
+}
+
+function brokeredEquipmentText(request) {
+  const itemText = request?.label || "that item";
+  const typeText = request?.type || "equipment";
+
+  return `We do not have a ${itemText} ${typeText} on our lot right now.
+
+However, we do broker equipment and can often source items we do not keep on our lot. Depending on supplier availability, we can likely have brokered equipment in a day or two, but brokered items may take a few days longer than equipment already on our lot and may not be available same-day or next-day.
+
+You can check or start the order at www.bigbendrentals.net, or call 850-295-5373 and ask us to source ${itemText}.`;
 }
 
 function hasExactAddress(message) {
@@ -947,6 +1024,13 @@ If possible, include:
 • What it's doing or not doing
 
 We'll take care of you.`;
+  }
+
+  // BROKERED EQUIPMENT HANDLER
+  // If the customer asks for a specific model we do not stock, do not guess or substitute another machine.
+  const brokerRequest = unavailableBrokerRequest(message);
+  if (brokerRequest) {
+    return brokeredEquipmentText(brokerRequest);
   }
 
   // HIGH FLOW BRUSH CUTTER LOGIC
