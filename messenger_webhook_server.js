@@ -1001,59 +1001,146 @@ ${mulcherChoicePrompt([selectedId])}`;
   return shortGuidedClarification("I’m not confident enough to answer that accurately yet.");
 }
 
+function splitMessengerText(text) {
+  const raw = String(text || "Can you clarify what you're looking to rent?");
+  const max = 1900;
+  if (raw.length <= max) return [raw];
+
+  const chunks = [];
+  let remaining = raw;
+  while (remaining.length > max) {
+    let cut = remaining.lastIndexOf("\n", max);
+    if (cut < 500) cut = remaining.lastIndexOf(" ", max);
+    if (cut < 500) cut = max;
+    chunks.push(remaining.slice(0, cut).trim());
+    remaining = remaining.slice(cut).trim();
+  }
+  if (remaining) chunks.push(remaining);
+  return chunks;
+}
+
 async function sendMessage(senderId, text) {
-  const response = await fetch(`https://graph.facebook.com/${GRAPH_VERSION}/me/messages`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${PAGE_ACCESS_TOKEN}` },
-    body: JSON.stringify({ recipient: { id: senderId }, messaging_type: "RESPONSE", message: { text: String(text || "Can you clarify what you're looking to rent?") } })
-  });
-  const bodyText = await response.text();
-  if (!response.ok) console.error("Facebook send failed:", response.status, bodyText);
+  if (!PAGE_ACCESS_TOKEN) {
+    console.error("Facebook send skipped: META_PAGE_ACCESS_TOKEN is missing in Render environment variables.");
+    return false;
+  }
+
+  for (const part of splitMessengerText(text)) {
+    const response = await fetch(`https://graph.facebook.com/${GRAPH_VERSION}/me/messages`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${PAGE_ACCESS_TOKEN}`
+      },
+      body: JSON.stringify({
+        recipient: { id: senderId },
+        messaging_type: "RESPONSE",
+        message: { text: part }
+      })
+    });
+
+    const bodyText = await response.text();
+    if (!response.ok) {
+      console.error("Facebook send failed:", response.status, bodyText);
+      return false;
+    }
+    console.log("Facebook send ok:", response.status, bodyText);
+  }
+
+  return true;
 }
 
 async function processMessengerEvent(event) {
   const senderId = event.sender?.id;
   const message = event.message?.text;
 
-  if (!senderId || !message) return;
+  if (!senderId) {
+    console.log("Messenger event ignored: missing sender id", JSON.stringify(event));
+    return;
+  }
+
+  if (!message) {
+    console.log("Messenger event ignored: no text message", JSON.stringify(event));
+    return;
+  }
 
   try {
-    console.log("Incoming:", message);
+    console.log("Incoming from", senderId, ":", message);
     const reply = handleMessage(message, senderId);
-    console.log("Reply:", reply);
+    console.log("Reply to", senderId, ":", reply);
     await sendMessage(senderId, reply);
   } catch (err) {
-    console.error("Messenger event handling error:", err);
-    try {
-      await sendMessage(senderId, "Sorry, something went wrong on our end. Please call 850-295-5373 and we’ll help you directly.");
-    } catch (sendErr) {
-      console.error("Fallback send failed:", sendErr);
-    }
+    console.error("processMessengerEvent error:", err);
+    await sendMessage(senderId, "Something went wrong on our end. Please call 850-295-5373 and we’ll help you directly.");
   }
 }
 
 app.post("/webhook", (req, res) => {
-  try {
-    for (const entry of req.body.entry || []) {
-      for (const event of entry.messaging || []) {
-        void processMessengerEvent(event);
-      }
-    }
-  } catch (err) {
-    console.error("Webhook parse error:", err);
+  // Facebook/Meta requires a fast 200 response. We acknowledge first, then send the reply.
+  res.status(200).send("EVENT_RECEIVED");
+
+  const body = req.body || {};
+  if (body.object !== "page") {
+    console.log("Webhook POST ignored: object was not page", JSON.stringify(body));
+    return;
   }
 
-  // Facebook expects a fast 200 response. Message processing continues above.
-  res.sendStatus(200);
+  setImmediate(async () => {
+    try {
+      for (const entry of body.entry || []) {
+        for (const event of entry.messaging || []) {
+          await processMessengerEvent(event);
+        }
+      }
+    } catch (err) {
+      console.error("Webhook async processing error:", err);
+    }
+  });
 });
 
 app.get("/webhook", (req, res) => {
-  if (req.query["hub.mode"] === "subscribe" && req.query["hub.verify_token"] === VERIFY_TOKEN) return res.send(req.query["hub.challenge"]);
-  res.sendStatus(403);
+  const mode = req.query["hub.mode"];
+  const token = req.query["hub.verify_token"];
+  const challenge = req.query["hub.challenge"];
+
+  if (mode === "subscribe" && token === VERIFY_TOKEN) {
+    console.log("Webhook verified successfully.");
+    return res.status(200).send(challenge);
+  }
+
+  console.error("Webhook verification failed. Check META_VERIFY_TOKEN in Render.");
+  return res.sendStatus(403);
 });
 
 app.get("/", (_req, res) => res.status(200).send("Messenger webhook is running."));
 
+app.get("/health", (_req, res) => {
+  res.status(200).json({
+    ok: true,
+    service: "bigbend-messenger-bot",
+    hasPageAccessToken: Boolean(PAGE_ACCESS_TOKEN),
+    hasVerifyToken: Boolean(VERIFY_TOKEN),
+    graphVersion: GRAPH_VERSION
+  });
+});
+
+app.get("/test-reply", (req, res) => {
+  const message = String(req.query.message || "Do you have augers?");
+  const sender = String(req.query.sender || "browser-test");
+  try {
+    const reply = handleMessage(message, sender);
+    res.status(200).type("text/plain").send(reply);
+  } catch (err) {
+    console.error("/test-reply error:", err);
+    res.status(500).type("text/plain").send(String(err?.stack || err));
+  }
+});
+
 if (process.env.NODE_ENV !== "test") {
-  app.listen(PORT, () => console.log(`Messenger webhook listening on port ${PORT}`));
+  app.listen(PORT, () => {
+    console.log(`Messenger webhook listening on port ${PORT}`);
+    console.log(`Graph version: ${GRAPH_VERSION}`);
+    console.log(`META_PAGE_ACCESS_TOKEN present: ${Boolean(PAGE_ACCESS_TOKEN)}`);
+    console.log(`META_VERIFY_TOKEN present: ${Boolean(VERIFY_TOKEN)}`);
+  });
 }
