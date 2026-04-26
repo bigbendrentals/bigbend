@@ -46,6 +46,7 @@ export const ITEM_IDS = {
   FLOOR_BUFFER: "prolux-20-commercial-floor-buffer-scrubber-polisher-sander",
   PLATE_COMPACTOR: "6-5-hp-honda-reverse-hydraulic-plate-compactor",
   TILE_SAW: "ridgid-10-wet-tile-saw",
+  POST_DRIVER_2_CYCLE: "2-cycle-post-driver",
   TR_89305_JACKHAMMER: "tr-89305-jackhammer",
   SMALL_TRENCHER: "18-trencher-not-self-propelled",
   ROTARY_LASER_LEVEL: "rotary-laser-level",
@@ -112,7 +113,7 @@ export const EQUIPMENT = {
   [ITEM_IDS.AUGER]: { name: "Skid Steer Auger", category: "attachment", day: 225, keyword: "Skid Steer Auger", aliases: ["skid steer auger", "auger attachment", "auger", "post hole auger", "post hole digger"], details: "Bits rented separately. Attachment can be rented separately." },
   [ITEM_IDS.BLUE_DIAMOND_AUGER]: { name: "Blue Diamond EX2 Mini Skid Auger", category: "attachment", day: 100, week: 400, keyword: "Blue Diamond EX2 Mini Skid Auger", aliases: ["blue diamond", "blue diamond auger", "mini skid auger", "auger", "boxer auger"], details: "Mini skid auger. 10, 12, or 18-inch bit rented separately." },
   [ITEM_IDS.STIHL_BT131_AUGER]: { name: "Stihl BT131 Auger", category: "attachment", day: 85, week: 340, keyword: "Stihl BT131 Auger", aliases: ["stihl", "bt131", "stihl bt131", "auger", "handheld auger", "hand held auger", "one person auger", "stihl auger"], details: "Stihl BT131 handheld auger." },
-  [ITEM_IDS.BREAKER]: { name: "Demolition Hammer Skid Steer or Excavator", category: "attachment", day: 350, week: 1000, keyword: "Demolition Hammer Skid Steer or Excavator", aliases: ["skid steer breaker", "breaker attachment", "breaker", "skid steer hammer", "demolition hammer", "concrete breaker", "excavator hammer"], details: "Demolition hammer attachment for skid steer or excavator." },
+  [ITEM_IDS.BREAKER]: { name: "Demolition Hammer Skid Steer or Excavator", category: "attachment", day: 350, week: 1000, keyword: "Demolition Hammer Skid Steer or Excavator", aliases: ["skid steer breaker", "skid steer concrete breaker", "skid steer jackhammer", "skid steer jack hammer", "skid steer demolition hammer", "breaker attachment", "breaker", "hydraulic breaker", "hydraulic hammer", "skid steer hammer", "demolition hammer attachment", "demolition hammer", "demo hammer attachment", "skid steer demo hammer", "concrete breaker attachment", "concrete breaker", "excavator breaker", "excavator hammer", "jackhammer attachment", "jack hammer attachment"], details: "Demolition hammer attachment for skid steer or excavator." },
   [ITEM_IDS.POWER_RAKE]: { name: "Power Rake", category: "attachment", day: 225, keyword: "Power Rake", aliases: ["power rake", "harley rake", "harley", "soil conditioner", "soil prep attachment"], details: "Attachment can be rented separately." },
   [ITEM_IDS.BRUSHCAT]: { name: "Bobcat Brushcat 60 High Flow Brush Cutter", category: "attachment", day: 275, week: 1100, month: 1500, keyword: "Bobcat Brushcat 60 High Flow Brush Cutter", aliases: ["brushcat", "brushcat 60", "skid steer brush cutter", "brush cutter attachment", "brush cutter", "bush hog", "rotary cutter"], details: "High-flow skid steer brush cutter attachment." },
   [ITEM_IDS.GRAPPLE]: { name: "Grapple", category: "attachment", day: 110, keyword: "Grapple", aliases: ["grapple", "root grapple", "brush grapple", "tree grapple"], details: "Attachment can be rented separately." },
@@ -134,7 +135,17 @@ export const EQUIPMENT = {
   [ITEM_IDS.PLATE_COMPACTOR]: { name: "6.5 HP Honda Reverse Hydraulic Plate Compactor", category: "small_tool", day: 100, week: 400, keyword: "Honda Reverse Hydraulic Plate Compactor", aliases: ["compactor", "walk behind compactor", "asphalt compactor", "plate compactor"], details: "Reverse hydraulic plate compactor for asphalt, aggregate, and cohesive soil compaction." },
   [ITEM_IDS.TILE_SAW]: { name: "Ridgid 10 Wet Tile Saw with Stand", category: "small_tool", day: 75, week: 300, keyword: "Ridgid 10 Wet Tile Saw", aliases: ["tile saw", "wet saw", "ridgid tile saw"], details: "10-inch wet tile saw with stand. Diamond blade sold separately." },
   [ITEM_IDS.DIAMOND_CORE_DRILL]: { name: "Diamond Core Drilling Machine (1-10 bits)", category: "small_tool", day: 125, week: 500, keyword: "Diamond Core Drilling Machine", aliases: ["core drill", "hole drill", "diamond core drill", "core drilling machine"], details: "Diamond core drilling machine. 1-10 inch bits." },
-  [ITEM_IDS.TR_89305_JACKHAMMER]: { name: "TR-89305 Jackhammer", category: "small_tool", day: 55, week: 220, keyword: "TR-89305 Jackhammer", aliases: ["jack hammer", "hand held jack hammer", "demo hammer", "demolition hammer", "concrete breaker", "jackhammer"], details: "Handheld jackhammer." },
+  
+  [ITEM_IDS.POST_DRIVER_2_CYCLE]: { 
+    name: "2-Cycle Post Driver", 
+    category: "small_tool", 
+    day: 55, 
+    week: 220, 
+    keyword: "2-Cycle Post Driver", 
+    aliases: ["post driver", "post pounder", "fence post driver", "fence post pounder", "t post driver", "t post pounder"], 
+    details: "Handheld 2-cycle fence post driver/pounder." 
+  },
+[ITEM_IDS.TR_89305_JACKHAMMER]: { name: "TR-89305 Jackhammer", category: "small_tool", day: 55, week: 220, keyword: "TR-89305 Jackhammer", aliases: ["jack hammer", "jackhammer", "handheld jackhammer", "handheld jack hammer", "hand held jackhammer", "hand held jack hammer", "electric jackhammer", "electric jack hammer", "demo hammer", "handheld demo hammer", "demolition hammer", "handheld demolition hammer", "concrete breaker"], details: "Handheld jackhammer." },
 
   [ITEM_IDS.DUMP_TRAILER_25K]: { name: "Dump Trailer 25' 25K GVWR", category: "trailer", day: 440, week: 1760, month: 4000, keyword: "Dump Trailer 25 25K GVWR", aliases: ["dump trailer", "gooseneck dump trailer", "25k dump trailer", "25 foot dump trailer", "trailer"], details: "25-foot dump trailer, 25K GVWR." }
 };
@@ -159,6 +170,7 @@ export const CATEGORY_ALIASES = {
   pressure_washer: ["pressure washer", "pressure washers", "power washer", "power washers"],
   compactor: ["compactor", "compactors", "plate compactor", "walk behind compactor"],
   concrete: ["concrete", "concrete saw", "concrete mixer", "power screed", "trowel", "bull float", "concrete vibrator", "tile saw", "core drill"],
+  breaker: ["breaker", "breakers", "concrete breaker", "demolition hammer", "demo hammer", "jack hammer", "jackhammer", "hydraulic breaker", "hydraulic hammer", "skid steer jackhammer", "skid steer jack hammer", "skid steer demolition hammer"],
   trailer: ["trailer", "trailers", "equipment trailer", "dump trailer", "gooseneck"],
   pump: ["pump", "pumps", "trash pump", "sump pump", "water pump"],
   compressor: ["compressor", "compressors", "air compressor", "pancake compressor", "gas compressor"],
@@ -186,6 +198,7 @@ export const CATEGORY_ITEMS = {
   pressure_washer: [ITEM_IDS.PRESSURE_WASHER, ITEM_IDS.SURFACE_CLEANER],
   compactor: [ITEM_IDS.PLATE_COMPACTOR],
   concrete: [ITEM_IDS.CONCRETE_SAW, ITEM_IDS.CONCRETE_MIXER, ITEM_IDS.SCREED, ITEM_IDS.TROWEL, ITEM_IDS.VIBRATOR, ITEM_IDS.BULL_FLOAT, ITEM_IDS.TILE_SAW, ITEM_IDS.DIAMOND_CORE_DRILL],
+  breaker: [ITEM_IDS.BREAKER, ITEM_IDS.TR_89305_JACKHAMMER],
   trailer: [ITEM_IDS.DUMP_TRAILER_25K],
   pump: [ITEM_IDS.TRASH_PUMP, ITEM_IDS.SUMP_PUMP],
   compressor: [ITEM_IDS.GAS_COMPRESSOR, ITEM_IDS.PANCAKE],

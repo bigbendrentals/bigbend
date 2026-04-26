@@ -960,6 +960,87 @@ Call 850-295-5373 or book online at www.bigbendrentals.net so we can confirm dum
 
 
 
+
+function breakerRequestIds(message) {
+  const t = normalize(message);
+
+  const hasBreakerTerm =
+    t.includes("concrete breaker") ||
+    t.includes("demolition hammer") ||
+    t.includes("demo hammer") ||
+    t.includes("jack hammer") ||
+    t.includes("jackhammer") ||
+    t.includes("hydraulic breaker") ||
+    t.includes("hydraulic hammer") ||
+    t.includes("breaker attachment") ||
+    t.includes("skid steer hammer") ||
+    t.includes("excavator hammer") ||
+    t.includes("skid steer breaker") ||
+    t.includes("excavator breaker");
+
+  if (!hasBreakerTerm) return [];
+
+  const wantsMachineAttachment =
+    t.includes("skid steer") ||
+    t.includes("skidsteer") ||
+    t.includes("excavator") ||
+    t.includes("attachment") ||
+    t.includes("hydraulic") ||
+    t.includes("for a skid") ||
+    t.includes("for skid") ||
+    t.includes("skid steer jack") ||
+    t.includes("skid steer demo") ||
+    t.includes("skid steer demolition") ||
+    t.includes("skid steer concrete breaker");
+
+  const wantsHandheld =
+    t.includes("handheld") ||
+    t.includes("hand held") ||
+    t.includes("electric jack") ||
+    t.includes("hand jack");
+
+  if (wantsMachineAttachment && EQUIPMENT[ITEM_IDS.BREAKER]) {
+    return [ITEM_IDS.BREAKER];
+  }
+
+  if (wantsHandheld && EQUIPMENT[ITEM_IDS.TR_89305_JACKHAMMER]) {
+    return [ITEM_IDS.TR_89305_JACKHAMMER];
+  }
+
+  return [ITEM_IDS.BREAKER, ITEM_IDS.TR_89305_JACKHAMMER].filter((id) => EQUIPMENT[id]);
+}
+
+function breakerRequestResponse(message, state) {
+  const ids = breakerRequestIds(message);
+  if (!ids.length) return null;
+
+  state.lastCategory = "breaker";
+  state.lastCategoryItems = ids;
+
+  if (ids.length === 1) {
+    const id = ids[0];
+    rememberSelectedWithType(state, id);
+
+    if (isPriceQuestion(message) || hasDurationText(message)) {
+      const days = getDays(message, state);
+      state.lastDays = days;
+      return quoteText(EQUIPMENT[id], days);
+    }
+
+    return itemBasicText(EQUIPMENT[id]);
+  }
+
+  return `We have these breaker / jackhammer options:
+
+${formatOptions(ids)}
+
+For a skid steer or excavator, choose the demolition hammer attachment. For handheld work, choose the TR-89305 Jackhammer.
+
+Which one do you need pricing or info for?`;
+}
+
+
+
 function attachmentIdFromMessage(message) {
   const t = normalize(message);
 
@@ -973,6 +1054,20 @@ function attachmentIdFromMessage(message) {
 
   if (t.includes("brush cutter") || t.includes("brushcat") || t.includes("brush cat")) {
     return ITEM_IDS.BRUSHCAT;
+  }
+
+  if (
+    t.includes("concrete breaker") ||
+    t.includes("skid steer breaker") ||
+    t.includes("skid steer jackhammer") ||
+    t.includes("skid steer jack hammer") ||
+    t.includes("skid steer demolition hammer") ||
+    t.includes("demolition hammer attachment") ||
+    t.includes("breaker attachment") ||
+    t.includes("hydraulic breaker") ||
+    t.includes("hydraulic hammer")
+  ) {
+    return ITEM_IDS.BREAKER;
   }
 
   if (t.includes("auger")) {
@@ -1368,6 +1463,13 @@ We'll take care of you.`;
     return `We can broker the ${itemText} for you.
 
 Please call 850-295-5373 during normal business hours to arrange it, or visit www.bigbendrentals.net to submit a request.`;
+  }
+
+  // BREAKER / JACKHAMMER HANDLER
+  // Handles skid steer concrete breaker, skid steer jackhammer, demo hammer, demolition hammer, and handheld jackhammer wording.
+  const breakerResponse = breakerRequestResponse(message, state);
+  if (breakerResponse) {
+    return breakerResponse;
   }
 
   // HIGH FLOW BRUSH CUTTER LOGIC
