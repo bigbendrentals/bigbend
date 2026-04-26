@@ -31,7 +31,6 @@ const PAGE_ACCESS_TOKEN = process.env.META_PAGE_ACCESS_TOKEN;
 const VERIFY_TOKEN = process.env.META_VERIFY_TOKEN;
 const GRAPH_VERSION = process.env.META_GRAPH_VERSION || "v22.0";
 const PORT = process.env.PORT || 10000;
-
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY || "";
 const BUSINESS_ADDRESS = process.env.BUSINESS_ADDRESS || "Big Bend Tool & Equipment Rentals, Perry, FL";
 const DELIVERY_LOCAL_MAX_ROUND_TRIP_MILES = Number(process.env.DELIVERY_LOCAL_MAX_ROUND_TRIP_MILES || 10);
@@ -579,6 +578,44 @@ function handleDeliveryOnly(message, state) {
   return "We deliver within about a 75-mile radius. What city or area are you in?";
 }
 
+function isSupportIssue(message) {
+  const t = normalize(message);
+
+  return (
+    t.includes("not working") ||
+    t.includes("isnt working") ||
+    t.includes("isn't working") ||
+    t.includes("wont start") ||
+    t.includes("won't start") ||
+    t.includes("will not start") ||
+    t.includes("wont run") ||
+    t.includes("won't run") ||
+    t.includes("will not run") ||
+    t.includes("wont turn on") ||
+    t.includes("won't turn on") ||
+    t.includes("will not turn on") ||
+    t.includes("broke") ||
+    t.includes("broken") ||
+    t.includes("stopped working") ||
+    t.includes("quit working") ||
+    t.includes("problem with") ||
+    t.includes("machine issue") ||
+    t.includes("equipment issue") ||
+    t.includes("can you call me") ||
+    t.includes("call me") ||
+    t.includes("need help") ||
+    t.includes("help with this machine") ||
+    t.includes("help with the machine") ||
+    (
+      t.includes("problem") &&
+      (t.includes("machine") || t.includes("equipment") || t.includes("mower") || t.includes("stump grinder") || t.includes("skid steer") || t.includes("excavator") || t.includes("trencher"))
+    ) ||
+    (
+      t.includes("issue") &&
+      (t.includes("machine") || t.includes("equipment") || t.includes("mower") || t.includes("stump grinder") || t.includes("skid steer") || t.includes("excavator") || t.includes("trencher"))
+    )
+  );
+}
 
 function hasExactAddress(message) {
   const t = normalize(message);
@@ -627,14 +664,6 @@ function needsExactAddress(message) {
   );
 }
 
-
-
-function roundUpToIncrement(value, increment = 1) {
-  const inc = Number(increment || 1);
-  if (inc <= 1) return Math.ceil(value);
-  return Math.ceil(value / inc) * inc;
-}
-
 function calculateDeliveryFeeFromMiles(roundTripMiles) {
   const miles = Number(roundTripMiles || 0);
 
@@ -646,8 +675,6 @@ function calculateDeliveryFeeFromMiles(roundTripMiles) {
     return DELIVERY_STANDARD_FEE;
   }
 
-  // Do not auto-quote beyond the configured delivery range.
-  // The calling function will ask the customer to call for manual confirmation.
   return null;
 }
 
@@ -688,10 +715,7 @@ async function getDrivingMilesFromGoogle(destinationAddress) {
   const oneWayMiles = Number(distanceMeters) / 1609.344;
   const roundTripMiles = oneWayMiles * 2;
 
-  return {
-    oneWayMiles,
-    roundTripMiles
-  };
+  return { oneWayMiles, roundTripMiles };
 }
 
 async function quoteTextWithMileageDelivery(item, days, address) {
@@ -706,6 +730,10 @@ Rental: ${money(getRentalAmount(item, days))}
 ${item.protection ? `Rental Protection Plan: ${money(protectionTotal(days))}
 ` : ""}Delivery: This address is about ${miles.roundTripMiles.toFixed(1)} round-trip miles, which is outside the automatic 75-mile delivery quote range.
 
+Estimated driving distance:
+One way: ${miles.oneWayMiles.toFixed(1)} miles
+Round trip: ${miles.roundTripMiles.toFixed(1)} miles
+
 Call 850-295-5373 or book online at www.bigbendrentals.net so we can confirm delivery availability and the exact delivery price.`;
     }
 
@@ -717,7 +745,7 @@ Call 850-295-5373 or book online at www.bigbendrentals.net so we can confirm del
     const deliveryNote =
       miles.roundTripMiles <= DELIVERY_LOCAL_MAX_ROUND_TRIP_MILES
         ? `Delivery pricing: ${money(DELIVERY_LOCAL_FEE)} up to ${DELIVERY_LOCAL_MAX_ROUND_TRIP_MILES} round-trip miles.`
-        : `Delivery pricing: ${money(DELIVERY_STANDARD_FEE)} for ${DELIVERY_LOCAL_MAX_ROUND_TRIP_MILES + 0.1}-${DELIVERY_STANDARD_MAX_ROUND_TRIP_MILES} round-trip miles.`;
+        : `Delivery pricing: ${money(DELIVERY_STANDARD_FEE)} for more than ${DELIVERY_LOCAL_MAX_ROUND_TRIP_MILES} and up to ${DELIVERY_STANDARD_MAX_ROUND_TRIP_MILES} round-trip miles.`;
 
     return `${quote}
 
@@ -738,6 +766,7 @@ ${item.protection ? `Rental Protection Plan: ${money(protectionTotal(days))}
 Call 850-295-5373 or book online at www.bigbendrentals.net so we can confirm delivery availability and the exact delivery price.`;
   }
 }
+
 
 
 function isMulcherId(id) {
@@ -890,9 +919,23 @@ export async function handleMessage(message, senderId = "local-test") {
 
   const t = normalize(message);
 
+  // CUSTOMER SUPPORT / EQUIPMENT ISSUE HANDLER
+  // This must run before inventory, category, and pricing logic.
+  if (isSupportIssue(message)) {
+    return `I'm sorry you're having trouble with the equipment.
+
+Please call 850-295-5373 right away so we can help.
+
+If possible, include:
+• Your name
+• The machine you're using
+• What it's doing or not doing
+
+We'll take care of you.`;
+  }
+
   // HIGH FLOW BRUSH CUTTER LOGIC
   // Only the CAT 265 and John Deere 333P are high-flow skid steers.
-  // This prevents high-flow brush-cutter requests from listing every skid steer.
   if (
     t.includes("high flow") &&
     (
@@ -914,8 +957,6 @@ ${formatOptions(ids)}
 
 Which one are you interested in?`;
   }
-
-
 
   if (state.awaitingExactDeliveryAddress) {
     if (!hasExactAddress(message)) {
@@ -959,6 +1000,7 @@ Which one are you interested in?`;
 
     return exactAddressPrompt();
   }
+
 
   if (isHoursQuestion(message)) return OFFICE_INFO;
 
