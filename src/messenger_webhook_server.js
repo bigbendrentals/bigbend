@@ -78,7 +78,8 @@ function getState(senderId) {
       awaitingMulcherComboSelection: false,
       lastBundleItemIds: [],
       disclaimerShown: false,
-      guidedMode: false
+      guidedMode: false,
+      lastBrokerRequest: null
     };
   }
   return stateStore[senderId];
@@ -584,6 +585,17 @@ function handleDeliveryOnly(message, state) {
 function isSupportIssue(message) {
   const t = normalize(message);
 
+  // Do not treat broker/brokered requests as broken-equipment support issues.
+  if (
+    t.includes("broker") ||
+    t.includes("brokered") ||
+    t.includes("source") ||
+    t.includes("order it") ||
+    t.includes("get me")
+  ) {
+    return false;
+  }
+
   return (
     t.includes("not working") ||
     t.includes("isnt working") ||
@@ -1062,7 +1074,28 @@ We'll take care of you.`;
   // If the customer asks for a specific model we do not stock, do not guess or substitute another machine.
   const brokerRequest = unavailableBrokerRequest(message);
   if (brokerRequest) {
+    state.lastBrokerRequest = brokerRequest;
     return brokeredEquipmentText(brokerRequest);
+  }
+
+  if (
+    state.lastBrokerRequest &&
+    (
+      t.includes("broker") ||
+      t.includes("brokered") ||
+      t.includes("source it") ||
+      t.includes("source the") ||
+      t.includes("order it") ||
+      t.includes("get it") ||
+      t.includes("i will broker") ||
+      t.includes("go ahead") ||
+      t.includes("yes")
+    )
+  ) {
+    const itemText = state.lastBrokerRequest?.label || "that equipment";
+    return `Got it. For brokered equipment like ${itemText}, please call 850-295-5373 so we can confirm supplier availability, timing, delivery, and final pricing.
+
+You can also start the order online at www.bigbendrentals.net, but brokered items may take a day or two or a few days longer depending on supplier availability.`;
   }
 
   // HIGH FLOW BRUSH CUTTER LOGIC
