@@ -204,10 +204,21 @@ function buildReply(message) {
   return universalUnknownItemReply();
 }
 
+function getPageAccessToken() {
+  return (
+    process.env.PAGE_ACCESS_TOKEN ||
+    process.env.FB_PAGE_ACCESS_TOKEN ||
+    process.env.FACEBOOK_PAGE_ACCESS_TOKEN ||
+    process.env.MESSENGER_PAGE_ACCESS_TOKEN ||
+    process.env.PAGE_TOKEN ||
+    ''
+  );
+}
+
 async function sendMessengerText(senderId, text) {
-  const token = process.env.PAGE_ACCESS_TOKEN;
+  const token = getPageAccessToken();
   if (!token) {
-    console.log('PAGE_ACCESS_TOKEN missing; reply would be:', text);
+    console.log('Messenger page token missing. Checked PAGE_ACCESS_TOKEN, FB_PAGE_ACCESS_TOKEN, FACEBOOK_PAGE_ACCESS_TOKEN, MESSENGER_PAGE_ACCESS_TOKEN, and PAGE_TOKEN; reply would be:', text);
     return;
   }
   const url = `https://graph.facebook.com/v19.0/me/messages?access_token=${encodeURIComponent(token)}`;
