@@ -56,6 +56,29 @@ Our facility is monitored with AI-powered cameras for your safety and ours.`;
 
 const CONTACT_TEXT = "Call 850-295-5373 or book online at www.bigbendrentals.net.";
 
+function universalUnknownFallback() {
+  return `I don’t show that exact item in my quick inventory. We carry many smaller tools and can also help with larger equipment requests, so please check www.bigbendrentals.net or call 850-295-5373 and we can confirm. For larger machines we don’t stock directly, we may be able to help broker the rental.`;
+}
+
+function looksLikeUnknownRentalRequest(message) {
+  const t = normalize(message);
+  return (
+    t.includes("do you have") ||
+    t.includes("do yall have") ||
+    t.includes("do you rent") ||
+    t.includes("can i rent") ||
+    t.includes("looking for") ||
+    t.includes("need a") ||
+    t.includes("need an") ||
+    t.includes("need to rent") ||
+    t.includes("want to see if") ||
+    t.includes("want to rent") ||
+    t.includes("trying to rent") ||
+    t.includes("i need") ||
+    t.includes("i want")
+  );
+}
+
 const stateStore = {};
 
 function getState(senderId) {
@@ -1550,6 +1573,7 @@ export async function handleMessage(message, senderId = "local-test") {
       bookingIntent(message);
 
     if (!hasClearIntent) {
+      if (looksLikeUnknownRentalRequest(message)) return universalUnknownFallback();
       return guidedPrompt("Thanks for messaging Big Bend Rentals.");
     }
   }
@@ -2200,7 +2224,7 @@ ${mulcherChoicePrompt([selectedId])}`;
     return itemBasicText(selectedItem);
   }
 
-  return shortGuidedClarification("I’m not confident enough to answer that accurately yet.");
+  return universalUnknownFallback();
 }
 
 async function sendMessage(senderId, text) {
