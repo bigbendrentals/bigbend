@@ -1782,6 +1782,125 @@ ${sections.join("\n\n")}
 Which specific items do you want pricing for, and will you need pickup or delivery?`;
 }
 
+function itemLooksLikeSaw(id, item = null) {
+  const target = item || (id ? EQUIPMENT[id] : null);
+  const text = normalize(`${target?.name || ""} ${target?.keyword || ""} ${(target?.aliases || []).join(" ")} ${target?.details || ""}`);
+  return text.includes("saw") || text.includes("cut off") || text.includes("cutoff");
+}
+
+function itemLooksLikeAuger(id, item = null) {
+  const target = item || (id ? EQUIPMENT[id] : null);
+  const text = normalize(`${target?.name || ""} ${target?.keyword || ""} ${(target?.aliases || []).join(" ")} ${target?.details || ""}`);
+  return text.includes("auger") || text.includes("post hole");
+}
+
+function isStihlAugerItem(id, item = null) {
+  const target = item || (id ? EQUIPMENT[id] : null);
+  const text = normalize(`${target?.name || ""} ${target?.keyword || ""} ${(target?.aliases || []).join(" ")}`);
+  return id === ITEM_IDS.STIHL_BT131_AUGER || text.includes("stihl") || text.includes("bt131");
+}
+
+function isFuelPolicyQuestion(message) {
+  const t = normalize(message);
+  return (
+    t.includes("fuel") ||
+    t.includes("gas") ||
+    t.includes("diesel") ||
+    t.includes("come full") ||
+    t.includes("return full") ||
+    t.includes("bring it back full") ||
+    t.includes("refuel") ||
+    t.includes("refueling")
+  );
+}
+
+function isBladeQuestion(message) {
+  const t = normalize(message);
+  return (
+    t.includes("blade") ||
+    t.includes("blades") ||
+    t.includes("diamond blade") ||
+    t.includes("cutting blade")
+  ) && (
+    t.includes("included") ||
+    t.includes("come with") ||
+    t.includes("comes with") ||
+    t.includes("include") ||
+    t.includes("need") ||
+    t.includes("rent") ||
+    t.includes("buy") ||
+    t.includes("sold") ||
+    t.includes("extra") ||
+    t.includes("separate") ||
+    t.includes("how much") ||
+    t.includes("price")
+  );
+}
+
+function isAugerBitQuestion(message) {
+  const t = normalize(message);
+  return (
+    t.includes("bit") ||
+    t.includes("bits") ||
+    t.includes("auger bit") ||
+    t.includes("auger bits")
+  ) && (
+    t.includes("included") ||
+    t.includes("come with") ||
+    t.includes("comes with") ||
+    t.includes("include") ||
+    t.includes("need") ||
+    t.includes("rent") ||
+    t.includes("size") ||
+    t.includes("sizes") ||
+    t.includes("extra") ||
+    t.includes("separate") ||
+    t.includes("how much") ||
+    t.includes("price")
+  );
+}
+
+function accessoryPolicyResponse(message, state) {
+  const t = normalize(message);
+
+  if (isFuelPolicyQuestion(message)) {
+    return "Fuel policy: machines go out full of fuel and must be returned full. If a machine is not returned full, we will charge your card up to $15/gallon.";
+  }
+
+  const explicitId = resolveGlobalDirect(message) || findEquipment(message)?.id || null;
+  const priorId = state.lastSelectedItemId || state.lastItemId || state.lastMachineItemId || null;
+  const itemId = explicitId || priorId;
+  const item = itemId ? EQUIPMENT[itemId] : null;
+
+  const sawContext =
+    itemLooksLikeSaw(itemId, item) ||
+    t.includes("saw") ||
+    t.includes("concrete saw") ||
+    t.includes("tile saw") ||
+    t.includes("cut off saw") ||
+    t.includes("cutoff saw");
+
+  if (isBladeQuestion(message) && sawContext) {
+    return "No, saw blades are not included. Blades are sold separately.";
+  }
+
+  const augerContext =
+    itemLooksLikeAuger(itemId, item) ||
+    t.includes("auger") ||
+    t.includes("post hole digger") ||
+    state.lastCategory === "auger";
+
+  if (isAugerBitQuestion(message) && augerContext) {
+    if (isStihlAugerItem(itemId, item) || t.includes("stihl") || t.includes("bt131")) {
+      return "Yes, the Stihl BT131 handheld auger comes with the bits.";
+    }
+
+    return "No, auger bits are not included with the skid steer or mini skid augers. Bits are rented separately.";
+  }
+
+  return null;
+}
+
 export async function handleMessage(message, senderId = "local-test") {
   const state = getState(senderId);
   const category = categoryFromText(message);
@@ -1805,6 +1924,11 @@ export async function handleMessage(message, senderId = "local-test") {
   }
 
   const t = normalize(message);
+
+  // ACCESSORY / CONSUMABLE / FUEL POLICY FOLLOW-UP HANDLER
+  // Keep these context-based follow-ups from drifting into unrelated inventory matches.
+  const accessoryReply = accessoryPolicyResponse(message, state);
+  if (accessoryReply) return accessoryReply;
 
   // CUSTOMER SUPPORT / EQUIPMENT ISSUE HANDLER
   // This must run before inventory, category, and pricing logic.
