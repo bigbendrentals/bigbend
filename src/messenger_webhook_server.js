@@ -46,7 +46,7 @@ Monday - Friday: 8:30 AM – 5:00 PM
 
 The office closes at noon each day, but we are still on site and working.
 
-For assistance, call 850-843-2248 and we will meet you at the office door.
+For assistance, call 850-295-5373 and we will meet you at the office door.
 
 Weekend Rentals:
 We arrange weekend rentals during the week and regularly handle weekend pickups and drop-offs.
@@ -57,8 +57,24 @@ Our facility is monitored with AI-powered cameras for your safety and ours.`;
 const CONTACT_TEXT = "Call 850-295-5373 or book online at www.bigbendrentals.net.";
 
 const stateStore = {};
+const SESSION_TTL_MS = Number(process.env.SESSION_TTL_MS || 1000 * 60 * 60 * 6);
+let lastStateCleanupAt = 0;
+
+function cleanupExpiredStates(now = Date.now()) {
+  if (now - lastStateCleanupAt < 1000 * 60 * 15) return;
+  lastStateCleanupAt = now;
+
+  for (const [senderId, state] of Object.entries(stateStore)) {
+    if (!state?._lastSeenAt || now - state._lastSeenAt > SESSION_TTL_MS) {
+      delete stateStore[senderId];
+    }
+  }
+}
 
 function getState(senderId) {
+  const now = Date.now();
+  cleanupExpiredStates(now);
+
   if (!stateStore[senderId]) {
     stateStore[senderId] = {
       lastItemId: null,
@@ -80,8 +96,11 @@ function getState(senderId) {
       lastBundleItemIds: [],
       disclaimerShown: false,
       guidedMode: false,
-      lastBrokerRequest: null
+      lastBrokerRequest: null,
+      _lastSeenAt: now
     };
+  } else {
+    stateStore[senderId]._lastSeenAt = now;
   }
   return stateStore[senderId];
 }
@@ -208,6 +227,45 @@ function categoryIds(category) {
   return [...new Set(mapped)].filter((id) => EQUIPMENT[id]);
 }
 
+function isLoaderRequest(message) {
+  const t = normalize(message);
+
+  return (
+    /\bloaders?\b/.test(t) ||
+    t.includes("track loader") ||
+    t.includes("track loaders") ||
+    t.includes("compact track loader") ||
+    t.includes("compact track loaders") ||
+    /\bctls?\b/.test(t) ||
+    t.includes("front end loader") ||
+    t.includes("front-end loader") ||
+    t.includes("wheel loader") ||
+    t.includes("dedicated loader")
+  );
+}
+
+function loaderRequestResponse(state) {
+  const ids = categoryIds("skid_steer");
+
+  state.lastCategory = "skid_steer";
+  state.lastCategoryItems = ids;
+  state.lastItemId = null;
+
+  const brokerMessage = brokeredEquipmentText({ label: "larger dedicated", type: "loader" });
+
+  return `For loader-type work, these are our skid steer / track loader options:
+
+${formatOptions(ids)}
+
+These handle most loader-type jobs like dirt moving, grading, lifting, cleanup, and material handling.
+
+For larger dedicated loaders, here is the brokered equipment option:
+
+${brokerMessage}
+
+If one of the skid steers above will work, which one do you want pricing or info for?`;
+}
+
 function formatOptions(ids) {
   return [...new Set(ids)]
     .map((id) => {
@@ -309,7 +367,18 @@ function shouldForceCategoryChoice(message, category) {
   if (!multi) return false;
   if (isSpecificItemMention(message)) return false;
   if (key === "mulcher") return false;
-  return isPriceQuestion(message) || hasDurationText(message) || normalize(message).includes("looking for") || normalize(message).includes("need") || normalize(message).includes("interested in");
+  return (
+    isPriceQuestion(message) ||
+    hasDurationText(message) ||
+    normalize(message).includes("looking for") ||
+    normalize(message).includes("need") ||
+    normalize(message).includes("interested in") ||
+    normalize(message).includes("renting") ||
+    normalize(message).includes("rent a") ||
+    normalize(message).includes("rent an") ||
+    normalize(message).includes("rent one") ||
+    normalize(message).includes("call me about")
+  );
 }
 
 function itemKeyword(item) {
@@ -582,18 +651,46 @@ function handleDeliveryOnly(message, state) {
 function isSupportIssue(message) {
   const t = normalize(message);
 
-  // Do not treat broker/brokered requests as broken-equipment support issues.
+  // Do not treat broker/brokered or sales-contact requests as broken-equipment support issues.
   if (
     t.includes("broker") ||
     t.includes("brokered") ||
     t.includes("source") ||
     t.includes("order it") ||
-    t.includes("get me")
+    t.includes("get me") ||
+    t.includes("rent") ||
+    t.includes("rental") ||
+    t.includes("price") ||
+    t.includes("pricing") ||
+    t.includes("quote") ||
+    t.includes("available") ||
+    t.includes("availability") ||
+    t.includes("reserve") ||
+    t.includes("book")
   ) {
-    return false;
+    // A sales message can still be support if it contains a clear breakdown phrase.
+    const clearBreakdown =
+      t.includes("not working") ||
+      t.includes("isnt working") ||
+      t.includes("isn't working") ||
+      t.includes("wont start") ||
+      t.includes("won't start") ||
+      t.includes("will not start") ||
+      t.includes("wont run") ||
+      t.includes("won't run") ||
+      t.includes("will not run") ||
+      t.includes("wont turn on") ||
+      t.includes("won't turn on") ||
+      t.includes("will not turn on") ||
+      t.includes("stopped working") ||
+      t.includes("quit working") ||
+      t.includes("broke down") ||
+      t.includes("broken down");
+
+    if (!clearBreakdown) return false;
   }
 
-  return (
+  const clearBrokenPhrases =
     t.includes("not working") ||
     t.includes("isnt working") ||
     t.includes("isn't working") ||
@@ -606,27 +703,46 @@ function isSupportIssue(message) {
     t.includes("wont turn on") ||
     t.includes("won't turn on") ||
     t.includes("will not turn on") ||
-    t.includes("broke") ||
-    t.includes("broken") ||
     t.includes("stopped working") ||
     t.includes("quit working") ||
-    t.includes("problem with") ||
-    t.includes("machine issue") ||
-    t.includes("equipment issue") ||
-    t.includes("can you call me") ||
-    t.includes("call me") ||
-    t.includes("need help") ||
-    t.includes("help with this machine") ||
-    t.includes("help with the machine") ||
-    (
-      t.includes("problem") &&
-      (t.includes("machine") || t.includes("equipment") || t.includes("mower") || t.includes("stump grinder") || t.includes("skid steer") || t.includes("excavator") || t.includes("trencher"))
-    ) ||
-    (
-      t.includes("issue") &&
-      (t.includes("machine") || t.includes("equipment") || t.includes("mower") || t.includes("stump grinder") || t.includes("skid steer") || t.includes("excavator") || t.includes("trencher"))
-    )
-  );
+    t.includes("broke down") ||
+    t.includes("broken down");
+
+  if (clearBrokenPhrases) return true;
+
+  const equipmentContext =
+    t.includes("machine") ||
+    t.includes("equipment") ||
+    t.includes("mower") ||
+    t.includes("stump grinder") ||
+    t.includes("skid steer") ||
+    t.includes("excavator") ||
+    t.includes("trencher") ||
+    t.includes("lift") ||
+    t.includes("forklift") ||
+    t.includes("dumpster") ||
+    t.includes("attachment");
+
+  const problemContext =
+    t.includes("problem") ||
+    t.includes("issue") ||
+    t.includes("malfunction") ||
+    t.includes("leaking") ||
+    t.includes("smoking") ||
+    t.includes("overheating") ||
+    t.includes("alarm") ||
+    t.includes("error code");
+
+  const helpWithRentedMachine =
+    (t.includes("help with this machine") ||
+      t.includes("help with the machine") ||
+      t.includes("help with this equipment") ||
+      t.includes("help with the equipment")) &&
+    !t.includes("choosing") &&
+    !t.includes("pick") &&
+    !t.includes("select");
+
+  return (problemContext && equipmentContext) || helpWithRentedMachine;
 }
 
 function unavailableBrokerRequest(message) {
@@ -654,6 +770,30 @@ function unavailableBrokerRequest(message) {
   function isAvailableModel(compactModel) {
     return availableBrandModels.has(String(compactModel || "").toLowerCase().replace(/[^a-z0-9]/g, ""));
   }
+
+  function mentionsAvailableStockedModel() {
+    const stockedModels = [
+      "cat3017",
+      "cat3075",
+      "cat239",
+      "cat265",
+      "jd50p",
+      "johndeere50p",
+      "deere50p",
+      "jd333p",
+      "johndeere333p",
+      "deere333p",
+      "geniez45",
+      "geniegs1930",
+      "geniegs3246",
+      "jlget500j",
+      "et500j"
+    ];
+
+    return stockedModels.some((model) => c.includes(model));
+  }
+
+  if (mentionsAvailableStockedModel()) return null;
 
   const catMatch = t.match(/\b(?:cat|caterpillar)\s*([0-9]{3,4}(?:\.[0-9])?[a-z]?)\b/);
   if (catMatch) {
@@ -1542,6 +1682,7 @@ export async function handleMessage(message, senderId = "local-test") {
     const hasClearIntent =
       isHoursQuestion(message) ||
       isPriceQuestion(message) ||
+      isLoaderRequest(message) ||
       category ||
       findEquipment(message) ||
       isDeliveryQuestion(message) ||
@@ -1597,6 +1738,13 @@ We'll take care of you.`;
     return `We can broker the ${itemText} for you.
 
 Please call 850-295-5373 during normal business hours to arrange it, or visit www.bigbendrentals.net to submit a request.`;
+  }
+
+  // LOADER REQUEST HANDLER
+  // Loader language should show and quote skid steers / track loaders, while also offering brokered larger dedicated loaders.
+  if (isLoaderRequest(message)) {
+    state.lastBrokerRequest = { label: "larger dedicated", type: "loader" };
+    return loaderRequestResponse(state);
   }
 
   // DIRECT SELECTION HANDLERS FOR PRIOR OPTION LISTS
