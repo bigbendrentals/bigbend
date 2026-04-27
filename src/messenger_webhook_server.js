@@ -817,7 +817,11 @@ function stockedAlternativesForBrokerRequest(request) {
 
 function brokeredEquipmentText(request) {
   const itemText = request?.label || "that item";
-  const typeText = request?.type || "equipment";
+  const rawTypeText = request?.type || "equipment";
+  const itemTextNorm = normalize(itemText);
+  const rawTypeNorm = normalize(rawTypeText);
+  const typeText = rawTypeNorm && rawTypeNorm !== "equipment" && !itemTextNorm.includes(rawTypeNorm) ? rawTypeText : "";
+  const itemTypePhrase = `${itemText}${typeText ? ` ${typeText}` : ""}`;
   const alternatives = stockedAlternativesForBrokerRequest(request);
   const alternativesText = alternatives.length
     ? `
@@ -829,7 +833,7 @@ ${formatOptions(alternatives)}
 Which direction would you like to go — broker the ${itemText}, or look at one of the on-lot options?`
     : "";
 
-  return `We do not have a ${itemText} ${typeText} on our lot right now.
+  return `We do not have a ${itemTypePhrase} on our lot right now.
 
 However, we do broker equipment and can often source items we do not keep on our lot. Depending on supplier availability, we can likely have brokered equipment in a day or two, but brokered items may take a few days longer than equipment already on our lot and may not be available same-day or next-day.
 
@@ -1648,10 +1652,12 @@ function telehandlerBrokerRequestFromMessage(message, state) {
   const priorId = state.lastMachineItemId || state.lastSelectedItemId || state.lastItemId || null;
   const priorItem = priorId ? EQUIPMENT[priorId] : null;
   const priorWasTelehandler = priorItem && normalize(priorItem.name).includes("telehandler");
-  const mentionsTelehandler = t.includes("telehandler") || t.includes("lull") || t.includes("reach forklift");
+  const mentionsTelehandler = t.includes("telehandler") || t.includes("tele handler") || t.includes("lull") || t.includes("reach forklift");
+  const priorBrokerWasTelehandler = state.lastBrokerRequest && normalize(`${state.lastBrokerRequest.label || ""} ${state.lastBrokerRequest.type || ""}`).includes("telehandler");
+  const priorMultiIncludedTelehandler = Array.isArray(state.lastCategoryItems) && state.lastCategoryItems.includes(ITEM_IDS.TELEHANDLER);
 
   if (!isSizeOrCapacityRequest(message)) return null;
-  if (!mentionsTelehandler && !priorWasTelehandler && state.lastCategory !== "telehandler") return null;
+  if (!mentionsTelehandler && !priorWasTelehandler && !priorBrokerWasTelehandler && !priorMultiIncludedTelehandler && state.lastCategory !== "telehandler") return null;
 
   let label = "telehandler";
   if (/\b\d+\s*k\b/.test(t)) {
@@ -1784,6 +1790,9 @@ We'll take care of you.`;
   const telehandlerBrokerRequest = telehandlerBrokerRequestFromMessage(message, state);
   if (telehandlerBrokerRequest) {
     state.lastBrokerRequest = telehandlerBrokerRequest;
+    state.lastCategory = "telehandler";
+    state.lastCategoryItems = [ITEM_IDS.TELEHANDLER].filter((id) => EQUIPMENT[id]);
+    state.lastMachineItemId = ITEM_IDS.TELEHANDLER;
     return brokeredEquipmentText(telehandlerBrokerRequest);
   }
 
