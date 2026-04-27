@@ -1,12 +1,14 @@
-'use strict';
+import { createRequire } from 'module';
+import { fileURLToPath } from 'url';
+import { INVENTORY, WEBSITE, PHONE } from './inventory.js';
 
+const require = createRequire(import.meta.url);
 let express;
 try {
   express = require('express');
 } catch (err) {
   express = null;
 }
-const { INVENTORY, WEBSITE, PHONE } = require('./inventory');
 
 const app = express
   ? express()
@@ -252,11 +254,14 @@ app.post('/test-reply', (req, res) => {
 });
 
 const port = process.env.PORT || 3000;
-if (require.main === module) {
+const currentFile = fileURLToPath(import.meta.url);
+const executedFile = process.argv[1] || '';
+
+if (!executedFile || currentFile === executedFile) {
   app.listen(port, () => console.log(`Big Bend Messenger bot listening on ${port}`));
 }
 
-module.exports = {
+export {
   app,
   buildReply,
   normalize,

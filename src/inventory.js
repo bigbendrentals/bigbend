@@ -1,5 +1,3 @@
-'use strict';
-
 const WEBSITE = 'www.bigbendrentals.net';
 const PHONE = '850-295-5373';
 
@@ -80,8 +78,5 @@ const INVENTORY = [
   }
 ];
 
-module.exports = {
-  WEBSITE,
-  PHONE,
-  INVENTORY
-};
+export { WEBSITE, PHONE, INVENTORY };
+export default INVENTORY;
