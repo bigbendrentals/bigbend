@@ -696,6 +696,13 @@ function isSupportIssue(message) {
     t.includes("call me") ||
     t.includes("need help") ||
     t.includes("help with this machine") ||
+    t.includes("leak") ||
+    t.includes("has a leak") ||
+    t.includes("is leaking") ||
+    t.includes("busted") ||
+    t.includes("won't connect") ||
+    t.includes("wont connect") ||
+    t.includes("crashed") ||
     t.includes("help with the machine") ||
     (
       t.includes("problem") &&
