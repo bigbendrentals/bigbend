@@ -78,5 +78,4 @@ const INVENTORY = [
   }
 ];
 
-export { WEBSITE, PHONE, INVENTORY };
-export default INVENTORY;
+module.exports = { WEBSITE, PHONE, INVENTORY };

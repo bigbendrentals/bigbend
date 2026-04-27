@@ -1,8 +1,4 @@
-import { createRequire } from 'module';
-import { fileURLToPath } from 'url';
-import { INVENTORY, WEBSITE, PHONE } from './inventory.js';
-
-const require = createRequire(import.meta.url);
+const { INVENTORY, WEBSITE, PHONE } = require('./inventory');
 let express;
 try {
   express = require('express');
@@ -211,11 +207,15 @@ async function sendMessengerText(senderId, text) {
     return;
   }
   const url = `https://graph.facebook.com/v19.0/me/messages?access_token=${encodeURIComponent(token)}`;
-  await fetch(url, {
+  const fbRes = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ recipient: { id: senderId }, message: { text } })
   });
+  if (!fbRes.ok) {
+    const errorBody = await fbRes.text().catch(() => '');
+    console.error('Facebook send failed:', fbRes.status, errorBody);
+  }
 }
 
 app.get('/', (req, res) => res.status(200).send('Big Bend Messenger bot is running.'));
@@ -254,14 +254,9 @@ app.post('/test-reply', (req, res) => {
 });
 
 const port = process.env.PORT || 3000;
-const currentFile = fileURLToPath(import.meta.url);
-const executedFile = process.argv[1] || '';
+app.listen(port, () => console.log(`Big Bend Messenger bot listening on ${port}`));
 
-if (!executedFile || currentFile === executedFile) {
-  app.listen(port, () => console.log(`Big Bend Messenger bot listening on ${port}`));
-}
-
-export {
+module.exports = {
   app,
   buildReply,
   normalize,
