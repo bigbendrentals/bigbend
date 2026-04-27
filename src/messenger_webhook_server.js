@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url';
 import { INVENTORY, WEBSITE, PHONE } from './inventory.js';
 
 const require = createRequire(import.meta.url);
+const https = require('https');
 let express;
 try {
   express = require('express');
@@ -205,28 +206,71 @@ function buildReply(message) {
 }
 
 function getPageAccessToken() {
-  return (
-    process.env.PAGE_ACCESS_TOKEN ||
-    process.env.FB_PAGE_ACCESS_TOKEN ||
-    process.env.FACEBOOK_PAGE_ACCESS_TOKEN ||
-    process.env.MESSENGER_PAGE_ACCESS_TOKEN ||
-    process.env.PAGE_TOKEN ||
-    ''
-  );
+  const candidates = [
+    'PAGE_ACCESS_TOKEN',
+    'FB_PAGE_ACCESS_TOKEN',
+    'FACEBOOK_PAGE_ACCESS_TOKEN',
+    'MESSENGER_PAGE_ACCESS_TOKEN',
+    'PAGE_TOKEN',
+    'META_PAGE_ACCESS_TOKEN',
+    'FACEBOOK_TOKEN',
+    'FB_TOKEN',
+    'MESSENGER_TOKEN'
+  ];
+
+  for (const key of candidates) {
+    const value = process.env[key];
+    if (value && String(value).trim()) {
+      return { key, value: String(value).trim() };
+    }
+  }
+  return { key: null, value: '' };
+}
+
+function postJson(urlString, payload) {
+  return new Promise((resolve, reject) => {
+    const url = new URL(urlString);
+    const body = JSON.stringify(payload);
+    const req = https.request(
+      {
+        hostname: url.hostname,
+        path: `${url.pathname}${url.search}`,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(body)
+        }
+      },
+      (res) => {
+        let data = '';
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => resolve({ statusCode: res.statusCode, body: data }));
+      }
+    );
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
 }
 
 async function sendMessengerText(senderId, text) {
   const token = getPageAccessToken();
-  if (!token) {
-    console.log('Messenger page token missing. Checked PAGE_ACCESS_TOKEN, FB_PAGE_ACCESS_TOKEN, FACEBOOK_PAGE_ACCESS_TOKEN, MESSENGER_PAGE_ACCESS_TOKEN, and PAGE_TOKEN; reply would be:', text);
-    return;
+  if (!token.value) {
+    console.log('Messenger page token NOT found. Checked PAGE_ACCESS_TOKEN, FB_PAGE_ACCESS_TOKEN, FACEBOOK_PAGE_ACCESS_TOKEN, MESSENGER_PAGE_ACCESS_TOKEN, PAGE_TOKEN, META_PAGE_ACCESS_TOKEN, FACEBOOK_TOKEN, FB_TOKEN, and MESSENGER_TOKEN. Reply would be:', text);
+    return { ok: false, reason: 'missing_token' };
   }
-  const url = `https://graph.facebook.com/v19.0/me/messages?access_token=${encodeURIComponent(token)}`;
-  await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ recipient: { id: senderId }, message: { text } })
-  });
+
+  const url = `https://graph.facebook.com/v19.0/me/messages?access_token=${encodeURIComponent(token.value)}`;
+  const payload = { recipient: { id: senderId }, messaging_type: 'RESPONSE', message: { text } };
+  const result = await postJson(url, payload);
+
+  if (result.statusCode >= 200 && result.statusCode < 300) {
+    console.log(`Messenger reply sent using ${token.key}. Status ${result.statusCode} .`);
+    return { ok: true, statusCode: result.statusCode };
+  }
+
+  console.error(`Messenger send failed using ${token.key}. Status ${result.statusCode}. Body: ${result.body}`);
+  return { ok: false, statusCode: result.statusCode, body: result.body };
 }
 
 app.get('/', (req, res) => res.status(200).send('Big Bend Messenger bot is running.'));
@@ -251,8 +295,14 @@ app.post('/webhook', async (req, res) => {
       for (const event of entry.messaging || []) {
         const senderId = event.sender && event.sender.id;
         const messageText = event.message && event.message.text;
-        if (!senderId || !messageText) continue;
-        await sendMessengerText(senderId, buildReply(messageText));
+        if (!senderId || !messageText) {
+          console.log('Messenger event ignored because it did not contain senderId + text:', JSON.stringify(event));
+          continue;
+        }
+        const reply = buildReply(messageText);
+        console.log('Messenger incoming text:', messageText);
+        console.log('Messenger outgoing reply:', reply);
+        await sendMessengerText(senderId, reply);
       }
     }
   } catch (err) {
@@ -283,5 +333,6 @@ export {
   hasMachineContext,
   hasSmallToolKeyword,
   shouldUseSmallToolWebsiteFallback,
-  universalUnknownItemReply
+  universalUnknownItemReply,
+  getPageAccessToken
 };
