@@ -682,6 +682,13 @@ function isSupportIssue(message) {
     t.includes("wont run") ||
     t.includes("won't run") ||
     t.includes("will not run") ||
+    t.includes("leak") ||
+    t.includes("has a leak") ||
+    t.includes("is leaking") ||
+    t.includes("busted") ||
+    t.includes("won't connect") ||
+    t.includes("wont connect") ||
+    t.includes("crashed") ||
     t.includes("wont turn on") ||
     t.includes("won't turn on") ||
     t.includes("will not turn on") ||
@@ -696,13 +703,6 @@ function isSupportIssue(message) {
     t.includes("call me") ||
     t.includes("need help") ||
     t.includes("help with this machine") ||
-    t.includes("leak") ||
-    t.includes("has a leak") ||
-    t.includes("is leaking") ||
-    t.includes("busted") ||
-    t.includes("won't connect") ||
-    t.includes("wont connect") ||
-    t.includes("crashed") ||
     t.includes("help with the machine") ||
     (
       t.includes("problem") &&
@@ -1618,6 +1618,120 @@ Which one are you interested in?`;
 }
 
 
+
+function isSizeOrCapacityRequest(message) {
+  const t = normalize(message);
+
+  return (
+    t.includes("smaller") ||
+    t.includes("smaller one") ||
+    t.includes("smaller machine") ||
+    t.includes("smaller telehandler") ||
+    t.includes("bigger") ||
+    t.includes("bigger one") ||
+    t.includes("larger") ||
+    t.includes("larger one") ||
+    t.includes("larger machine") ||
+    t.includes("something larger") ||
+    t.includes("something bigger") ||
+    t.includes("more capacity") ||
+    t.includes("less capacity") ||
+    t.includes("higher capacity") ||
+    t.includes("lower capacity") ||
+    /\b\d+\s*k\b/.test(t) ||
+    /\b\d{1,2}\s*(?:thousand|000)\s*(?:lb|lbs|pound|pounds)?\b/.test(t)
+  );
+}
+
+function telehandlerBrokerRequestFromMessage(message, state) {
+  const t = normalize(message);
+  const priorId = state.lastMachineItemId || state.lastSelectedItemId || state.lastItemId || null;
+  const priorItem = priorId ? EQUIPMENT[priorId] : null;
+  const priorWasTelehandler = priorItem && normalize(priorItem.name).includes("telehandler");
+  const mentionsTelehandler = t.includes("telehandler") || t.includes("lull") || t.includes("reach forklift");
+
+  if (!isSizeOrCapacityRequest(message)) return null;
+  if (!mentionsTelehandler && !priorWasTelehandler && state.lastCategory !== "telehandler") return null;
+
+  let label = "telehandler";
+  if (/\b\d+\s*k\b/.test(t)) {
+    const match = t.match(/\b(\d+)\s*k\b/);
+    if (match) label = `${match[1]}K telehandler`;
+  } else if (/\b\d{1,2}\s*(?:thousand|000)/.test(t)) {
+    const match = t.match(/\b(\d{1,2})\s*(?:thousand|000)/);
+    if (match) label = `${match[1]}K telehandler`;
+  } else if (t.includes("smaller") || t.includes("less capacity") || t.includes("lower capacity")) {
+    label = "smaller telehandler";
+  } else if (t.includes("larger") || t.includes("bigger") || t.includes("more capacity") || t.includes("higher capacity")) {
+    label = "larger telehandler";
+  }
+
+  return { label, type: "telehandler" };
+}
+
+function categoryMentioned(message, category) {
+  const t = normalize(message);
+
+  if (category === "auger") {
+    return /\baugers?\b/.test(t) || t.includes("post hole digger") || t.includes("post hole auger");
+  }
+
+  if (category === "telehandler") {
+    return t.includes("telehandler") || t.includes("tele handler") || t.includes("lull") || t.includes("reach forklift");
+  }
+
+  if (category === "skid_steer") {
+    return t.includes("skid steer") || t.includes("skidsteer") || t.includes("track loader") || t.includes("compact track loader");
+  }
+
+  if (category === "excavator") {
+    return t.includes("excavator") || t.includes("trackhoe") || t.includes("mini ex");
+  }
+
+  if (category === "boom_lift") {
+    return t.includes("boom lift") || t.includes("man lift") || t.includes("towable boom");
+  }
+
+  if (category === "forklift") {
+    return t.includes("forklift") || t.includes("fork lift");
+  }
+
+  return false;
+}
+
+function findMultipleRequestedCategories(message) {
+  const categories = ["auger", "telehandler", "skid_steer", "excavator", "boom_lift", "forklift"];
+  return categories.filter((category) => categoryMentioned(message, category));
+}
+
+function multiEquipmentRequestResponse(categories, state) {
+  const uniqueCategories = [...new Set(categories || [])];
+  if (uniqueCategories.length < 2) return null;
+
+  const sections = [];
+  const allIds = [];
+
+  for (const category of uniqueCategories) {
+    const ids = categoryIds(category);
+    if (!ids.length) continue;
+    allIds.push(...ids);
+    sections.push(`For the ${String(category).replace(/_/g, " ")}:
+${formatOptions(ids)}`);
+  }
+
+  if (sections.length < 2) return null;
+
+  state.lastCategory = "multi_request";
+  state.lastCategoryItems = [...new Set(allIds)];
+  state.lastItemId = null;
+
+  return `It sounds like you may need more than one item.
+
+${sections.join("\n\n")}
+
+Which specific items do you want pricing for, and will you need pickup or delivery?`;
+}
+
 export async function handleMessage(message, senderId = "local-test") {
   const state = getState(senderId);
   const category = categoryFromText(message);
@@ -1655,6 +1769,22 @@ If possible, include:
 • What it's doing or not doing
 
 We'll take care of you.`;
+  }
+
+  // MULTI-EQUIPMENT REQUEST HANDLER
+  // Example: "I need an auger and a telehandler" should not latch onto only the first item.
+  const multiRequestCategories = findMultipleRequestedCategories(message);
+  if (multiRequestCategories.length >= 2) {
+    const response = multiEquipmentRequestResponse(multiRequestCategories, state);
+    if (response) return response;
+  }
+
+  // TELEHANDLER SIZE / CAPACITY BROKER HANDLER
+  // We only stock a 6K telehandler. Smaller/larger/capacity-specific requests should go to brokered equipment.
+  const telehandlerBrokerRequest = telehandlerBrokerRequestFromMessage(message, state);
+  if (telehandlerBrokerRequest) {
+    state.lastBrokerRequest = telehandlerBrokerRequest;
+    return brokeredEquipmentText(telehandlerBrokerRequest);
   }
 
   // BROKERED EQUIPMENT HANDLER
@@ -2288,6 +2418,10 @@ ${mulcherChoicePrompt([selectedId])}`;
     }
 
     return itemBasicText(selectedItem);
+  }
+
+  if (shouldUseUniversalUnknownFallback(message, state, category)) {
+    return universalUnknownFallbackText();
   }
 
   return shortGuidedClarification("I’m not confident enough to answer that accurately yet.");
