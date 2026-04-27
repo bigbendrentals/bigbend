@@ -1647,8 +1647,52 @@ function isSizeOrCapacityRequest(message) {
   );
 }
 
+function isStocked6KTelehandlerAcceptance(message, state) {
+  const raw = String(message || "").toLowerCase();
+  const t = normalize(message);
+  const priorId = state.lastMachineItemId || state.lastSelectedItemId || state.lastItemId || null;
+  const priorItem = priorId ? EQUIPMENT[priorId] : null;
+  const priorWasTelehandler = priorItem && normalize(priorItem.name).includes("telehandler");
+  const priorBrokerWasTelehandler = state.lastBrokerRequest && normalize(`${state.lastBrokerRequest.label || ""} ${state.lastBrokerRequest.type || ""}`).includes("telehandler");
+  const priorMultiIncludedTelehandler = Array.isArray(state.lastCategoryItems) && state.lastCategoryItems.includes(ITEM_IDS.TELEHANDLER);
+  const telehandlerContext = priorWasTelehandler || priorBrokerWasTelehandler || priorMultiIncludedTelehandler || state.lastCategory === "telehandler" || t.includes("telehandler") || t.includes("tele handler") || t.includes("lull") || t.includes("reach forklift");
+
+  if (!telehandlerContext) return false;
+
+  const mentionsStocked6K =
+    /\b6\s*k\b/.test(t) ||
+    /\b6\s*(?:thousand|000)\b/.test(t) ||
+    /\b6000\b/.test(t) ||
+    /\b6,000\b/.test(raw);
+
+  if (!mentionsStocked6K) return false;
+
+  return (
+    t.includes("take") ||
+    t.includes("use") ||
+    t.includes("want") ||
+    t.includes("need") ||
+    t.includes("that") ||
+    t.includes("then") ||
+    t.includes("ok") ||
+    t.includes("okay") ||
+    t.includes("yes") ||
+    t.includes("works") ||
+    t.includes("will work") ||
+    t.includes("go with") ||
+    t.includes("price") ||
+    t.includes("how much") ||
+    t.includes("available") ||
+    t.includes("do you have")
+  );
+}
+
 function telehandlerBrokerRequestFromMessage(message, state) {
   const t = normalize(message);
+
+  // We do stock the 6K telehandler. Do not route exact 6K/6000 lb requests to brokered equipment.
+  if (/\b6\s*k\b/.test(t) || /\b6\s*(?:thousand|000)\b/.test(t) || /\b6000\b/.test(t)) return null;
+
   const priorId = state.lastMachineItemId || state.lastSelectedItemId || state.lastItemId || null;
   const priorItem = priorId ? EQUIPMENT[priorId] : null;
   const priorWasTelehandler = priorItem && normalize(priorItem.name).includes("telehandler");
@@ -1783,6 +1827,25 @@ We'll take care of you.`;
   if (multiRequestCategories.length >= 2) {
     const response = multiEquipmentRequestResponse(multiRequestCategories, state);
     if (response) return response;
+  }
+
+  // STOCKED 6K TELEHANDLER SELECTION HANDLER
+  // If the customer comes back from smaller/larger broker options and chooses the 6K, use the on-lot telehandler.
+  if (isStocked6KTelehandlerAcceptance(message, state) && EQUIPMENT[ITEM_IDS.TELEHANDLER]) {
+    state.lastBrokerRequest = null;
+    state.lastCategory = "telehandler";
+    state.lastCategoryItems = [ITEM_IDS.TELEHANDLER];
+    state.lastMachineItemId = ITEM_IDS.TELEHANDLER;
+    state.lastSelectedItemId = ITEM_IDS.TELEHANDLER;
+    state.lastItemId = ITEM_IDS.TELEHANDLER;
+
+    const item = EQUIPMENT[ITEM_IDS.TELEHANDLER];
+    if (isPriceQuestion(message) || hasDurationText(message)) {
+      const days = getDays(message, state);
+      state.lastDays = days;
+      return quoteText(item, days);
+    }
+    return itemBasicText(item);
   }
 
   // TELEHANDLER SIZE / CAPACITY BROKER HANDLER
