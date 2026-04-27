@@ -56,29 +56,6 @@ Our facility is monitored with AI-powered cameras for your safety and ours.`;
 
 const CONTACT_TEXT = "Call 850-295-5373 or book online at www.bigbendrentals.net.";
 
-function universalUnknownFallback() {
-  return `I don’t show that exact item in my quick inventory. We carry many smaller tools and can also help with larger equipment requests, so please check www.bigbendrentals.net or call 850-295-5373 and we can confirm. For larger machines we don’t stock directly, we may be able to help broker the rental.`;
-}
-
-function looksLikeUnknownRentalRequest(message) {
-  const t = normalize(message);
-  return (
-    t.includes("do you have") ||
-    t.includes("do yall have") ||
-    t.includes("do you rent") ||
-    t.includes("can i rent") ||
-    t.includes("looking for") ||
-    t.includes("need a") ||
-    t.includes("need an") ||
-    t.includes("need to rent") ||
-    t.includes("want to see if") ||
-    t.includes("want to rent") ||
-    t.includes("trying to rent") ||
-    t.includes("i need") ||
-    t.includes("i want")
-  );
-}
-
 const stateStore = {};
 
 function getState(senderId) {
@@ -111,6 +88,85 @@ function getState(senderId) {
 
 function safeNormalize(value) {
   return String(value || "").toLowerCase().replace(/[’']/g, "").replace(/[^a-z0-9\s.-]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function wordBoundaryIncludes(text, phrase) {
+  const normalizedText = ` ${safeNormalize(text)} `;
+  const normalizedPhrase = safeNormalize(phrase);
+  if (!normalizedPhrase || normalizedPhrase.length < 3) return false;
+  return normalizedText.includes(` ${normalizedPhrase} `);
+}
+
+function hasStrongKnownInventorySignal(message) {
+  const t = safeNormalize(message);
+  const c = compact(message);
+
+  if (!t) return false;
+
+  for (const id of Object.keys(EQUIPMENT)) {
+    const item = EQUIPMENT[id];
+    if (!item) continue;
+
+    const terms = [item.name, item.keyword, item.searchKeyword, ...(item.aliases || [])].filter(Boolean);
+
+    for (const term of terms) {
+      const nt = safeNormalize(term);
+      const nc = nt.replace(/[^a-z0-9]/g, "");
+      if (!nt || nt.length < 3) continue;
+      if (wordBoundaryIncludes(t, nt)) return true;
+      if (nc.length >= 4 && c.includes(nc)) return true;
+    }
+  }
+
+  return false;
+}
+
+function universalUnknownFallbackText() {
+  return `I don’t show that exact item in my quick inventory. We carry many smaller tools and can also help with larger equipment requests, so please check www.bigbendrentals.net or call 850-295-5373 and we can confirm. For larger machines we don’t stock directly, we may be able to help broker the rental.`;
+}
+
+function shouldUseUniversalUnknownFallback(message, state, category) {
+  const t = normalize(message);
+
+  if (
+    state.awaitingDeliveryLocation ||
+    state.awaitingExactDeliveryAddress ||
+    state.awaitingMulcherChoice ||
+    state.awaitingMulcherComboSelection ||
+    state.lastBrokerRequest
+  ) {
+    return false;
+  }
+
+  if (category) return false;
+  if (hasStrongKnownInventorySignal(message)) return false;
+
+  if (
+    isHoursQuestion(message) ||
+    isDeliveryQuestion(message) ||
+    isTrailerQuestion(message) ||
+    bookingIntent(message) ||
+    isSupportIssue(message)
+  ) {
+    return false;
+  }
+
+  const asksForItem =
+    t.includes("do you have") ||
+    t.includes("do yall have") ||
+    t.includes("do you rent") ||
+    t.includes("can i rent") ||
+    t.includes("looking for") ||
+    t.includes("need a") ||
+    t.includes("need an") ||
+    t.includes("need to rent") ||
+    t.includes("want to see if you have") ||
+    t.includes("wondering if you have") ||
+    t.includes("trying to rent") ||
+    t.includes("rent a") ||
+    t.includes("rent an");
+
+  return asksForItem;
 }
 
 function itemHaystack(id) {
@@ -1573,7 +1629,6 @@ export async function handleMessage(message, senderId = "local-test") {
       bookingIntent(message);
 
     if (!hasClearIntent) {
-      if (looksLikeUnknownRentalRequest(message)) return universalUnknownFallback();
       return guidedPrompt("Thanks for messaging Big Bend Rentals.");
     }
   }
@@ -1990,6 +2045,10 @@ Which one do you want pricing for with the attachment?`;
     return itemMoreInfoText(EQUIPMENT[state.lastSelectedItemId]);
   }
 
+  if (shouldUseUniversalUnknownFallback(message, state, category)) {
+    return universalUnknownFallbackText();
+  }
+
   const contextualId = resolveFromLastOptions(message, state);
   const globalDirectId = resolveGlobalDirect(message);
   const explicit = globalDirectId || contextualId ? null : findEquipment(message);
@@ -2224,7 +2283,7 @@ ${mulcherChoicePrompt([selectedId])}`;
     return itemBasicText(selectedItem);
   }
 
-  return universalUnknownFallback();
+  return shortGuidedClarification("I’m not confident enough to answer that accurately yet.");
 }
 
 async function sendMessage(senderId, text) {
